@@ -2,6 +2,7 @@
 #![warn(clippy::nursery)]
 use std::{
     collections::HashMap,
+    fmt::Debug,
     fs,
     hash::BuildHasher,
     io::{self, Read},
@@ -9,10 +10,13 @@ use std::{
 };
 
 use encoding_rs::mem::convert_latin1_to_utf8;
-use regex::{Regex, RegexBuilder};
+use process_tex::find_year;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 mod preamble;
+pub mod process_tex;
+pub mod run_latex;
 /// .
 ///
 /// # Panics
@@ -24,7 +28,7 @@ mod preamble;
 /// This function will return an error if
 /// * The file can't be opened
 /// * There's an error reading the file
-pub fn parse_file<T: AsRef<Path>>(path: T) -> io::Result<String> {
+pub fn parse_file<T: Clone + Debug + AsRef<Path>>(path: T) -> io::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut buf = vec![];
 
@@ -32,11 +36,8 @@ pub fn parse_file<T: AsRef<Path>>(path: T) -> io::Result<String> {
 
     let try_read = String::from_utf8(buf.clone());
 
-    match try_read {
-        Ok(string) => return Ok(string),
-        Err(err) => {
-            log::info!("Not utf8:{err:?}");
-        }
+    if let Ok(string) = try_read {
+        return Ok(string);
     }
 
     let mut converted_buffer = vec![0; buf.len() * 2];
@@ -57,33 +58,38 @@ pub fn parse_file<T: AsRef<Path>>(path: T) -> io::Result<String> {
 /// # Panics
 ///
 /// If I mess up
-pub fn parse_all_files<T: BuildHasher>(data: &HashMap<usize, Data, T>) -> io::Result<()> {
+pub fn parse_all_files<T: BuildHasher>(data: &mut HashMap<usize, Data, T>) -> io::Result<()> {
     let entries = fs::read_dir("ejercicios-in")?;
 
     for file in entries {
         let file = file?;
         let name = file.file_name();
         let name = name.to_string_lossy();
-        let id: Result<usize, _> = name.split(".tex").next().unwrap().parse();
-
-        let id = if let Ok(id) = id {
-            id
-        } else {
-            log::warn!("Nombre de archivo {name}");
-            continue;
-        };
 
         if file.file_type()?.is_file() && name.ends_with(".tex") {
+            let id: Result<usize, _> = name.split(".tex").next().unwrap().parse();
+
+            let id = if let Ok(id) = id {
+                id
+            } else {
+                println!("Nombre de archivo {name}");
+                continue;
+            };
             let path = file.path();
             let in_string = parse_file(path).expect("Had problems parsing file");
             let out_path = format!("ejercicios-out/{name}");
-            let placeholder = Data::new(id);
-            let problem_info = data.get(&id).unwrap_or_else(|| {
-                log::warn!("El problema {id} no está en la base de datos");
-                &placeholder
+            let mut placeholder = Data::new(id);
+            let mut to_insert = false;
+            let problem_info = data.get_mut(&id).unwrap_or_else(|| {
+                println!("{id} no está en la base de datos");
+                to_insert = true;
+                &mut placeholder
             });
             let out_string = process_tex(&in_string, problem_info);
             fs::write(out_path, out_string)?;
+            if to_insert {
+                data.insert(id, placeholder);
+            }
         }
     }
 
@@ -105,7 +111,7 @@ pub struct ReadData {
     historial: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Data {
     id: usize,
     temas: Vec<String>,
@@ -113,6 +119,8 @@ pub struct Data {
     fuente: String,
     historial: Vec<String>,
     comentarios: Vec<String>,
+    curso: Option<String>,
+    enunciado: String,
 }
 impl Data {
     const fn new(id: usize) -> Self {
@@ -123,6 +131,8 @@ impl Data {
             fuente: String::new(),
             historial: vec![],
             comentarios: vec![],
+            curso: None,
+            enunciado: String::new(),
         }
     }
 }
@@ -175,6 +185,8 @@ impl Data {
             fuente: descripcion,
             comentarios,
             historial,
+            curso: None,
+            enunciado: String::new(),
         }
     }
 }
@@ -213,7 +225,13 @@ pub fn write_json<T: BuildHasher>(data: &HashMap<usize, Data, T>) -> io::Result<
 ///
 /// Panics if I fuck up.
 #[must_use]
-pub fn process_tex(input: &str, data: &Data) -> String {
+#[allow(clippy::too_many_lines)]
+pub fn process_tex(input: &str, data: &mut Data) -> String {
+    if input.contains("%%% PLANTILLA PARA SUBIR EJERCICIOS A LA BASE DE DATOS DEL PIM") {
+        // println!("{} está en la plantilla", data.id);
+        find_year(input, data);
+        return input.to_owned();
+    }
     let problem_regex = Regex::new(r"(?s)\\begin\{ejer\}(.*)\\end\{ejer\}").expect("regex wrong");
     let problem = problem_regex
         .captures_iter(input)
@@ -223,7 +241,93 @@ pub fn process_tex(input: &str, data: &Data) -> String {
         .unwrap()
         .as_str();
 
-    let problem_regex = Regex::new(r"(?s)\\begin\{ejer\}(.*)\\end\{ejer\}").expect("regex wrong");
+    let sol_regex = [
+        Regex::new(r"(?s)\\begin\{proof\}\[Solución\](.*)\\end\{proof\}").expect("regex wrong"),
+        Regex::new(r"(?s)\{\\bf Soluci\\'on:\}(.*)\\end\{document\}").expect("regex wrong"),
+        Regex::new(r"(?s)\{\\bf Solución:\}(.*)\\end\{document\}").expect("regex wrong"),
+    ];
+
+    let solution = sol_regex
+        .iter()
+        .flat_map(|regex| regex.captures_iter(input))
+        .next()
+        .ok_or(format!("{data:#?}"))
+        .expect("Didn't find solution")
+        .get(1)
+        .unwrap()
+        .as_str();
+
+    let paquetes_1: String = Regex::new(r"\\usepackage\[(.*)\]\{(.*)}")
+        .expect("fucked up")
+        .captures_iter(input)
+        .filter_map(|result| {
+            let option = result.get(1).unwrap().as_str();
+            let package = result.get(2).unwrap().as_str();
+            if [
+                "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath", "amsthm",
+                "verbatim",
+            ]
+            .contains(&package)
+            {
+                return None;
+            }
+            Some(format!("\\usepackage[{option}]{{{package}}}\n"))
+        })
+        .collect();
+
+    let paquetes_2: String = Regex::new(r"\\usepackage\{(.*)}")
+        .expect("fucked up")
+        .captures_iter(input)
+        .flat_map(|result| {
+            let packages = result.get(1).unwrap().as_str().split(',');
+            packages
+                .filter(|package| {
+                    ![
+                        "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath",
+                        "amsthm", "verbatim",
+                    ]
+                    .contains(package)
+                })
+                .map(|package| format!("\\usepackage{{{package}}}\n"))
+        })
+        .collect();
+
+    let tikz_libraries: String = Regex::new(r"\\usetikzlibrary\{(.*)}")
+        .expect("fucked up")
+        .captures_iter(input)
+        .map(|result| {
+            let package = result.get(1).unwrap().as_str();
+            format!("\\usetikzlibrary{{{package}}}\n")
+        })
+        .collect();
+    let pgfplotsets: String = Regex::new(r"\\pgfplotsset\{(.*)}")
+        .expect("fucked up")
+        .captures_iter(input)
+        .map(|result| {
+            let package = result.get(1).unwrap().as_str();
+            format!("\\pgfplotsset{{{package}}}\n")
+        })
+        .collect();
+    let mut temas = data.temas.join(", ");
+
+    if temas.is_empty() {
+        temas = "%".into();
+    }
+
+    let id = data.id;
+
+    let mut fuente = &data.fuente;
+    let percent = String::from("%");
+
+    if fuente.is_empty() {
+        fuente = &percent;
+    }
+    let mut comentarios = data.comentarios.join(", ");
+
+    if comentarios.is_empty() {
+        comentarios = "%".into();
+    }
+
     format!(
         "
 % !TeX encoding = UTF-8
@@ -238,7 +342,10 @@ pub fn process_tex(input: &str, data: &Data) -> String {
 
 % Si necesitas más paquetes, añádelos debajo de la siguiente línea
 %%% Paquetes extra
-
+{paquetes_1}
+{paquetes_2}
+{tikz_libraries}
+{pgfplotsets}
 %%% Fin de paquetes extra
 
 
@@ -248,7 +355,7 @@ pub fn process_tex(input: &str, data: &Data) -> String {
 % Inducción, Numeritos
 % }}
 \\temas{{
-%
+{temas}
 }}
 
 % Dificultad del 1 al 10
@@ -264,7 +371,7 @@ pub fn process_tex(input: &str, data: &Data) -> String {
 % Aritmética de Diofanto, capítulo 1.
 % }}
 \\fuente{{
-%
+{fuente}
 }}
 
 % Curso a partir del cual se puede poner el problema
@@ -289,7 +396,11 @@ pub fn process_tex(input: &str, data: &Data) -> String {
 % Un problema muy fácil, les salió a todos
 % }}
 \\comentarios{{
-%
+{comentarios}
+}}
+
+\\id{{
+{id}
 }}
 
 \\begin{{document}}
@@ -309,7 +420,7 @@ pub fn process_tex(input: &str, data: &Data) -> String {
  
  
 \\begin{{proof}}[Solución]
-Claro que las hay: $3^2+4^2=5^2$.
+{solution}
 \\end{{proof}}
 
 \\end{{document}}

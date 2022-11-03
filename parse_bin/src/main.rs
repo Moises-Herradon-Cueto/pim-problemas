@@ -1,6 +1,9 @@
-use parse_lib::parse_file;
+use parse_lib::{parse_all_files, read_csv, run_latex::run_latex, write_json};
 
 fn main() {
-    let result = parse_file("ejercicios-in/220001.tex").unwrap();
-    println!("{result}");
+    pretty_env_logger::init();
+    let mut data = read_csv().expect("oops");
+    parse_all_files(&mut data).expect("oops");
+    write_json(&data).expect("oops");
+    run_latex();
 }
