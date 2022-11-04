@@ -5,7 +5,7 @@ use std::{fs, process::Command};
 /// # Panics
 ///
 /// Panics if .
-pub fn run_latex() {
+pub fn run() {
     let entries = fs::read_dir("ejercicios-out").unwrap();
     let mut count = 0_u8;
     for file in entries {

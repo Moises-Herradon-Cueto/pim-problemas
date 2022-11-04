@@ -1,6 +1,6 @@
 use regex::Regex;
 
-use crate::Data;
+use crate::data::{self, Data};
 
 /// .
 ///
