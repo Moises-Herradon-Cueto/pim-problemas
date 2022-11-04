@@ -3,10 +3,12 @@ use std::{
     fmt::Debug,
     fs,
     hash::BuildHasher,
-    io::{self},
+    io::{self, Write},
 };
 
 use serde::{Deserialize, Serialize};
+
+use crate::html::{POSTAMBLE, PREAMBLE};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Read {
@@ -110,30 +112,82 @@ impl Data {
     }
 }
 
-/// .
-///
-/// # Errors
-///
-/// This function will return an error if there's an i/o error
-pub fn read_csv() -> io::Result<HashMap<usize, Data>> {
+#[must_use]
+pub fn read_csv() -> HashMap<usize, Data> {
     let mut output: HashMap<usize, _> = HashMap::new();
-    let mut reader = csv::Reader::from_path("Datos.csv")?;
+    let mut reader = csv::Reader::from_path("Datos.csv").expect("Can't open file?");
     for result in reader.deserialize() {
         // The iterator yields Result<StringRecord, Error>, so we check the
         // error here.
-        let record: Read = result?;
+        let record: Read = result.expect("Record is wrong");
         let record = Data::from_read(record);
         output.insert(record.id, record);
     }
-    Ok(output)
+    output
 }
 
-/// .
-///
-/// # Errors
-///
-/// This function will return an error if there are io problems
 pub fn write_json<T: BuildHasher>(data: &HashMap<usize, Data, T>) -> io::Result<()> {
     let string = serde_json::to_string(data)?;
     fs::write("data.json", string)
+}
+
+pub fn write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
+    let mut writer = fs::File::create("Datos.html").expect("Can't create file"); // let mut writer = csv::Writer::from_path("Datos-out.csv").expect("Can't create file");
+    writer
+        .write_all(PREAMBLE.as_bytes())
+        .expect("Couldn't start writing");
+    let mut data_vec: Vec<_> = data.iter().map(|(_, value)| value.clone()).collect();
+    data_vec.sort_by(|d1, d2| d1.id.cmp(&d2.id));
+    data_vec
+        .into_iter()
+        .for_each(|data| write_one_entry(&data, &mut writer));
+    writer
+        .write_all(POSTAMBLE.as_bytes())
+        .expect("Couldn't write the end");
+    writer.flush().expect("Couldn't flush. Yuck!");
+}
+
+fn write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
+    let to_write = format!(
+        "
+        <tr>
+        <td>
+        {}
+        </td>
+        <td>
+        {}
+        </td>
+        <td>
+        {}
+        </td>
+        <td>
+        {}
+        </td>
+        <td>
+        {}
+        </td>
+        <td>
+        {}
+        </td>
+        <td>
+        {}
+        </td>
+        <td>
+        {}
+        </td>
+        </tr>
+        ",
+        data.id,
+        data.temas.join("<br/>"),
+        data.dificultad,
+        data.fuente,
+        data.historial.join("<br/>"),
+        data.comentarios.join("<br/>"),
+        data.curso.as_ref().unwrap_or(&String::from("Vacío")),
+        data.enunciado
+    );
+
+    writer
+        .write_all(to_write.as_bytes())
+        .expect("Couldn't write entry");
 }

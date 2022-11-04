@@ -12,7 +12,7 @@ pub fn find_year(input: &str, data: &mut Data) {
         .expect("messed up")
         .captures_iter(input)
         .next()
-        .unwrap()
+        .unwrap_or_else(|| panic!("El problema {} no tiene curso", data.id))
         .get(1)
         .unwrap()
         .as_str();

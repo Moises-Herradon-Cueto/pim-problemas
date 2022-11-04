@@ -4,7 +4,7 @@ use crate::preamble::into_template;
 use crate::process_tex::find_year;
 use regex::Regex;
 
-use ParseResult::*;
+use ParseResult::{Template, ToChange};
 
 pub enum ParseResult {
     Template,
@@ -17,7 +17,8 @@ pub enum ParseResult {
 ///
 /// Panics if I mess up.
 #[must_use]
-pub fn merge_string_data(input: &str, data: &mut Data) -> ParseResult {
+#[allow(clippy::too_many_lines)]
+pub fn string_and_data(input: &str, data: &mut Data) -> ParseResult {
     if is_template(input, data) {
         return Template;
     }
@@ -30,6 +31,8 @@ pub fn merge_string_data(input: &str, data: &mut Data) -> ParseResult {
         .get(1)
         .unwrap()
         .as_str();
+
+    data.enunciado = problem.to_owned();
 
     let sol_regex = [
         Regex::new(r"(?s)\\begin\{proof\}\[Solución\](.*)\\end\{proof\}").expect("regex wrong"),

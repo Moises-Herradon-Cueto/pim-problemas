@@ -8,12 +8,10 @@ use std::{
 };
 
 use crate::{
-    data::{Data},
-    merge_string_data,
+    data::Data,
+    merge::{string_and_data, ParseResult},
 };
 use encoding_rs::mem::convert_latin1_to_utf8;
-
-
 
 /// .
 ///
@@ -96,10 +94,12 @@ fn merge_file_data<T: BuildHasher, P: AsRef<Path>>(
         to_insert = true;
         &mut placeholder
     });
-    let out_string = merge_string_data(tex_string, problem_info);
-    fs::write(out_path, out_string)?;
-    if to_insert {
-        data.insert(id, placeholder);
+    let parse_result = string_and_data(tex_string, problem_info);
+    if let ParseResult::ToChange(out_string) = parse_result {
+        fs::write(out_path, out_string)?;
+        if to_insert {
+            data.insert(id, placeholder);
+        }
     }
     Ok(())
 }
