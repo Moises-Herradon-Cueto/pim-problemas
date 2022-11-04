@@ -1,19 +1,10 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
-use std::{
-    collections::HashMap,
-    fmt::Debug,
-    fs,
-    hash::BuildHasher,
-    io::{self, Read},
-    path::Path,
-};
 
 use data::Data;
-use encoding_rs::mem::convert_latin1_to_utf8;
+
 use process_tex::find_year;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 
 pub mod data;
 pub mod files;
@@ -25,7 +16,7 @@ pub mod process_tex;
 ///
 /// # Panics
 ///
-/// Panics if I fuck up.
+/// Panics if I mess up.
 #[must_use]
 #[allow(clippy::too_many_lines)]
 pub fn merge_string_data(input: &str, data: &mut Data) -> String {
@@ -60,7 +51,7 @@ pub fn merge_string_data(input: &str, data: &mut Data) -> String {
         .as_str();
 
     let paquetes_1: String = Regex::new(r"\\usepackage\[(.*)\]\{(.*)}")
-        .expect("fucked up")
+        .expect("messed up")
         .captures_iter(input)
         .filter_map(|result| {
             let option = result.get(1).unwrap().as_str();
@@ -78,7 +69,7 @@ pub fn merge_string_data(input: &str, data: &mut Data) -> String {
         .collect();
 
     let paquetes_2: String = Regex::new(r"\\usepackage\{(.*)}")
-        .expect("fucked up")
+        .expect("messed up")
         .captures_iter(input)
         .flat_map(|result| {
             let packages = result.get(1).unwrap().as_str().split(',');
@@ -95,7 +86,7 @@ pub fn merge_string_data(input: &str, data: &mut Data) -> String {
         .collect();
 
     let tikz_libraries: String = Regex::new(r"\\usetikzlibrary\{(.*)}")
-        .expect("fucked up")
+        .expect("messed up")
         .captures_iter(input)
         .map(|result| {
             let package = result.get(1).unwrap().as_str();
@@ -103,7 +94,7 @@ pub fn merge_string_data(input: &str, data: &mut Data) -> String {
         })
         .collect();
     let pgfplotsets: String = Regex::new(r"\\pgfplotsset\{(.*)}")
-        .expect("fucked up")
+        .expect("messed up")
         .captures_iter(input)
         .map(|result| {
             let package = result.get(1).unwrap().as_str();

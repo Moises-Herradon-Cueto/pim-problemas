@@ -1,15 +1,15 @@
 use regex::Regex;
 
-use crate::data::{self, Data};
+use crate::data::Data;
 
 /// .
 ///
 /// # Panics
 ///
-/// Panics if I fuck up
+/// Panics if I mess up
 pub fn find_year(input: &str, data: &mut Data) {
     let curso = Regex::new(r"\\curso\{\s*\n(.*)\n\}")
-        .expect("fucked up")
+        .expect("messed up")
         .captures_iter(input)
         .next()
         .unwrap()

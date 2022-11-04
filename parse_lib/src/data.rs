@@ -3,17 +3,13 @@ use std::{
     fmt::Debug,
     fs,
     hash::BuildHasher,
-    io::{self, Read},
-    path::Path,
+    io::{self},
 };
 
-use crate::process_tex::find_year;
-use encoding_rs::mem::convert_latin1_to_utf8;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ReadData {
+pub struct Read {
     id: String,
     fecha: String,
     tema1: String,
@@ -39,6 +35,7 @@ pub struct Data {
     pub enunciado: String,
 }
 impl Data {
+    #[must_use]
     pub const fn new(id: usize) -> Self {
         Self {
             id,
@@ -54,8 +51,14 @@ impl Data {
 }
 
 impl Data {
+    /// .
+    ///
+    /// # Panics
+    ///
+    /// Panics if I mess up
+    #[must_use]
     pub fn from_read(
-        ReadData {
+        Read {
             id,
             fecha: _,
             tema1,
@@ -67,7 +70,7 @@ impl Data {
             dificultad3,
             descripcion,
             historial,
-        }: ReadData,
+        }: Read,
     ) -> Self {
         let temas = [tema1, tema2, tema3, tema4]
             .into_iter()
@@ -118,7 +121,7 @@ pub fn read_csv() -> io::Result<HashMap<usize, Data>> {
     for result in reader.deserialize() {
         // The iterator yields Result<StringRecord, Error>, so we check the
         // error here.
-        let record: ReadData = result?;
+        let record: Read = result?;
         let record = Data::from_read(record);
         output.insert(record.id, record);
     }
