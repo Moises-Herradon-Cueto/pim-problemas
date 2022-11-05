@@ -2791,6 +2791,52 @@ $\angle AMB=45^\circ$ y que $BC\cdot AC=2\cdot AM\cdot AB$.
         </td>
         <td>
         
+Los puntos $A$, $B$ y $C$ determinan un ángulo agudo $\widehat{ABC}$ y dos semirrectas que empiezan en $B$ y pasan por $A$ y $C$ respectivamente. Hay un punto $D$ tal que la semirrecta que empieza en $B$ y pasa por $D$ se encuentra en el interior del ángulo $\widehat{ABC}$.
+
+\begin{center}
+	\begin{tikzpicture}
+		\filldraw [gray]  (0,0) circle (2pt) node[left]{$B$};
+		\filldraw [gray] (4,0) circle (2pt) node[below]{$C$};
+		\filldraw [gray]  (5,2) circle (2pt) node[above]{$D$};
+		\filldraw [gray] (3,2.25) circle (2pt)node[above]{$A$};
+		\draw[->] (0,0) -- (5,0);
+		\draw[->] (0,0) -- (4,3);
+		\draw[->] (0,0) -- (6,2.4);
+	\end{tikzpicture}
+\end{center}
+
+Laura tiene una ``regla infinita'' que consiste en dos semirrectas paralelas unidas en su inicio por un segmento perpendicular a las dos.
+\begin{center}
+	\begin{tikzpicture}
+		\draw[->] (0,0) -- (5,0);
+		\draw[->] (0,0.5) -- (5,0.5);
+		\draw (0,0.25) -- (0.25,0.5);
+		\draw (0,0) -- (0.5,0.5);
+		\draw (0.25,0) -- (0.75,0.5);
+		\draw (0.5,0) -- (1,0.5);
+		\draw (0.75,0) -- (1.25,0.5);
+		\draw (1,0) -- (1.5,0.5);
+		\draw (1.25,0) -- (1.75,0.5);
+		\draw (1.5,0) -- (2,0.5);
+		\draw (1.75,0) -- (2.25,0.5);
+		\draw (2,0) -- (2.5,0.5);
+		\draw (2.25,0) -- (2.75,0.5);
+		\draw (2.5,0) -- (3,0.5);
+		\draw (2.75,0) -- (3.25,0.5);
+		\draw (3,0) -- (3.5,0.5);
+		\draw (3.25,0) -- (3.75,0.5);
+		\draw (3.5,0) -- (4,0.5);
+		\draw (3.75,0) -- (4.25,0.5);
+		\draw (4,0) -- (4.5,0.5);
+		\draw (4.25,0) -- (4.75,0.5);
+		\draw (0,0) -- (0,0.5);
+	\end{tikzpicture}
+\end{center}
+
+Laura puede hacer lo siguiente con su regla infinita: colocarla en el dibujo de tal manera que uno de los lados infinitos pase por cualesquiera dos puntos del dibujo, o colocarla tal que la intersección de uno de los lados (finito o infinito) de la regla coincide exactamente con una porción de un segmento, semirrecta o recta que ya aparezca en el dibujo. Una vez que Laura ha colocado su regla en su dibujo, Laura puede dibujar cualquiera de los lados de su regla en el dibujo. También puede marcar los puntos de intersección entre dos objetos rectos. Puede colocar su recta y marcar puntos o lados de las maneras que hemos descrito tantas veces como quiera.
+
+Usando sólo su regla infinita de la manera permitida, describe cómo puede encontrar un punto $P$ en la semirrecta $BA$ y un punto $Q$ en la semirrecta $BC$ tal que $|\overline{PR}|=2|\overline{QR}|$, donde $R$ es la intersección del segmento $\overline{PQ}$ y la semirrecta que empieza en $B$ y pasa por $D$.
+
         </td>
         </tr>
         
@@ -2879,6 +2925,48 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+Una \textbf{mediana} de un triángulo es el segmento que une un vértice de un triángulo con el punto medio del lado puesto. En un triángulo hay tres medianas (una por cada vértice).
+
+En un triángulo $ABC$, sea $P$ la intersección de las medianas correspondientes a los vértices $A$ y $B$. Sea $A'$ el punto medio del segmento $BC$, y $B'$ el punto medio del segmento $AC$. En el siguiente dibujo, hemos dibujado las medianas correspondientes a los vértices $A$ y $B$ en el triángulo $ABC$. 
+\begin{center}
+		\begin{tikzpicture}
+			\draw (0,0) node[below]{$A$}--(6,0)node[below]{$B$}--(5,4)node[above]{$C$}--(0,0);
+			\draw[color=red] (0,0)--(5.5,2)node[right]{$A'$};
+			\draw[color=red] (6,0)--(2.5,2)node[left]{$B'$};
+			\draw (3.3,1.2)node[below]{$P$};
+		\end{tikzpicture}
+	\end{center}
+
+Para las tres primeras partes del ejercicio, construimos un cuadrilátero $ABDC$ a partir del triángulo $ABC$ de la siguiente manera. $D$ es el único punto del plano que hace que $\widehat{DCB}=\widehat{ABC}$ y $\widehat{CBD}=\widehat{BCA}$. Los segmentos con trazo discontinuo que aparecen en el interior del triángulo $BDC$ son las medianas correspondientes al los vércices $D$ y $C$, y estas dos medianas se cortan en el punto $Q$. La mediana correspondiente al vértice $C$ en el triángulo $BDC$ corta al lado $BD$ en el punto $E$.
+	
+	\begin{center}
+		\begin{tikzpicture}
+			\draw (0,0) node[below]{$A$}--(6,0)node[below]{$B$}--(5,4)node[above]{$C$}--(0,0);
+			\draw[color=red] (0,0)--(5.5,2)node[right]{$A'$};
+			\draw[color=red] (6,0)--(2.5,2)node[left]{$B'$};
+			\draw[dashed] (6,0)--(11,4)node[right]{$D$}--(5,4);
+			\draw[color=red, dashed] (5.5,2)--(11,4);
+			\draw[color=red, dashed] (5,4)--(8.5,2)node[right]{$E$};
+			\draw (3.3,1.2)node[below]{$P$};
+			\draw (7.3,2.7)node[above]{$Q$};
+		\end{tikzpicture}
+	\end{center}
+	
+	Demuestra las siguientes afirmaciones:
+
+\begin{enumerate}
+
+	\item[(a)] $ABDC$ es un paralelogramo.
+	\item[(b)] Los puntos $A$, $A'$ y $D$ están alineados.
+	\item[(c)] Los segmentos $BB'$ y $CE$ son paralelos.
+	
+\item[(d)] Usando las partes anteriores, demuestra que $|\overline{AP}|=2|\overline{PA'}|$, y que $|\overline{BP}|=2|\overline{PB'}|$. En otras palabras, demuestra que \textbf{el punto de intersección de dos medianas de un triángulo las divide a las dos en una proporción $2:1$}. Recuerda este resultado en negrita para el futuro, es muy útil.
+	
+	
+	\item[(e)] Deduce usando la parte anterior que las tres medianas de un triángulo se cortan en un punto. Este punto se llama el \textbf{baricentro} del triángulo. \textbf{Recuerda la definición de baricentro para el futuro.}
+\end{enumerate}
+
+
         </td>
         </tr>
         
@@ -2906,6 +2994,31 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+Una \textbf{mediana} de un triángulo es el segmento que une un vértice de un triángulo con el punto medio del lado puesto. En un triángulo hay tres medianas (una por cada vértice). Las siguientes afirmaciones son ciertas y puedes usarlas en este ejercicio.
+\begin{itemize}
+\item Las tres medianas de un triángulo se cortan en un único punto, llamado \textbf{baricentro}.
+\item Si $P$ es el baricentro del triángulo $ABC$, $A'$ es el punto medio del segmento $BC$, $B'$ es el punto medio del segmento $AC$ y $C'$ es el punto medio del segmento $AB$, entonces
+\begin{align*}
+| {AP}| &=2| {PA'}|,\\
+| {BP}| &=2| {PB'}|,\\
+| {CP}| &=2| {PC'}|.\\
+\end{align*}
+Es decir, el baricentro divide a cada mediana en  una proporción $2:1$.
+\end{itemize}
+
+Sea $ABCD$ un trapecio isósceles, donde los vértices están numerados en sentido antihorario tal que $AD$ y $BC$ son dos lados paralelos, y $|AD|\leq |BC|$.
+	
+Sea $E$ el pie de la perpendicular de $A$ al lado $BC$. Demostrar que el baricentro del triángulo $ABC$ se encuentra en el segmento $ {ED}$.
+	
+	\begin{center}
+		\begin{tikzpicture}
+			\draw (-1,0) node[below]{$B$}--(9,0)node[below]{$C$}--(6,4)node[above]{$D$}--(2,4)node[above]{$A$}--(-1,0);
+			\draw[dashed] (2,4)--(2,0)node[below]{$E$};
+		\end{tikzpicture}
+	\end{center}
+
+
+
         </td>
         </tr>
         
@@ -2933,6 +3046,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+ Demostrar que el punto de intersección de los círculos construidos sobre los lados $AB$ y $AC$ de un triángulo $ABC$ como diámetros, diferente de $A$, está sobre la recta $BC$.
+ 
         </td>
         </tr>
         
@@ -2960,6 +3075,9 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+El punto $M$ está   en el lado $BC$ del un paralelogramo $ABCD$ y divide el lado $BC$ en proporción $|BM|:|MC| = 3 : 2$. Las rectas $AM$ y $BD$ se cortan en el punto $K$. Se sabe que el área del paralelogramo $ABCD$  es 1. 
+Encuentra el área del cuadrilátero $CMKD$. 
+ 
         </td>
         </tr>
         
@@ -2987,6 +3105,9 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+ 	Marcamos un punto $K$ está marcado en el lado $AB$  de un triángulo $ABC$. El segmento $CK$ corta a la mediana $AM$ ($M$ está en el lado $BC$) del triángulo $ABC$ en el punto $P$. Resultó que $|AK| = |AP|$.
+Encuentra $|BK| : |PM|$.
+ 
         </td>
         </tr>
         
@@ -3014,6 +3135,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+ Un  punto $D$ está marcado en la hipotenusa $AB$ de un triángulo rectángulo $ABC$ de modo que $|BD| = |AC|$. Demostrar que en el triángulo $ACD$ la bisectriz $AL$, la mediana $CM$ y la altura $DH$ se cortan en un punto.
+ 
         </td>
         </tr>
         
@@ -3041,6 +3164,10 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+ En el triángulo $ABC$, el punto $K$ se toma del lado $AC$, además, $AK = 1$, $KC = 3$, y el punto $L$ se toma del lado $AB$, además, $|AL| : |LB |= 2 : 3$. Sea $Q$ el punto de intersección de las líneas $BK$ y $CL$. El área del triángulo $AQC$ es 1. Encuentra la altura del triángulo $ABC$ desde el vértice $B$.
+
+
+ 
         </td>
         </tr>
         
@@ -3068,6 +3195,10 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+ Sean $a,b,c$ números reales positivos. En el triángulo $ABC$, el punto $L$ se toma del lado $AC$, y lo divide en la proporción $|AL|:|LC|=c:a$. El punto $K$ se toma en el lado $AB$,  y lo divide en la proporción $|AK|:|KB|=b:a$. Sea $Q$ el punto de intersección de las líneas $BL$ y $CK$ y sea $M$ el punto de intersección de $AQ$ y $BC$. Demuestra que $M$ divide $BC$  en la proporción $|BM|:|MC|=c:b$.
+
+ Esto se conoce como Teorema de Ceva, por Giovanni Ceva. Casi 500 años antes de que lo publicara Ceva, lo había publicado Yúsuf Al-Mutamán, rey de la taifa de Zaragoza.
+ 
         </td>
         </tr>
         
@@ -3094,7 +3225,9 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         1ESO
         </td>
         <td>
-        
+         Se da un triángulo $ABC$. En la extensión del lado $AC$ más allá del punto $A$, se traza el punto $D$ con  $|AD| = |AB|$ más allá del punto $C$, el punto $E$ tal que $|CE| = |CB|$.
+Expresa  los ángulos del triángulo $DBE$ en función de los ángulos del triángulo $ABC$.
+   
         </td>
         </tr>
         
@@ -3122,6 +3255,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+Sean $a$ y $b$ números enteros. Demuestra que si $29$ divide al número $3a+2b$, entonces $29$ divide al número $11a+17b$ y viceversa.
+
         </td>
         </tr>
         
@@ -3148,7 +3283,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         1ESO
         </td>
         <td>
-        
+         En un triángulo isósceles $ABC$, las alturas $AD$ y $CE$, bajadas a los lados, forman un ángulo $AMC$ igual a $48^\circ$. Halla los ángulos del triángulo $ABC$.
+   
         </td>
         </tr>
         
@@ -3176,6 +3312,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+Encuentra todos los enteros positivos $n$ tal que $n^4-27n^2+121$ es un número primo positivo.
+
         </td>
         </tr>
         
@@ -3202,7 +3340,9 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         1ESO
         </td>
         <td>
-        
+         Sea $ABC$ un triángulo isósceles  con $|BA|=|CA|$. Un saltamontes está  en el punto $C$. La longitud de su salto es igual a  $|BC|$. Se sabe que partiendo del punto $C$, el saltamontes terminó en el punto $A$ en 22 saltos, 
+aterrizando después de cada salto en los lados $BA$ o $CA$ y alternando lados con cada salto (excepto el último).  Encuentra los ángulos del triángulo $ABC$ si se sabe que con cada salto el saltamontes se acercaba al punto $A$ (es decir, no retrocedía).
+   
         </td>
         </tr>
         
@@ -3229,7 +3369,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         1ESO
         </td>
         <td>
-        
+         Dado un círculo y un punto $A$ fuera de él trazamos dos tangente $AB$ y $AC$   al círculo ($B$ y $C$ son puntos tangentes). Demuestra  que el centro de la circunferencia inscrita en el triángulo $ABC$ se encuentra en la circunferencia dada.
+   
         </td>
         </tr>
         
@@ -3257,6 +3398,37 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+	Tenemos dos puntos $A$ y $B$ al mismo lado de una recta $r$. Demuestra que el punto $C$ de $r$ que cumple que $|AC|+|BC|$ es el mínimo posible es el que hace que estos dos ángulos sean iguales:
+
+
+
+\begin{center}
+	
+\definecolor{qqwuqq}{rgb}{0,0.392,0}
+\definecolor{uuuuuu}{rgb}{0.266,0.266,0.266}
+\definecolor{ududff}{rgb}{0.301,0.301,1}
+\begin{tikzpicture}[x=0.7cm,y=0.7cm]
+\clip(-4,-5.2) rectangle (8,2);
+\draw [shift={(1.841,-4.456)},line width=2pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (138.756:1.2) arc (138.756:183.768:1.2) -- cycle;
+\draw [shift={(1.841,-4.456)},line width=2pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (4:1.2) arc (4:48.780:1.2) -- cycle;
+\draw [line width=2pt] (-3.98,-4.84)-- (9.38,-3.96);
+\draw [line width=2pt] (1.841,-4.456)-- (5.22,-0.6);
+\draw [line width=2pt] (-1.12,-1.86)-- (1.841,-4.456);
+\begin{scriptsize}
+\draw [fill=ududff] (-1.12,-1.86) circle (2.5pt);
+\draw[color=ududff] (-0.96,-1.43) node {$A$};
+\draw [fill=ududff] (5.22,-0.6) circle (2.5pt);
+\draw[color=ududff] (5.38,-0.17) node {$B$};
+\draw [fill=ududff] (5.696,-7.836) circle (2.5pt);
+%\draw[color=ududff] (5.94,-7.41) node {$B'$};
+\draw [fill=uuuuuu] (1.841,-4.456) circle (2pt);
+\draw[color=uuuuuu] (2,-4.9) node {$C$};
+%\draw[color=qqwuqq] (1.06,-3.99) node {$\alpha = 45.01\textrm{\degre}$};
+%\draw[color=qqwuqq] (3.88,-3.79) node {$\beta = 45.01\textrm{\degre}$};
+\end{scriptsize}
+\end{tikzpicture}
+\end{center}
+
         </td>
         </tr>
         
@@ -3284,6 +3456,15 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+	Sabemos que dos triángulos $ABC$ y $DEF$ son congruentes, es decir, idénticos, si se cumple alguna de estas condiciones:
+	\begin{itemize}
+		\item Tienen los tres lados iguales, es decir, $|AB|=|DE|,|BC|=|EF|,|FE|=|CA|$.
+		\item Tienen dos lados iguales y el ángulo que está entre ellos, es decir, $|AB|=|DE|,|BC|=|EF|,A\hat BC = D\hat E F$.
+		\item Tienen un lado igual y dos ángulos iguales.
+	\end{itemize}
+
+	Encuentra dos triángulos que tienen dos lados iguales y un ángulo igual, pero no son congruentes.
+
         </td>
         </tr>
         
@@ -3311,6 +3492,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+	Tenemos un triángulo $ABC$, y $M$ es el punto medio de $BC$. Demuestra que $|AM| < \frac{|AB|+|AC|}{2}$.
+
         </td>
         </tr>
         
@@ -3338,6 +3521,8 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+	Demuestra que un polígono convexo no puede tener 3 lados que midan más que la diagonal más larga.
+
         </td>
         </tr>
         
@@ -3365,6 +3550,36 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+Encuentra la suma de los ángulos de las puntas de una estrella de 5 puntas.
+\begin{center}
+	
+
+\definecolor{qqwuqq}{rgb}{0,0.392,0}
+\definecolor{zzttqq}{rgb}{0.6,0.2,0}
+\definecolor{ududff}{rgb}{0.301,0.301,1}
+
+\begin{tikzpicture}[x=1cm,y=1cm]
+\clip(-0.614,0.359) rectangle (6.066,5.045);
+\draw [shift={(2.46,4.66)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (-105.429:0.341) arc (-105.429:-76.118:0.341) -- cycle;
+\draw [shift={(0.56,3.26)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (-37.002:0.341) arc (-37.002:-8.746:0.341) -- cycle;
+\draw [shift={(1.396,0.805)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (31.189:0.341) arc (31.189:74.570:0.341) -- cycle;
+\draw [shift={(3.32,1.18)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (103.881:0.341) arc (103.881:142.997:0.341) -- cycle;
+\draw [shift={(4.46,2.66)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (171.253:0.341) arc (171.253:211.189:0.341) -- cycle;
+\draw [line width=1pt] (2.46,4.66)-- (1.396,0.805);
+\draw [line width=1pt] (1.396,0.805)-- (4.46,2.66);
+\draw [line width=1pt] (4.46,2.66)-- (0.56,3.26);
+\draw [line width=1pt] (0.56,3.26)-- (3.32,1.18);
+\draw [line width=1pt] (3.32,1.18)-- (2.46,4.66);
+\begin{scriptsize}
+\draw [fill=ududff] (2.46,4.66) circle (1.5pt);
+\draw [fill=ududff] (1.396,0.805) circle (1.5pt);
+\draw [fill=ududff] (4.46,2.66) circle (1.5pt);
+\draw [fill=ududff] (0.56,3.26) circle (1.5pt);
+\draw [fill=ududff] (3.32,1.18) circle (1.5pt);
+\end{scriptsize}
+\end{tikzpicture}
+\end{center}
+
         </td>
         </tr>
         
@@ -3392,6 +3607,42 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+	Sean $p , q $ números naturales primos entre sí, con $p>2q$. Tenemos un polígono convexo de $p$ lados. Formamos una estrella con las diagonales que unen el vértice $n$-ésimo con el $n+q$-ésimo: por ejemplo, si $p=7$ y $q=3$:
+
+	\begin{center}
+
+\definecolor{qqwuqq}{rgb}{0,0.392,0}
+\definecolor{ududff}{rgb}{0.301,0.301,1}
+\begin{tikzpicture}[x=1.5cm,y=1.5cm]
+\clip(0.023,1) rectangle (5,5);
+\draw [shift={(1.225,2.961)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (-1.909:0.450) arc (-1.909:21.743:0.450) -- cycle;
+\draw [shift={(1.571,1.736)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (45.385:0.450) arc (45.385:73.092:0.450) -- cycle;
+\draw [shift={(3.788,3.983)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (-158.256:0.450) arc (-158.256:-134.614:0.450) -- cycle;
+\draw [shift={(2.46,4.66)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (-106.907:0.450) arc (-106.907:-69.051:0.450) -- cycle;
+\draw [shift={(3.682,1.465)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (110.948:0.450) arc (110.948:131.582:0.450) -- cycle;
+\draw [shift={(1.375,4.065)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (-48.417:0.450) arc (-48.417:-20.643:0.450) -- cycle;
+\draw [shift={(4.607,2.848)},line width=1pt,color=qqwuqq,fill=qqwuqq,fill opacity=0.100] (0,0) -- (159.356:0.450) arc (159.356:178.090:0.450) -- cycle;
+\draw [line width=1pt] (2.46,4.66)-- (1.571,1.736);
+\draw [line width=1pt] (1.571,1.736)-- (3.788,3.983);
+\draw [line width=1pt] (3.788,3.983)-- (1.225,2.961);
+\draw [line width=1pt] (1.225,2.961)-- (4.607,2.848);
+\draw [line width=1pt] (4.607,2.848)-- (1.375,4.065);
+\draw [line width=1pt] (1.375,4.065)-- (3.682,1.465);
+\draw [line width=1pt] (3.682,1.465)-- (2.46,4.66);
+\begin{scriptsize}
+\draw [fill=ududff] (3.682,1.465) circle (1pt);
+\draw [fill=ududff] (1.375,4.065) circle (1pt);
+\draw [fill=ududff] (4.607,2.848) circle (1pt);
+\draw [fill=ududff] (1.225,2.961) circle (1pt);
+\draw [fill=ududff] (3.788,3.983) circle (1pt);
+\draw [fill=ududff] (1.571,1.736) circle (1pt);
+\draw [fill=ududff] (2.46,4.66) circle (1pt);
+\end{scriptsize}
+\end{tikzpicture}
+		
+	\end{center}
+	Encuentra la suma de los ángulos de las puntas en función de $p$ y $q$. Recuerda que los ángulos de un polígono de $n$ lados suman $(n-2)\cdot 180^\circ$.
+
         </td>
         </tr>
         
@@ -3419,6 +3670,19 @@ es el doble de la distancia del circuncentro al lado opuesto a ese vértice.
         </td>
         <td>
         
+Llamamos $f(n,k)$ al número de maneras de dividir el conjunto $\{1,2,\ldots,n\}$ en $k$ subconjuntos distintos no vacíos. Por ejemplo, el conjunto $\{1,2,3\}$ se puede dividir en dos subconjuntos distintos no vacíos de las siguientes maneras: $\{1\}$ y $\{2,3\}$, $\{2\}$ y $\{1,3\}$, $\{3\}$ y $\{1,2\}$. Por tanto, $f(3,2)=3$.
+
+Sea $m$ un número entero positivo. Encuentra una fórmula sencilla para
+$$
+\sum_{k=1}^{n}f(n,k)\cdot m\cdot (m-1)\cdot\ldots\cdot(m-k+1).
+$$
+y demuestra que tu fórmula es cierta.
+
+Si nunca has visto la notación $\sum$, tienes que saber que si $a_k$ es una expresión que depende de $k$, $\sum_{k=1}^{n} a_k$ es la suma de todos los $a_k$ cuando $k$ va desde $1$ hasta $n$, es decir, $\sum_{k=1}^{n} a_k=a_1+a_2+\ldots+a_n$. Por tanto, 
+$$
+\sum_{k=1}^{n}f(n,k)\cdot m\cdot (m-1)\cdot\ldots\cdot(m-k+1)=f(n,1)\cdot m+f(n,2)\cdot m\cdot (m-1)+\ldots+f(n,n)\cdot m\cdot(m-1)\cdot\ldots\cdot (m-n+1)
+$$
+
         </td>
         </tr>
             </table>
