@@ -19,10 +19,6 @@ pub enum ParseResult {
 #[must_use]
 #[allow(clippy::too_many_lines)]
 pub fn string_and_data(input: &str, data: &mut Data) -> ParseResult {
-    if is_template(input, data) {
-        return Template;
-    }
-
     let problem_regex = Regex::new(r"(?s)\\begin\{ejer\}(.*)\\end\{ejer\}").expect("regex wrong");
     let problem = problem_regex
         .captures_iter(input)
@@ -34,6 +30,9 @@ pub fn string_and_data(input: &str, data: &mut Data) -> ParseResult {
 
     data.enunciado = problem.to_owned();
 
+    if is_template(input, data) {
+        return Template;
+    }
     let sol_regex = [
         Regex::new(r"(?s)\\begin\{proof\}\[Solución\](.*)\\end\{proof\}").expect("regex wrong"),
         Regex::new(r"(?s)\{\\bf Soluci\\'on:\}(.*)\\end\{document\}").expect("regex wrong"),
@@ -64,7 +63,9 @@ pub fn string_and_data(input: &str, data: &mut Data) -> ParseResult {
             {
                 return None;
             }
-            Some(format!("\\usepackage[{option}]{{{package}}}\n"))
+            let use_statement = format!("\\usepackage[{option}]{{{package}}}\n");
+            data.paquetes.push(use_statement.clone());
+            Some(use_statement)
         })
         .collect();
 
@@ -85,19 +86,26 @@ pub fn string_and_data(input: &str, data: &mut Data) -> ParseResult {
         })
         .collect();
 
+    let more_packages = paquetes_2.split('\n').map(std::borrow::ToOwned::to_owned);
+    data.paquetes.extend(more_packages);
+
     let tikz_libraries: String = Regex::new(r"\\usetikzlibrary\{(.*)}")
         .expect("messed up")
         .captures_iter(input)
         .map(|result| {
             let package = result.get(1).unwrap().as_str();
+            data.paquetes
+                .push(format!("\\usetikzlibrary{{{package}}}\n"));
             format!("\\usetikzlibrary{{{package}}}\n")
         })
         .collect();
+
     let pgfplotsets: String = Regex::new(r"\\pgfplotsset\{(.*)}")
         .expect("messed up")
         .captures_iter(input)
         .map(|result| {
             let package = result.get(1).unwrap().as_str();
+            data.paquetes.push(format!("\\pgfplotsset{{{package}}}\n"));
             format!("\\pgfplotsset{{{package}}}\n")
         })
         .collect();

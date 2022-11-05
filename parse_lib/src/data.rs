@@ -35,6 +35,7 @@ pub struct Data {
     pub comentarios: Vec<String>,
     pub curso: Option<String>,
     pub enunciado: String,
+    pub paquetes: Vec<String>,
 }
 impl Data {
     #[must_use]
@@ -48,6 +49,7 @@ impl Data {
             comentarios: vec![],
             curso: None,
             enunciado: String::new(),
+            paquetes: Vec::new(),
         }
     }
 }
@@ -108,6 +110,7 @@ impl Data {
             historial,
             curso: None,
             enunciado: String::new(),
+            paquetes: Vec::new(),
         }
     }
 }
@@ -129,6 +132,13 @@ pub fn read_csv() -> HashMap<usize, Data> {
 pub fn write_json<T: BuildHasher>(data: &HashMap<usize, Data, T>) -> io::Result<()> {
     let string = serde_json::to_string(data)?;
     fs::write("data.json", string)
+}
+
+#[must_use]
+pub fn read_json() -> HashMap<usize, Data> {
+    let string = fs::read_to_string("data.json").expect("Couldn't read data");
+
+    serde_json::from_str(&string).expect("Failed to deserialize")
 }
 
 pub fn write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
