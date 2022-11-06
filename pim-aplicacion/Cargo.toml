@@ -13,5 +13,5 @@ wasm-bindgen-futures = "0.4.32"
 web-sys = "0.3.59"
 yew = "0.19"
 
-[workspace]
-members = ["src-tauri"]
+# [workspace]
+# members = ["src-tauri"]
