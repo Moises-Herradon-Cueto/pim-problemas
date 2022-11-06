@@ -1,9 +1,6 @@
-use std::{
-    path::{Path, PathBuf},
-    str::FromStr,
-};
+use std::path::PathBuf;
 
-use web_sys::{HtmlInputElement, Node};
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 #[cfg(debug_assertions)]
