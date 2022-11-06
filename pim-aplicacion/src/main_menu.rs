@@ -1,4 +1,7 @@
-use crate::update::Update;
+use crate::files_info::Comp as FilesInfo;
+use crate::home_button;
+use crate::update_db::UpdateDb as Update;
+use crate::view_db::ViewDb as View;
 use yew::prelude::*;
 
 pub enum MainMenu {
@@ -7,24 +10,24 @@ pub enum MainMenu {
     View,
 }
 
-pub enum MainMenuMsg {
+pub enum Msg {
     UpdateDb,
     ViewDb,
     ToStart,
 }
 
-impl From<MainMenuMsg> for MainMenu {
-    fn from(msg: MainMenuMsg) -> Self {
+impl From<Msg> for MainMenu {
+    fn from(msg: Msg) -> Self {
         match msg {
-            MainMenuMsg::UpdateDb => Self::Update,
-            MainMenuMsg::ViewDb => Self::View,
-            MainMenuMsg::ToStart => Self::Start,
+            Msg::UpdateDb => Self::Update,
+            Msg::ViewDb => Self::View,
+            Msg::ToStart => Self::Start,
         }
     }
 }
 
 impl Component for MainMenu {
-    type Message = MainMenuMsg;
+    type Message = Msg;
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
@@ -38,20 +41,21 @@ impl Component for MainMenu {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         match self {
-            Self::Start => self.view_start(ctx),
-            Self::Update => self.view_update(ctx),
-            Self::View => self.view_db(ctx),
+            Self::Start => Self::view_start(ctx),
+            Self::Update => Self::view_update(ctx),
+            Self::View => Self::view_db(ctx),
         }
     }
 }
 
 impl MainMenu {
-    fn view_start(&self, ctx: &Context<Self>) -> Html {
-        let update_db = ctx.link().callback(|_: MouseEvent| MainMenuMsg::UpdateDb);
-        let view_db = ctx.link().callback(|_: MouseEvent| MainMenuMsg::ViewDb);
+    fn view_start(ctx: &Context<Self>) -> Html {
+        let update_db = ctx.link().callback(|_: MouseEvent| Msg::UpdateDb);
+        let view_db = ctx.link().callback(|_: MouseEvent| Msg::ViewDb);
         html! {
             <div id="container">
             <h1>{"OLA"}</h1>
+            <FilesInfo></FilesInfo>
             <p>{"¿Qué quieres hacer?"}</p>
             <ul>
                 <li><button onclick={update_db}>{"Actualizar la base de datos"}</button></li>
@@ -61,17 +65,23 @@ impl MainMenu {
         }
     }
 
-    fn view_update(&self, ctx: &Context<Self>) -> Html {
-        let return_cb = ctx.link().callback(|_: ()| MainMenuMsg::ToStart);
+    fn view_update(ctx: &Context<Self>) -> Html {
+        let return_cb = ctx.link().callback(|_: ()| Msg::ToStart);
         html! {
-            <Update {return_cb}></Update>
+            <>
+            <FilesInfo></FilesInfo>
+            <home_button::With<Update> props={()} {return_cb}></home_button::With<Update>>
+            </>
         }
     }
 
-    fn view_db(&self, ctx: &Context<Self>) -> Html {
-        let return_cb = ctx.link().callback(|_: ()| MainMenuMsg::ToStart);
+    fn view_db(ctx: &Context<Self>) -> Html {
+        let return_cb = ctx.link().callback(|_: ()| Msg::ToStart);
         html! {
-            <Update {return_cb}></Update>
+            <>
+            <FilesInfo></FilesInfo>
+            <home_button::With<View> props={()}  {return_cb}></home_button::With<View>>
+            </>
         }
     }
 }

@@ -1,20 +1,30 @@
-use yew::prelude::*;
+use std::marker::PhantomData;
 
-pub struct Update;
+use yew::{prelude::*, virtual_dom::VChild};
+
+pub struct With<T> {
+    _marker: PhantomData<T>,
+}
 
 pub enum UpdateMsg {}
 
 #[derive(Properties, PartialEq, Clone)]
-pub struct Props {
+pub struct Props<TProps: PartialEq> {
     pub return_cb: Callback<()>,
+    pub props: TProps,
 }
 
-impl Component for Update {
+impl<T: Component> Component for With<T>
+where
+    T::Properties: Clone,
+{
     type Message = UpdateMsg;
-    type Properties = Props;
+    type Properties = Props<T::Properties>;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Self
+        Self {
+            _marker: PhantomData::<T>,
+        }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -23,9 +33,11 @@ impl Component for Update {
             return_cb.emit(());
             None
         });
+        let t: VChild<T> = VChild::new(ctx.props().props.clone(), NodeRef::default(), None);
         html! {
             <>
             <button onclick={return_button}>{"Volver al inicio"}</button>
+            {t}
             </>
         }
     }
