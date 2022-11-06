@@ -32,15 +32,15 @@ impl Component for MainMenu {
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        *self = MainMenu::from(msg);
+        *self = Self::from(msg);
         true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         match self {
-            MainMenu::Start => self.view_start(ctx),
-            MainMenu::Update => self.view_update(ctx),
-            MainMenu::View => self.view_db(ctx),
+            Self::Start => self.view_start(ctx),
+            Self::Update => self.view_update(ctx),
+            Self::View => self.view_db(ctx),
         }
     }
 }

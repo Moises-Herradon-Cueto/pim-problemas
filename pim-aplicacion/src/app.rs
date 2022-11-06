@@ -21,13 +21,13 @@ struct GreetArgs<'a> {
 
 #[function_component(App)]
 pub fn app() -> Html {
-    let greet_input_ref = use_ref(|| NodeRef::default());
+    let greet_input_ref = use_ref(NodeRef::default);
 
-    let name = use_state(|| String::new());
+    let name = use_state(String::new);
 
-    let greet_msg = use_state(|| String::new());
+    let greet_msg = use_state(String::new);
     {
-        let greet_msg = greet_msg.clone();
+        let greet_msg = greet_msg;
         let name = name.clone();
         let name2 = name.clone();
         use_effect_with_deps(
@@ -39,7 +39,7 @@ pub fn app() -> Html {
 
                     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
                     let new_msg =
-                        invoke("greet", to_value(&GreetArgs { name: &*name }).unwrap()).await;
+                        invoke("greet", to_value(&GreetArgs { name: &name }).unwrap()).await;
                     log(&new_msg.as_string().unwrap());
                     greet_msg.set(new_msg.as_string().unwrap());
                 });
@@ -50,9 +50,9 @@ pub fn app() -> Html {
         );
     }
 
-    let greet = {
-        let name = name.clone();
-        let greet_input_ref = greet_input_ref.clone();
+    let _greet = {
+        let name = name;
+        let greet_input_ref = greet_input_ref;
         Callback::from(move |_: MouseEvent| {
             name.set(
                 greet_input_ref

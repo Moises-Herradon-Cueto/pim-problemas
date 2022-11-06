@@ -3,7 +3,6 @@ use std::{collections::HashSet, fs};
 use parse_lib::{
     data::{read_csv, read_json, write_html, write_json},
     files::parse_all,
-    pdflatex,
 };
 
 fn main() {
