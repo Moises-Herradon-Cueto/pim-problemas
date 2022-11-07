@@ -9,7 +9,6 @@ use crate::view_db::ViewDb as View;
 use crate::{home_button, DB};
 use parse_lib::data::Data;
 use serde::{Deserialize, Serialize};
-use serde_wasm_bindgen::to_value;
 use yew::prelude::*;
 use AppType::Start;
 
@@ -43,16 +42,18 @@ impl Component for MainMenu {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
+        log::info!("Create something");
         ctx.link().send_future(async move {
-            let db = invoke(
-                "get_db_from_json",
-                to_value(&GetJsonArgs {
-                    json_path: PathBuf::from(DEFAULT_DB),
-                })
-                .unwrap(),
-            )
-            .await;
+            log::info!("Trying to invoke");
+            let args = serde_wasm_bindgen::to_value(&GetJsonArgs {
+                json_path: PathBuf::from(DEFAULT_DB),
+            })
+            .expect("Couldn't make into js value🫣");
+            log::info!("Made args:\n{args:?}");
+            let db = invoke("get_db_from_json", args).await;
+            log::info!("Created db: {db:?}");
             let db: Result<Result<DB, String>, _> = serde_wasm_bindgen::from_value(db);
+            log::info!("Deserialized DB: {db:?}");
             match db {
                 Ok(Ok(db)) => Msg::UpdateDb(db),
                 Ok(Err(err)) => Msg::UpdateErr(err),

@@ -3,15 +3,9 @@
     windows_subsystem = "windows"
 )]
 
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::PathBuf};
 
 use parse_lib::data::{read_json, Data};
-
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
 
 fn main() {
     tauri::Builder::default()
@@ -20,10 +14,14 @@ fn main() {
         .expect("error while running tauri application");
 }
 
-#[tauri::command]
-fn update_db(db_path: &Path, problems_path: &Path) {}
+type Db = HashMap<usize, Data>;
 
 #[tauri::command]
-fn get_db_from_json(json_path: &Path) -> Result<HashMap<usize, Data>, String> {
-    read_json(json_path).map_err(|err| err.to_string())
+fn get_db_from_json(json_path: PathBuf) -> Result<Result<Db, String>, ()> {
+    Ok(get_db_from_json_inner(json_path))
+}
+
+fn get_db_from_json_inner(json_path: PathBuf) -> Result<Db, String> {
+    println!("{json_path:?}");
+    read_json(&json_path).map_err(|err| format!("Error reading from {json_path:?}.\n {err}"))
 }
