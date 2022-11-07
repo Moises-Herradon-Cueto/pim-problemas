@@ -4,6 +4,7 @@ use std::{
     fs,
     hash::BuildHasher,
     io::{self, Write},
+    path::Path,
 };
 
 use serde::{Deserialize, Serialize};
@@ -134,11 +135,19 @@ pub fn write_json<T: BuildHasher>(data: &HashMap<usize, Data, T>) -> io::Result<
     fs::write("data.json", string)
 }
 
-#[must_use]
-pub fn read_json() -> HashMap<usize, Data> {
-    let string = fs::read_to_string("data.json").expect("Couldn't read data");
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if
+///     The file can't be read
+///     Json can't be deserialized
+pub fn read_json<P: AsRef<Path>>(json_path: P) -> Result<HashMap<usize, Data>, Error> {
+    let string = fs::read_to_string(&json_path)?;
 
-    serde_json::from_str(&string).expect("Failed to deserialize")
+    let json = serde_json::from_str(&string)?;
+
+    Ok(json)
 }
 
 pub fn write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
@@ -200,4 +209,30 @@ fn write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
     writer
         .write_all(to_write.as_bytes())
         .expect("Couldn't write entry");
+}
+
+pub enum Error {
+    IO(std::io::Error),
+    Serde(serde_json::Error),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(val: std::io::Error) -> Self {
+        Self::IO(val)
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(val: serde_json::Error) -> Self {
+        Self::Serde(val)
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::IO(err) => write!(f, "Error reading file: {err}"),
+            Self::Serde(err) => write!(f, "Error parsing JSON: {err}"),
+        }
+    }
 }

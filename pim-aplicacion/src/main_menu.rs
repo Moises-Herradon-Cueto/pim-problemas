@@ -1,13 +1,23 @@
-use crate::files_info::{Comp as FilesInfo, Paths};
-use crate::home_button;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::rc::Rc;
+
+use crate::app::invoke;
+use crate::files_info::{Comp as FilesInfo, Paths, DEFAULT_DB};
 use crate::update_db::UpdateDb as Update;
 use crate::view_db::ViewDb as View;
+use crate::{home_button, DB};
+use parse_lib::data::Data;
+use serde::{Deserialize, Serialize};
+use serde_wasm_bindgen::to_value;
 use yew::prelude::*;
 use AppType::Start;
 
 pub struct MainMenu {
     main_app: AppType,
     paths: Paths,
+    db: Option<Rc<HashMap<usize, Data>>>,
+    error: String,
 }
 
 pub enum AppType {
@@ -18,16 +28,42 @@ pub enum AppType {
 pub enum Msg {
     ChangeApps(AppType),
     UpdatePaths(Paths),
+    UpdateDb(HashMap<usize, Data>),
+    UpdateErr(String),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GetJsonArgs {
+    #[serde(rename = "jsonPath")]
+    json_path: PathBuf,
 }
 
 impl Component for MainMenu {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        ctx.link().send_future(async move {
+            let db = invoke(
+                "get_db_from_json",
+                to_value(&GetJsonArgs {
+                    json_path: PathBuf::from(DEFAULT_DB),
+                })
+                .unwrap(),
+            )
+            .await;
+            let db: Result<Result<DB, String>, _> = serde_wasm_bindgen::from_value(db);
+            match db {
+                Ok(Ok(db)) => Msg::UpdateDb(db),
+                Ok(Err(err)) => Msg::UpdateErr(err),
+                Err(parse_err) => Msg::UpdateErr(format!("Error parsing response: {parse_err}")),
+            }
+        });
         Self {
             main_app: AppType::Start,
             paths: Paths::default(),
+            db: None,
+            error: String::new(),
         }
     }
 
@@ -39,6 +75,15 @@ impl Component for MainMenu {
             }
             Msg::UpdatePaths(paths) => {
                 self.paths = paths;
+                true
+            }
+            Msg::UpdateDb(db) => {
+                log::info!("{db:?}");
+                self.db = Some(Rc::new(db));
+                false
+            }
+            Msg::UpdateErr(err) => {
+                self.error = err;
                 true
             }
         }
@@ -56,7 +101,7 @@ impl Component for MainMenu {
 
         html! {
             <div id="container">
-            <p>{format!("Archivos: {:?}, {:?}", self.paths.problems, self.paths.database)}</p>
+            <p>{&self.error}</p>
             <FilesInfo {paths} {update_cb}></FilesInfo>
             {main_app}
             </div>

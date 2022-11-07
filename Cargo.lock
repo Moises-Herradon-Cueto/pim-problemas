@@ -2066,6 +2066,7 @@ dependencies = [
 name = "pim-aplicacion"
 version = "0.0.0"
 dependencies = [
+ "parse_lib",
  "serde",
  "serde_json",
  "tauri",
@@ -2079,6 +2080,7 @@ dependencies = [
  "console_error_panic_hook",
  "js-sys",
  "log",
+ "parse_lib",
  "serde",
  "serde-wasm-bindgen",
  "wasm-bindgen",
