@@ -147,3 +147,23 @@ impl MainMenu {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::Data;
+
+    #[test]
+    fn serialize_deserialize_data() {
+        let database = (0_usize..10)
+            .map(|x| (x, Data::new(x)))
+            .collect::<HashMap<_, _>>();
+
+        let serialized = serde_wasm_bindgen::to_value(&database).unwrap();
+
+        let deserialized = serde_wasm_bindgen::from_value(serialized).unwrap();
+
+        assert_eq!(database, deserialized);
+    }
+}

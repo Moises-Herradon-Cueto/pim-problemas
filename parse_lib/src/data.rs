@@ -26,7 +26,7 @@ pub struct Read {
     historial: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct Data {
     pub id: usize,
     pub temas: Vec<String>,
