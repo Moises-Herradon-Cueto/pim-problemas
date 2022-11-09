@@ -8,7 +8,7 @@ pub enum Msg {
     ParseFiles,
 }
 
-#[derive(Properties, Clone, PartialEq)]
+#[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
     pub paths: Paths,
 }

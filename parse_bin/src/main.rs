@@ -21,7 +21,7 @@ fn gather_info_copy_files() {
     write_html(&data);
 }
 
-fn make_problem_list(data: &HashMap<usize, Data>) {
+fn _make_problem_list(data: &HashMap<usize, Data>) {
     let mut packages = HashSet::new();
     let problems: String = (2200070..2200130_usize)
         .filter_map(|i| {

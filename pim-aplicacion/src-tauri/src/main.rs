@@ -3,9 +3,9 @@
     windows_subsystem = "windows"
 )]
 
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
-use parse_lib::data::{get_json_string, read_json, Data};
+use parse_lib::data::get_json_string;
 
 fn main() {
     tauri::Builder::default()
@@ -13,8 +13,6 @@ fn main() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-type Db = HashMap<usize, Data>;
 
 #[tauri::command]
 fn get_db_from_json(json_path: PathBuf) -> Result<Result<String, String>, ()> {
