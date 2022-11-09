@@ -20,9 +20,7 @@ fn get_db_from_json(json_path: PathBuf) -> Result<Result<String, String>, ()> {
 }
 
 fn get_db_from_json_inner(json_path: PathBuf) -> Result<String, String> {
-    println!("{json_path:?}");
-    let result = get_json_string(&json_path)
-        .map_err(|err| format!("Error reading from {json_path:?}.\n {err}"));
-    println!("Result: \n{result:#?} ");
-    result
+    // println!("{json_path:?}");
+    get_json_string(&json_path).map_err(|err| format!("Error reading from {json_path:?}.\n {err}"))
+    // println!("Result: \n{result:#?} ");
 }

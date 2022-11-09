@@ -4,10 +4,9 @@ use std::rc::Rc;
 
 use crate::app::invoke;
 use crate::files_info::{Comp as FilesInfo, Paths, DEFAULT_DB};
-use crate::main_menu::tests::serialize_deserialize_data;
 use crate::update_db::{self, UpdateDb as Update};
 use crate::view_db::ViewDb as View;
-use crate::{home_button};
+use crate::{home_button, view_db};
 use parse_lib::data::Data;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
@@ -45,17 +44,16 @@ impl Component for MainMenu {
     fn create(ctx: &Context<Self>) -> Self {
         log::info!("Create something");
         ctx.link().send_future(async move {
-            serialize_deserialize_data();
-            log::info!("Trying to invoke");
+            // log::info!("Trying to invoke");
             let args = serde_wasm_bindgen::to_value(&GetJsonArgs {
                 json_path: PathBuf::from(DEFAULT_DB),
             })
             .expect("Couldn't make into js value🫣");
-            log::info!("Made args:\n{args:#?}");
+            // log::info!("Made args:\n{args:#?}");
             let db = invoke("get_db_from_json", args).await;
-            log::info!("Created db: {db:#?}");
+            // log::info!("Created db: {db:#?}");
             let db: Result<Result<String, String>, _> = serde_wasm_bindgen::from_value(db);
-            log::info!("Deserialized DB: {db:?}");
+            // log::info!("Deserialized DB: {db:?}");
             match db {
                 Ok(Ok(db)) => {
                     let db = serde_json::from_str(&db);
@@ -87,7 +85,6 @@ impl Component for MainMenu {
                 true
             }
             Msg::UpdateDb(db) => {
-                log::info!("{db:?}");
                 self.db = Some(Rc::new(db));
                 false
             }
@@ -105,7 +102,7 @@ impl Component for MainMenu {
         let main_app = match self.main_app {
             AppType::Start => Self::view_start(ctx),
             AppType::Update => self.view_update(ctx),
-            AppType::View => Self::view_db(ctx),
+            AppType::View => self.view_db(ctx),
         };
 
         html! {
@@ -146,13 +143,15 @@ impl MainMenu {
         }
     }
 
-    fn view_db(ctx: &Context<Self>) -> Html {
-        let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
-        html! {
-            <>
-            <home_button::With<View> props={()}  {return_cb}></home_button::With<View>>
-            </>
-        }
+    fn view_db(&self, ctx: &Context<Self>) -> Html {
+        self.db.as_ref().map_or_else(|| self.view_update(ctx), |db| {
+            let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
+            html! {
+                <>
+                <home_button::With<View> props={view_db::Props {db:db.clone()}}  {return_cb}></home_button::With<View>>
+                </>
+            }
+        })
     }
 }
 
@@ -161,7 +160,7 @@ mod tests {
 
     use super::Data;
 
-    pub fn serialize_deserialize_data() {
+    pub fn _serialize_deserialize_data() {
         let database = (3_usize..4)
             .map(|x| (x, Data::new(x)))
             .collect::<HashMap<_, _>>();
