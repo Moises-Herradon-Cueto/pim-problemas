@@ -9,19 +9,19 @@ pub enum Msg {
 }
 
 #[derive(Properties, Clone, PartialEq)]
-pub struct Properties {
-    paths: Paths,
+pub struct Props {
+    pub paths: Paths,
 }
 
 impl Component for UpdateDb {
     type Message = Msg;
-    type Properties = ();
+    type Properties = Props;
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::ParseFiles => {
                 log::info!("Unimplemented");

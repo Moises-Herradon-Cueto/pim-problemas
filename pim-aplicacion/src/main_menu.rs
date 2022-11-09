@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::app::invoke;
 use crate::files_info::{Comp as FilesInfo, Paths, DEFAULT_DB};
-use crate::update_db::UpdateDb as Update;
+use crate::update_db::{UpdateDb as Update, self};
 use crate::view_db::ViewDb as View;
 use crate::{home_button, DB};
 use parse_lib::data::Data;
@@ -96,7 +96,7 @@ impl Component for MainMenu {
 
         let main_app = match self.main_app {
             AppType::Start => Self::view_start(ctx),
-            AppType::Update => Self::view_update(ctx),
+            AppType::Update => self.view_update(ctx),
             AppType::View => Self::view_db(ctx),
         };
 
@@ -129,11 +129,11 @@ impl MainMenu {
         }
     }
 
-    fn view_update(ctx: &Context<Self>) -> Html {
+    fn view_update(&self, ctx: &Context<Self>) -> Html {
         let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
         html! {
             <>
-            <home_button::With<Update> props={()} {return_cb}></home_button::With<Update>>
+            <home_button::With<Update> props={update_db::Props {paths: self.paths.clone()}}  {return_cb}></home_button::With<Update>>
             </>
         }
     }
