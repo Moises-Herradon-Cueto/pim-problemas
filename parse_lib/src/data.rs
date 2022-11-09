@@ -147,7 +147,21 @@ pub fn read_json<P: AsRef<Path>>(json_path: P) -> Result<HashMap<usize, Data>, E
 
     let json = serde_json::from_str(&string)?;
 
+    println!("Fetched data: {json:#?}");
+
     Ok(json)
+}
+
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if
+/// the file can't be opened
+pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, Error> {
+    let string = fs::read_to_string(&json_path)?;
+
+    Ok(string)
 }
 
 pub fn write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {

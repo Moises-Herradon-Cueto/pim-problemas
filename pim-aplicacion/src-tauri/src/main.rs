@@ -5,7 +5,7 @@
 
 use std::{collections::HashMap, path::PathBuf};
 
-use parse_lib::data::{read_json, Data};
+use parse_lib::data::{get_json_string, read_json, Data};
 
 fn main() {
     tauri::Builder::default()
@@ -17,11 +17,14 @@ fn main() {
 type Db = HashMap<usize, Data>;
 
 #[tauri::command]
-fn get_db_from_json(json_path: PathBuf) -> Result<Result<Db, String>, ()> {
+fn get_db_from_json(json_path: PathBuf) -> Result<Result<String, String>, ()> {
     Ok(get_db_from_json_inner(json_path))
 }
 
-fn get_db_from_json_inner(json_path: PathBuf) -> Result<Db, String> {
+fn get_db_from_json_inner(json_path: PathBuf) -> Result<String, String> {
     println!("{json_path:?}");
-    read_json(&json_path).map_err(|err| format!("Error reading from {json_path:?}.\n {err}"))
+    let result = get_json_string(&json_path)
+        .map_err(|err| format!("Error reading from {json_path:?}.\n {err}"));
+    println!("Result: \n{result:#?} ");
+    result
 }

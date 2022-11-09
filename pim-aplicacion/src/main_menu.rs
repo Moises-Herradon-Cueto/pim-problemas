@@ -4,7 +4,8 @@ use std::rc::Rc;
 
 use crate::app::invoke;
 use crate::files_info::{Comp as FilesInfo, Paths, DEFAULT_DB};
-use crate::update_db::{UpdateDb as Update, self};
+use crate::main_menu::tests::serialize_deserialize_data;
+use crate::update_db::{self, UpdateDb as Update};
 use crate::view_db::ViewDb as View;
 use crate::{home_button, DB};
 use parse_lib::data::Data;
@@ -44,18 +45,25 @@ impl Component for MainMenu {
     fn create(ctx: &Context<Self>) -> Self {
         log::info!("Create something");
         ctx.link().send_future(async move {
+            serialize_deserialize_data();
             log::info!("Trying to invoke");
             let args = serde_wasm_bindgen::to_value(&GetJsonArgs {
                 json_path: PathBuf::from(DEFAULT_DB),
             })
             .expect("Couldn't make into js value🫣");
-            log::info!("Made args:\n{args:?}");
+            log::info!("Made args:\n{args:#?}");
             let db = invoke("get_db_from_json", args).await;
-            log::info!("Created db: {db:?}");
-            let db: Result<Result<DB, String>, _> = serde_wasm_bindgen::from_value(db);
+            log::info!("Created db: {db:#?}");
+            let db: Result<Result<String, String>, _> = serde_wasm_bindgen::from_value(db);
             log::info!("Deserialized DB: {db:?}");
             match db {
-                Ok(Ok(db)) => Msg::UpdateDb(db),
+                Ok(Ok(db)) => {
+                    let db = serde_json::from_str(&db);
+                    match db {
+                        Ok(db) => Msg::UpdateDb(db),
+                        Err(err) => Msg::UpdateErr(format!("Error parsing response: {err}")),
+                    }
+                }
                 Ok(Err(err)) => Msg::UpdateErr(err),
                 Err(parse_err) => Msg::UpdateErr(format!("Error parsing response: {parse_err}")),
             }
@@ -148,21 +156,25 @@ impl MainMenu {
     }
 }
 
-#[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
     use super::Data;
 
-    #[test]
-    fn serialize_deserialize_data() {
-        let database = (0_usize..10)
+    pub fn serialize_deserialize_data() {
+        let database = (3_usize..4)
             .map(|x| (x, Data::new(x)))
             .collect::<HashMap<_, _>>();
 
+        log::info!("Before serialization: {database:?}");
+
         let serialized = serde_wasm_bindgen::to_value(&database).unwrap();
 
+        log::info!("After serialization: {serialized:?}");
+
         let deserialized = serde_wasm_bindgen::from_value(serialized).unwrap();
+
+        log::info!("After deserialization: {deserialized:?}");
 
         assert_eq!(database, deserialized);
     }
