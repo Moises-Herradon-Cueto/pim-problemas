@@ -3,10 +3,7 @@ use std::{
     fs,
 };
 
-use parse_lib::{
-    data::{read_csv, write_html, write_json, Data},
-    files::parse_all,
-};
+use parse_lib::data::{read_csv, write_html, Data};
 
 fn main() {
     gather_info_copy_files();
@@ -15,9 +12,9 @@ fn main() {
 }
 
 fn gather_info_copy_files() {
-    let mut data = read_csv();
-    parse_all(&mut data).expect("oops");
-    write_json(&data).expect("oops");
+    let data = read_csv();
+    // parse_all(&mut data).expect("oops");
+    // write_json(&data).expect("oops");
     write_html(&data);
 }
 

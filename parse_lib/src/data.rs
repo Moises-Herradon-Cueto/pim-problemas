@@ -130,9 +130,19 @@ pub fn read_csv() -> HashMap<usize, Data> {
     output
 }
 
-pub fn write_json<T: BuildHasher>(data: &HashMap<usize, Data, T>) -> io::Result<()> {
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if
+/// there is a problem serializing
+/// or if there is a problem writing the file
+pub fn write_json<P: AsRef<Path>, T: BuildHasher>(
+    path: P,
+    data: &HashMap<usize, Data, T>,
+) -> io::Result<()> {
     let string = serde_json::to_string(data)?;
-    fs::write("data.json", string)
+    fs::write(path, string)
 }
 
 /// .

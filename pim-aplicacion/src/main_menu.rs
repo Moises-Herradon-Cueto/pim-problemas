@@ -27,7 +27,7 @@ pub enum AppType {
 pub enum Msg {
     ChangeApps(AppType),
     UpdatePaths(Paths),
-    UpdateDb(HashMap<usize, Data>),
+    UpdateDb(Rc<HashMap<usize, Data>>),
     UpdateErr(String),
 }
 
@@ -42,7 +42,6 @@ impl Component for MainMenu {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        log::info!("Create something");
         ctx.link().send_future(async move {
             // log::info!("Trying to invoke");
             let args = serde_wasm_bindgen::to_value(&GetJsonArgs {
@@ -58,7 +57,7 @@ impl Component for MainMenu {
                 Ok(Ok(db)) => {
                     let db = serde_json::from_str(&db);
                     match db {
-                        Ok(db) => Msg::UpdateDb(db),
+                        Ok(db) => Msg::UpdateDb(Rc::new(db)),
                         Err(err) => Msg::UpdateErr(format!("Error parsing response: {err}")),
                     }
                 }
@@ -85,7 +84,7 @@ impl Component for MainMenu {
                 true
             }
             Msg::UpdateDb(db) => {
-                self.db = Some(Rc::new(db));
+                self.db = Some(db);
                 false
             }
             Msg::UpdateErr(err) => {
@@ -136,9 +135,11 @@ impl MainMenu {
 
     fn view_update(&self, ctx: &Context<Self>) -> Html {
         let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
+        let cb = ctx.link().callback(Msg::UpdateDb);
         html! {
             <>
-            <home_button::With<Update> props={update_db::Props {paths: self.paths.clone()}}  {return_cb}></home_button::With<Update>>
+            <home_button::With<Update> props={update_db::Props {paths: self.paths.clone(), cb, db: self.db.clone()}}  {return_cb}>
+            </home_button::With<Update>>
             </>
         }
     }

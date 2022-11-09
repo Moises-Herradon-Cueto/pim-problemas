@@ -5,14 +5,14 @@ use yew::prelude::*;
 
 #[cfg(debug_assertions)]
 pub const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
-    "./input/problems_in/"
+    "/home/moises/problems_in/"
 } else {
     "."
 };
 
 #[cfg(debug_assertions)]
 pub const DEFAULT_DB: &str = if cfg!(debug_assertions) {
-    "./input/database.json"
+    "/home/moises/pim-input/database.json"
 } else if cfg!(target = "windows") {
     ".\\base_de_datos.json"
 } else {

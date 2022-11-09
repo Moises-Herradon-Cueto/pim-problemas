@@ -1,10 +1,10 @@
 use std::{
     collections::HashMap,
-    fmt::Debug,
-    fs,
+    fmt::Display,
+    fs::{self, DirEntry},
     hash::BuildHasher,
     io::{self, Read},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use crate::{
@@ -12,20 +12,10 @@ use crate::{
     merge::{string_and_data, ParseResult},
 };
 use encoding_rs::mem::convert_latin1_to_utf8;
+use serde::{Deserialize, Serialize};
 
-/// .
-///
-/// # Panics
-///
-/// Panics if I mess up the implementation
-///
-/// # Errors
-///
-/// This function will return an error if
-/// * The file can't be opened
-/// * There's an error reading the file
-pub fn parse_file<T: Clone + Debug + AsRef<Path>>(path: T) -> io::Result<String> {
-    let mut file = fs::File::open(path)?;
+fn parse_file(path: PathBuf) -> Result<String, ParseOneError> {
+    let mut file = fs::File::open(path.clone())?;
     let mut buf = vec![];
 
     file.read_to_end(&mut buf)?;
@@ -42,43 +32,115 @@ pub fn parse_file<T: Clone + Debug + AsRef<Path>>(path: T) -> io::Result<String>
 
     converted_buffer.truncate(written);
 
-    Ok(String::from_utf8(converted_buffer).expect("Ni después de convertir es utf 8"))
+    String::from_utf8(converted_buffer).map_err(|_| ParseOneError::Encoding(path))
+}
+
+pub enum ParsingError {
+    IO(io::Error),
+    MyError(String),
+}
+
+impl From<io::Error> for ParsingError {
+    fn from(value: io::Error) -> Self {
+        Self::IO(value)
+    }
+}
+
+impl From<io::Error> for ParseOneError {
+    fn from(value: io::Error) -> Self {
+        Self::IO(value.to_string())
+    }
+}
+#[derive(Serialize, Deserialize)]
+pub enum ParseOneError {
+    IO(String),
+    BadFileName(String),
+    NotFile(String),
+    NotTex(String),
+    Encoding(PathBuf),
+}
+
+impl Display for ParseOneError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::IO(err) => write!(f, "Problemas abriendo el archivo: {err}"),
+            Self::BadFileName(err) => write!(
+                f,
+                "El archivo {err} no se llama numero.tex, p. ej. 220001.tex"
+            ),
+            Self::NotFile(err) => write!(f, "{err} no es un archivo"),
+            Self::NotTex(err) => write!(f, "{err} no es un documento .tex"),
+            Self::Encoding(err) => write!(f, "En el archivo {} no se pudo encontrar la codificación.
+            \nIntenta guardarlo como utf-8, escribiendo % !TeX encoding = UTF-8 en la primera línea", err.to_string_lossy()),
+        }
+    }
+}
+
+fn parse_one<T: BuildHasher>(
+    entry: Result<DirEntry, io::Error>,
+    data: &mut HashMap<usize, Data, T>,
+) -> Result<(), ParseOneError> {
+    let file = entry?;
+    let name = file.file_name();
+    let name = name.to_string_lossy();
+
+    if !file.file_type()?.is_file() {
+        return Err(ParseOneError::NotFile(name.into_owned()));
+    }
+    if !name.ends_with(".tex") {
+        return Err(ParseOneError::NotTex(name.into_owned()));
+    }
+
+    let id = name
+        .split(".tex")
+        .next()
+        .ok_or_else(|| ParseOneError::BadFileName(name.clone().into_owned()))?;
+
+    let id: Result<usize, _> = id.parse();
+
+    let id = if let Ok(id) = id {
+        id
+    } else {
+        return Err(ParseOneError::BadFileName(name.into_owned()));
+    };
+    let path = file.path();
+    let in_string = parse_file(path)?;
+    let out_path = format!("ejercicios-out/{name}");
+    merge_file_data(id, data, &in_string, out_path)?;
+
+    Ok(())
 }
 
 /// .
 ///
 /// # Errors
 ///
-/// This function will return an error if there's an io problem
+/// This function will return an error if
+/// the directory can't be read
 ///
 /// # Panics
 ///
-/// If I mess up
-pub fn parse_all<T: BuildHasher>(data: &mut HashMap<usize, Data, T>) -> io::Result<()> {
-    let entries = fs::read_dir("ejercicios-in")?;
+/// This function panics if I mess up the
+/// buffer length in the call to encoding
+/// ``convert_latin1_to_utf8``, inside
+/// ``parse_file``
+pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
+    problems_dir: P,
+    data: &mut HashMap<usize, Data, T>,
+) -> Result<Vec<ParseOneError>, io::Error> {
+    let entries = fs::read_dir(problems_dir)?;
+
+    let mut errors = vec![];
 
     for file in entries {
-        let file = file?;
-        let name = file.file_name();
-        let name = name.to_string_lossy();
-
-        if file.file_type()?.is_file() && name.ends_with(".tex") {
-            let id: Result<usize, _> = name.split(".tex").next().unwrap().parse();
-
-            let id = if let Ok(id) = id {
-                id
-            } else {
-                println!("Nombre de archivo {name}");
-                continue;
-            };
-            let path = file.path();
-            let in_string = parse_file(path).expect("Had problems parsing file");
-            let out_path = format!("ejercicios-out/{name}");
-            merge_file_data(id, data, &in_string, out_path)?;
+        let res = parse_one(file, data);
+        match res {
+            Ok(_) => todo!(),
+            Err(err) => errors.push(err),
         }
     }
 
-    Ok(())
+    Ok(errors)
 }
 
 fn merge_file_data<T: BuildHasher, P: AsRef<Path>>(
