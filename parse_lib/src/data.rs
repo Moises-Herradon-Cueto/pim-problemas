@@ -120,8 +120,8 @@ impl Data {
     #[must_use]
     pub fn has_more_data_than(&self, other: &Self) -> Option<(String, String)> {
         for f in Fields::ALL {
-            let info_1 = f.get(self);
-            let info_2 = f.get(other);
+            let info_1 = f.get_string(self);
+            let info_2 = f.get_string(other);
             if info_1 != info_2 {
                 if [String::from("255"), String::new()].contains(&info_2.clone().into_owned()) {
                     continue;
@@ -131,6 +131,22 @@ impl Data {
             }
         }
         None
+    }
+
+    pub fn merge_with(&mut self, other: Self) -> Result<(), String> {
+        use crate::FieldContents::*;
+        for field in Fields::ALL {
+            let data_1 = field.get(self);
+            let data_2 = field.get(&other);
+            if data_1 != data_2 {
+                let data_1 = data_1.to_owned();
+                let data_2 = data_2.to_owned();
+                match (data_1, data_2) {
+                    (Id(_), Id(_)) => return Err(String::from("Los ids son diferentes")),
+                }
+            }
+        }
+        Ok(())
     }
 }
 

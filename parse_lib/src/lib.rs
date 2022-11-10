@@ -68,7 +68,7 @@ impl Fields {
     ];
 
     #[must_use]
-    pub fn get(self, data: &Data) -> Cow<str> {
+    pub fn get_string(self, data: &Data) -> Cow<str> {
         match self {
             Problem => Cow::Borrowed(&data.enunciado),
             Solution => Cow::Borrowed("No están guardadas las soluciones"),
@@ -79,6 +79,51 @@ impl Fields {
             Comentarios => Cow::Owned(data.comentarios.join("\n")),
             Year => Cow::Owned(data.curso.clone().unwrap_or_default()),
             Packages => Cow::Owned(data.paquetes.join("\n")),
+        }
+    }
+
+    #[must_use]
+    pub fn get(self, data: &Data) -> FieldContentsRef {
+        match self {
+            Problem => FieldContentsRef::Str(&data.enunciado),
+            Solution => FieldContentsRef::Optional(&None),
+            Difficulty => FieldContentsRef::Difficulty(&data.dificultad),
+            Topics => FieldContentsRef::VecStr(&data.temas),
+            Source => FieldContentsRef::Str(&data.fuente),
+            History => FieldContentsRef::VecStr(&data.historial),
+            Comentarios => FieldContentsRef::VecStr(&data.comentarios),
+            Year => FieldContentsRef::Optional(&data.curso),
+            Packages => FieldContentsRef::VecStr(&data.paquetes),
+        }
+    }
+}
+
+pub enum FieldContents {
+    Id(usize),
+    VecStr(Vec<String>),
+    Difficulty(u8),
+    Str(String),
+    Optional(Option<String>),
+}
+
+#[derive(PartialEq, Eq)]
+pub enum FieldContentsRef<'a> {
+    Id(&'a usize),
+    VecStr(&'a [String]),
+    Difficulty(&'a u8),
+    Str(&'a str),
+    Optional(&'a Option<String>),
+}
+
+impl<'a> FieldContentsRef<'a> {
+    #[must_use]
+    pub fn to_owned(&self) -> FieldContents {
+        match self {
+            Self::Id(x) => FieldContents::Id(**x),
+            Self::VecStr(x) => FieldContents::VecStr((*x).to_vec()),
+            Self::Difficulty(x) => FieldContents::Difficulty(**x),
+            Self::Str(x) => FieldContents::Str((*x).to_owned()),
+            Self::Optional(x) => FieldContents::Optional(x.as_ref().cloned()),
         }
     }
 }
