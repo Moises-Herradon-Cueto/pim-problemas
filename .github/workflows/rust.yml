@@ -29,4 +29,6 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build
       uses: tauri-apps/tauri-action@v0
-
+      with:
+        projectPath: pim-aplicacion
+        tauriScript: Tauri
