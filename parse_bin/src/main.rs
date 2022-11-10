@@ -25,8 +25,8 @@ fn gather_info_copy_files() {
         let Some(other_data) = data_csv.get(id) else {
             continue;
         };
-        if data != other_data {
-            println!("Found a difference.\nJson data:\n{data:#?}\nCsv data\n{other_data:#?}");
+        if other_data.has_more_data_than(data).is_some() {
+            println!("Found more stuff.\nJson data:\n{data:#?}\nCsv data\n{other_data:#?}");
             count += 1;
         }
     }

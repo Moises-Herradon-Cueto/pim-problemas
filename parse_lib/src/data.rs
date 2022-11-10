@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     files::ParseOneError,
     html::{_POSTAMBLE, _PREAMBLE},
+    Fields,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -114,6 +115,22 @@ impl Data {
             enunciado: String::new(),
             paquetes: Vec::new(),
         })
+    }
+
+    #[must_use]
+    pub fn has_more_data_than(&self, other: &Self) -> Option<(String, String)> {
+        for f in Fields::ALL {
+            let info_1 = f.get(self);
+            let info_2 = f.get(other);
+            if info_1 != info_2 {
+                if [String::from("255"), String::new()].contains(&info_2.clone().into_owned()) {
+                    continue;
+                }
+
+                return Some((info_1.into_owned(), info_2.into_owned()));
+            }
+        }
+        None
     }
 }
 
