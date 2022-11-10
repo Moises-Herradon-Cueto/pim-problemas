@@ -1,6 +1,6 @@
 use std::{fs, process::Command};
 
-pub fn run() {
+pub fn _run() {
     let entries = fs::read_dir("ejercicios-out").unwrap();
     let mut count = 0_u8;
     for file in entries {

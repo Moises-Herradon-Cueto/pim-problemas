@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     files::ParseOneError,
-    html::{POSTAMBLE, PREAMBLE},
+    html::{_POSTAMBLE, _PREAMBLE},
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -159,15 +159,15 @@ pub fn write_json<P: AsRef<Path>, T: BuildHasher>(
 /// This function will return an error if
 ///     The file can't be read
 ///     Json can't be deserialized
-pub fn read_json<P: AsRef<Path>>(json_path: P) -> Result<HashMap<usize, Data>, Error> {
-    let string = fs::read_to_string(&json_path)?;
+// pub fn read_json<P: AsRef<Path>>(json_path: P) -> Result<HashMap<usize, Data>, Error> {
+//     let string = fs::read_to_string(&json_path)?;
 
-    let json = serde_json::from_str(&string)?;
+//     let json = serde_json::from_str(&string)?;
 
-    println!("Fetched data: {json:#?}");
+//     println!("Fetched data: {json:#?}");
 
-    Ok(json)
-}
+//     Ok(json)
+// }
 
 /// .
 ///
@@ -181,23 +181,23 @@ pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, Error> {
     Ok(string)
 }
 
-pub fn write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
+pub fn _write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
     let mut writer = fs::File::create("Datos.html").expect("Can't create file"); // let mut writer = csv::Writer::from_path("Datos-out.csv").expect("Can't create file");
     writer
-        .write_all(PREAMBLE.as_bytes())
+        .write_all(_PREAMBLE.as_bytes())
         .expect("Couldn't start writing");
     let mut data_vec: Vec<_> = data.iter().map(|(_, value)| value.clone()).collect();
     data_vec.sort_by(|d1, d2| d1.id.cmp(&d2.id));
     data_vec
         .into_iter()
-        .for_each(|data| write_one_entry(&data, &mut writer));
+        .for_each(|data| _write_one_entry(&data, &mut writer));
     writer
-        .write_all(POSTAMBLE.as_bytes())
+        .write_all(_POSTAMBLE.as_bytes())
         .expect("Couldn't write the end");
     writer.flush().expect("Couldn't flush. Yuck!");
 }
 
-fn write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
+fn _write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
     let to_write = format!(
         "
         <tr>

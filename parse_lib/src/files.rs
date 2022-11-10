@@ -5,6 +5,7 @@ use std::{
     hash::BuildHasher,
     io::{self, Read},
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 use crate::{
@@ -80,6 +81,7 @@ impl Display for ParseOneError {
 
 fn parse_one<T: BuildHasher>(
     entry: Result<DirEntry, io::Error>,
+    output_dir: &Path,
     data: &mut HashMap<usize, Data, T>,
 ) -> Result<(), ParseOneError> {
     let file = entry.map_err(|err| ParseOneError::IO {
@@ -117,7 +119,11 @@ fn parse_one<T: BuildHasher>(
     };
     let path = file.path();
     let in_string = decode_file(path)?;
-    let out_path = format!("/home/moises/ejercicios-out/{name}");
+    let out_path =
+        output_dir.join(PathBuf::from_str(&name).map_err(|_| {
+            ParseOneError::IMessedUp("I'm not concatenating paths right".to_string())
+        })?);
+
     merge_file_data(id, data, &in_string, out_path)?;
 
     Ok(())
@@ -138,6 +144,7 @@ fn parse_one<T: BuildHasher>(
 /// ``parse_file``
 pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     problems_dir: P,
+    output_dir: &Path,
     data: &mut HashMap<usize, Data, T>,
 ) -> Result<Vec<ParseOneError>, io::Error> {
     let entries = fs::read_dir(problems_dir)?;
@@ -145,7 +152,7 @@ pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     let mut errors = vec![];
 
     for file in entries {
-        let res = parse_one(file, data);
+        let res = parse_one(file, output_dir, data);
         match res {
             Ok(_) => {}
             Err(err) => errors.push(err),

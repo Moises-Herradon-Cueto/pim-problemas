@@ -108,3 +108,17 @@ button {
 li {
   display: block
 }
+
+.file_info input {
+  width: 30em;
+}
+
+.file_info tr {
+  height: 5em;
+}
+
+#return-button {
+  background-color: rgba(233, 84, 84, 0.5);
+  font-size: 14px;
+  padding: 4px;
+}
