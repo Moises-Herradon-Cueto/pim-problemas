@@ -31,4 +31,4 @@ jobs:
       uses: tauri-apps/tauri-action@v0
       with:
         projectPath: pim-aplicacion
-        tauriScript: Tauri
+        tauriScript: cargo tauri
