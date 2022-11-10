@@ -1,12 +1,12 @@
 use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
-use parse_lib::{data::Data, files::ParseOneError};
+use parse_lib::{Data, ParseOneError};
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 
 use crate::{
     app::invoke,
-    files_info::{Paths, DEFAULT_DB, DEFAULT_PROBLEMS},
+    files_info::{Paths, DEFAULT_DB, DEFAULT_OUTPUT, DEFAULT_PROBLEMS},
 };
 
 #[derive(Default)]
@@ -45,6 +45,7 @@ impl Component for UpdateDb {
 
                 ctx.link().send_future(async move {
                     let parsed = Self::parse_files(paths, &db).await;
+                    log::info!("Parsed: {parsed:#?}");
                     match parsed {
                         Ok(errors) => Msg::UpdateOutput(errors),
                         Err(err) => Msg::UpdateErr(err),
@@ -81,11 +82,15 @@ impl Component for UpdateDb {
 }
 
 fn show_error(error: &ParseOneError) -> Html {
-    html!(
-        <li>
-        {error.to_string()}
-        </li>
-    )
+    if matches!(error, ParseOneError::NotTex(_)) {
+        html! {}
+    } else {
+        html!(
+            <li>
+            {error.to_string()}
+            </li>
+        )
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -94,6 +99,8 @@ struct UpdateArgs {
     problems_path: PathBuf,
     #[serde(rename = "dbPath")]
     db_path: PathBuf,
+    #[serde(rename = "outputPath")]
+    output_path: PathBuf,
     db: String,
 }
 impl UpdateDb {
@@ -108,9 +115,13 @@ impl UpdateDb {
             .problems
             .unwrap_or_else(|| PathBuf::from(DEFAULT_PROBLEMS));
         let db_path = paths.database.unwrap_or_else(|| PathBuf::from(DEFAULT_DB));
+        let output_path = paths
+            .output
+            .unwrap_or_else(|| PathBuf::from(DEFAULT_OUTPUT));
         let args = serde_wasm_bindgen::to_value(&UpdateArgs {
             problems_path,
             db_path,
+            output_path,
             db,
         })
         .expect("Couldn't make into js value🫣");
@@ -119,6 +130,7 @@ impl UpdateDb {
             serde_wasm_bindgen::from_value(invoke_result)
                 .map_err(|err| format!("Error converting js value to value: {err}"))?;
         let value = parsed_result?;
+        log::info!("About to deserialize: {value:#}");
         serde_json::from_str(&value).map_err(|err| format!("Error deserializing {err}"))
     }
 }

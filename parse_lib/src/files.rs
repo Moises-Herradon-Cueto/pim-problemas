@@ -5,20 +5,29 @@ use std::{
     hash::BuildHasher,
     io::{self, Read},
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 use crate::{
     data::Data,
-    merge::{string_and_data, ParseResult},
+    merge::{self, ParseResult},
+    Fields,
 };
 use encoding_rs::mem::convert_latin1_to_utf8;
 use serde::{Deserialize, Serialize};
 
-fn parse_file(path: PathBuf) -> Result<String, ParseOneError> {
-    let mut file = fs::File::open(path.clone())?;
+fn decode_file(path: PathBuf) -> Result<String, ParseOneError> {
+    let mut file = fs::File::open(path.clone()).map_err(|err| ParseOneError::IO {
+        io_err: err.to_string(),
+        action: format!("Error al abrir el archivo: {path:?}"),
+    })?;
     let mut buf = vec![];
 
-    file.read_to_end(&mut buf)?;
+    file.read_to_end(&mut buf)
+        .map_err(|err| ParseOneError::IO {
+            io_err: err.to_string(),
+            action: format!("Error al leer el archivo: {path:?}"),
+        })?;
 
     let try_read = String::from_utf8(buf.clone());
 
@@ -35,35 +44,25 @@ fn parse_file(path: PathBuf) -> Result<String, ParseOneError> {
     String::from_utf8(converted_buffer).map_err(|_| ParseOneError::Encoding(path))
 }
 
-pub enum ParsingError {
-    IO(io::Error),
-    MyError(String),
-}
-
-impl From<io::Error> for ParsingError {
-    fn from(value: io::Error) -> Self {
-        Self::IO(value)
-    }
-}
-
-impl From<io::Error> for ParseOneError {
-    fn from(value: io::Error) -> Self {
-        Self::IO(value.to_string())
-    }
-}
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum ParseOneError {
-    IO(String),
+    IO { io_err: String, action: String },
     BadFileName(String),
     NotFile(String),
     NotTex(String),
     Encoding(PathBuf),
+    NotInDb(usize),
+    NotInTemplate(usize, String),
+    NotFound(usize, Fields),
+    IMessedUp(String),
 }
+
+impl std::error::Error for ParseOneError {}
 
 impl Display for ParseOneError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::IO(err) => write!(f, "Problemas abriendo el archivo: {err}"),
+            Self::IO { io_err, action } => write!(f, "{action}\n{io_err}"),
             Self::BadFileName(err) => write!(
                 f,
                 "El archivo {err} no se llama numero.tex, p. ej. 220001.tex"
@@ -72,19 +71,34 @@ impl Display for ParseOneError {
             Self::NotTex(err) => write!(f, "{err} no es un documento .tex"),
             Self::Encoding(err) => write!(f, "En el archivo {} no se pudo encontrar la codificación.
             \nIntenta guardarlo como utf-8, escribiendo % !TeX encoding = UTF-8 en la primera línea", err.to_string_lossy()),
+            Self::NotInDb(id) => write!(f, "El problema {id} no estaba en la base de datos"),
+            Self::NotInTemplate(id, outpath) => write!(f, "El problema {id} no estaba en la plantilla. Se ha reescrito en {outpath}"),
+            Self::NotFound(id, field) => write!(f, "No se encontró el campo {field} en el problema {id}"),
+            Self::IMessedUp(msg) => f.write_str(msg)
         }
     }
 }
 
 fn parse_one<T: BuildHasher>(
     entry: Result<DirEntry, io::Error>,
+    output_dir: &Path,
     data: &mut HashMap<usize, Data, T>,
 ) -> Result<(), ParseOneError> {
-    let file = entry?;
+    let file = entry.map_err(|err| ParseOneError::IO {
+        io_err: err.to_string(),
+        action: "Error en la entrada del directorio?".to_string(),
+    })?;
     let name = file.file_name();
     let name = name.to_string_lossy();
 
-    if !file.file_type()?.is_file() {
+    if !file
+        .file_type()
+        .map_err(|err| ParseOneError::IO {
+            io_err: err.to_string(),
+            action: "Error al buscar el tipo de archivo".to_string(),
+        })?
+        .is_file()
+    {
         return Err(ParseOneError::NotFile(name.into_owned()));
     }
     if !name.ends_with(".tex") {
@@ -104,8 +118,12 @@ fn parse_one<T: BuildHasher>(
         return Err(ParseOneError::BadFileName(name.into_owned()));
     };
     let path = file.path();
-    let in_string = parse_file(path)?;
-    let out_path = format!("ejercicios-out/{name}");
+    let in_string = decode_file(path)?;
+    let out_path =
+        output_dir.join(PathBuf::from_str(&name).map_err(|_| {
+            ParseOneError::IMessedUp("I'm not concatenating paths right".to_string())
+        })?);
+
     merge_file_data(id, data, &in_string, out_path)?;
 
     Ok(())
@@ -126,6 +144,7 @@ fn parse_one<T: BuildHasher>(
 /// ``parse_file``
 pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     problems_dir: P,
+    output_dir: &Path,
     data: &mut HashMap<usize, Data, T>,
 ) -> Result<Vec<ParseOneError>, io::Error> {
     let entries = fs::read_dir(problems_dir)?;
@@ -133,9 +152,9 @@ pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     let mut errors = vec![];
 
     for file in entries {
-        let res = parse_one(file, data);
+        let res = parse_one(file, output_dir, data);
         match res {
-            Ok(_) => todo!(),
+            Ok(_) => {}
             Err(err) => errors.push(err),
         }
     }
@@ -143,25 +162,37 @@ pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     Ok(errors)
 }
 
-fn merge_file_data<T: BuildHasher, P: AsRef<Path>>(
+fn merge_file_data<T: BuildHasher, P: std::fmt::Debug + Clone + AsRef<Path>>(
     id: usize,
     data: &mut HashMap<usize, Data, T>,
     tex_string: &str,
     out_path: P,
-) -> io::Result<()> {
+) -> Result<Vec<ParseOneError>, ParseOneError> {
     let mut placeholder = Data::new(id);
     let mut to_insert = false;
+    let mut return_errs = vec![];
     let problem_info = data.get_mut(&id).unwrap_or_else(|| {
-        println!("{id} no está en la base de datos");
+        return_errs.push(ParseOneError::NotInDb(id));
         to_insert = true;
         &mut placeholder
     });
-    let parse_result = string_and_data(tex_string, problem_info);
-    if let ParseResult::ToChange(out_string) = parse_result {
-        fs::write(out_path, out_string)?;
-        if to_insert {
-            data.insert(id, placeholder);
+    let parse_result = merge::string_and_data(tex_string, problem_info);
+    match parse_result {
+        Err(err) => return_errs.push(err),
+        Ok(ParseResult::ToChange(out_string)) => {
+            return_errs.push(ParseOneError::NotInTemplate(
+                id,
+                out_path.as_ref().to_string_lossy().into_owned(),
+            ));
+            fs::write(out_path.clone(), out_string).map_err(|err| ParseOneError::IO {
+                io_err: err.to_string(),
+                action: format!("Error al escribir el archivo: {out_path:?}"),
+            })?;
+            if to_insert {
+                data.insert(id, placeholder);
+            }
         }
+        Ok(ParseResult::Template) => {}
     }
-    Ok(())
+    Ok(return_errs)
 }

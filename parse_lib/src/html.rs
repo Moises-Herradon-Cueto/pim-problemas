@@ -1,4 +1,4 @@
-pub const PREAMBLE: &str = r"<!DOCTYPE html>
+pub const _PREAMBLE: &str = r"<!DOCTYPE html>
 <html lang='en'>
 
 <head>
@@ -21,7 +21,7 @@ pub const PREAMBLE: &str = r"<!DOCTYPE html>
             <th>Enunciado</th>
         </tr>";
 
-pub const POSTAMBLE: &str = r"    </table>
+pub const _POSTAMBLE: &str = r"    </table>
 </body>
 
 </html>

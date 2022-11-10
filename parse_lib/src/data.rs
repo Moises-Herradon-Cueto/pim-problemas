@@ -9,7 +9,10 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::html::{POSTAMBLE, PREAMBLE};
+use crate::{
+    files::ParseOneError,
+    html::{_POSTAMBLE, _PREAMBLE},
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Read {
@@ -56,13 +59,7 @@ impl Data {
 }
 
 impl Data {
-    /// .
-    ///
-    /// # Panics
-    ///
-    /// Panics if I mess up
-    #[must_use]
-    pub fn from_read(
+    fn from_read(
         Read {
             id,
             fecha: _,
@@ -76,7 +73,7 @@ impl Data {
             descripcion,
             historial,
         }: Read,
-    ) -> Self {
+    ) -> Result<Self, ParseOneError> {
         let temas = [tema1, tema2, tema3, tema4]
             .into_iter()
             .filter(|x| !x.is_empty())
@@ -102,8 +99,12 @@ impl Data {
         } else {
             vec![historial]
         };
-        Self {
-            id: id.parse().unwrap(),
+        Ok(Self {
+            id: id.parse().map_err(|err| {
+                ParseOneError::IMessedUp(format!(
+                    "No se pudo interpretar {id} como un número\n{err}"
+                ))
+            })?,
             temas,
             dificultad,
             fuente: descripcion,
@@ -112,22 +113,28 @@ impl Data {
             curso: None,
             enunciado: String::new(),
             paquetes: Vec::new(),
-        }
+        })
     }
 }
 
 #[must_use]
-pub fn read_csv() -> HashMap<usize, Data> {
+pub fn read_csv() -> (HashMap<usize, Data>, Vec<ParseOneError>) {
     let mut output: HashMap<usize, _> = HashMap::new();
     let mut reader = csv::Reader::from_path("Datos.csv").expect("Can't open file?");
+    let mut errors = vec![];
     for result in reader.deserialize() {
         // The iterator yields Result<StringRecord, Error>, so we check the
         // error here.
         let record: Read = result.expect("Record is wrong");
         let record = Data::from_read(record);
-        output.insert(record.id, record);
+        match record {
+            Ok(record) => {
+                output.insert(record.id, record);
+            }
+            Err(err) => errors.push(err),
+        }
     }
-    output
+    (output, errors)
 }
 
 /// .
@@ -152,15 +159,15 @@ pub fn write_json<P: AsRef<Path>, T: BuildHasher>(
 /// This function will return an error if
 ///     The file can't be read
 ///     Json can't be deserialized
-pub fn read_json<P: AsRef<Path>>(json_path: P) -> Result<HashMap<usize, Data>, Error> {
-    let string = fs::read_to_string(&json_path)?;
+// pub fn read_json<P: AsRef<Path>>(json_path: P) -> Result<HashMap<usize, Data>, Error> {
+//     let string = fs::read_to_string(&json_path)?;
 
-    let json = serde_json::from_str(&string)?;
+//     let json = serde_json::from_str(&string)?;
 
-    println!("Fetched data: {json:#?}");
+//     println!("Fetched data: {json:#?}");
 
-    Ok(json)
-}
+//     Ok(json)
+// }
 
 /// .
 ///
@@ -174,23 +181,23 @@ pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, Error> {
     Ok(string)
 }
 
-pub fn write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
+pub fn _write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
     let mut writer = fs::File::create("Datos.html").expect("Can't create file"); // let mut writer = csv::Writer::from_path("Datos-out.csv").expect("Can't create file");
     writer
-        .write_all(PREAMBLE.as_bytes())
+        .write_all(_PREAMBLE.as_bytes())
         .expect("Couldn't start writing");
     let mut data_vec: Vec<_> = data.iter().map(|(_, value)| value.clone()).collect();
     data_vec.sort_by(|d1, d2| d1.id.cmp(&d2.id));
     data_vec
         .into_iter()
-        .for_each(|data| write_one_entry(&data, &mut writer));
+        .for_each(|data| _write_one_entry(&data, &mut writer));
     writer
-        .write_all(POSTAMBLE.as_bytes())
+        .write_all(_POSTAMBLE.as_bytes())
         .expect("Couldn't write the end");
     writer.flush().expect("Couldn't flush. Yuck!");
 }
 
-fn write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
+fn _write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
     let to_write = format!(
         "
         <tr>

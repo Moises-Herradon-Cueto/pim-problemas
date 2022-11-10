@@ -7,7 +7,7 @@ use crate::files_info::{Comp as FilesInfo, Paths, DEFAULT_DB};
 use crate::update_db::{self, UpdateDb as Update};
 use crate::view_db::ViewDb as View;
 use crate::{home_button, view_db};
-use parse_lib::data::Data;
+use parse_lib::Data;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use AppType::Start;

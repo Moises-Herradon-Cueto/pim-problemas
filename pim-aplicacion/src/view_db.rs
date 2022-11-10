@@ -1,6 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
-use parse_lib::data::Data;
+use parse_lib::Data;
 use yew::prelude::*;
 
 pub struct ViewDb {

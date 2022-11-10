@@ -6,8 +6,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use parse_lib::{
-    data::{get_json_string, write_json, Data},
-    files::parse_all,
+    parse_all, {get_json_string, write_json, Data},
 };
 
 fn main() {
@@ -32,20 +31,22 @@ fn get_db_from_json_inner(json_path: PathBuf) -> Result<String, String> {
 fn update_db(
     problems_path: PathBuf,
     db_path: PathBuf,
+    output_path: PathBuf,
     db: String,
 ) -> Result<Result<String, String>, ()> {
-    Ok(update_db_inner(problems_path, db_path, db))
+    Ok(update_db_inner(problems_path, db_path, output_path, db))
 }
 
 fn update_db_inner(
     problems_path: PathBuf,
     db_path: PathBuf,
+    output_path: PathBuf,
     db_json: String,
 ) -> Result<String, String> {
-    println!("Call update_db_inner");
+    // println!("Call update_db_inner");
     let mut db: HashMap<usize, Data> =
         serde_json::from_str(&db_json).map_err(|err| format!("Error parsing db json: {err}"))?;
-    let errors = parse_all(&problems_path, &mut db)
+    let errors = parse_all(&problems_path, &output_path, &mut db)
         .map_err(|err| format!("Error opening directory: {err}"))?;
     write_json(db_path, &db)
         .map_err(|err| format!("Found an error when writing to database: {err}"))?;
