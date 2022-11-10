@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
-use parse_lib::{data::Data, files::ParseOneError};
+use parse_lib::{Data, ParseOneError};
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 
@@ -45,6 +45,7 @@ impl Component for UpdateDb {
 
                 ctx.link().send_future(async move {
                     let parsed = Self::parse_files(paths, &db).await;
+                    log::info!("Parsed: {parsed:#?}");
                     match parsed {
                         Ok(errors) => Msg::UpdateOutput(errors),
                         Err(err) => Msg::UpdateErr(err),
@@ -81,11 +82,15 @@ impl Component for UpdateDb {
 }
 
 fn show_error(error: &ParseOneError) -> Html {
-    html!(
-        <li>
-        {error.to_string()}
-        </li>
-    )
+    if matches!(error, ParseOneError::NotTex(_)) {
+        html! {}
+    } else {
+        html!(
+            <li>
+            {error.to_string()}
+            </li>
+        )
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -119,6 +124,7 @@ impl UpdateDb {
             serde_wasm_bindgen::from_value(invoke_result)
                 .map_err(|err| format!("Error converting js value to value: {err}"))?;
         let value = parsed_result?;
+        log::info!("About to deserialize: {value:#}");
         serde_json::from_str(&value).map_err(|err| format!("Error deserializing {err}"))
     }
 }

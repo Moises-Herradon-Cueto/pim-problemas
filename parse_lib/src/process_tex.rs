@@ -1,20 +1,21 @@
 use regex::Regex;
 
-use crate::data::Data;
+use crate::{data::Data, files::ParseOneError};
 
-/// .
-///
-/// # Panics
-///
-/// Panics if I mess up
-pub fn find_year(input: &str, data: &mut Data) {
+pub fn find_year(input: &str, data: &mut Data) -> Result<(), ParseOneError> {
     let curso = Regex::new(r"\\curso\{\s*\n(.*)\n\}")
-        .expect("messed up")
+        .map_err(|err| ParseOneError::IMessedUp(format!("I messed up the regex creation: {err}")))?
         .captures_iter(input)
         .next()
         .unwrap_or_else(|| panic!("El problema {} no tiene curso", data.id))
         .get(1)
-        .unwrap()
+        .ok_or_else(|| {
+            ParseOneError::IMessedUp(format!(
+                "The captured group should have an entry, parsing problem {}",
+                data.id
+            ))
+        })?
         .as_str();
     data.curso = Some(curso.to_owned());
+    Ok(())
 }

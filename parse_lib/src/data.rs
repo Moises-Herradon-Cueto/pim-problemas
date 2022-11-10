@@ -9,7 +9,10 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::html::{POSTAMBLE, PREAMBLE};
+use crate::{
+    files::ParseOneError,
+    html::{POSTAMBLE, PREAMBLE},
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Read {
@@ -56,13 +59,7 @@ impl Data {
 }
 
 impl Data {
-    /// .
-    ///
-    /// # Panics
-    ///
-    /// Panics if I mess up
-    #[must_use]
-    pub fn from_read(
+    fn from_read(
         Read {
             id,
             fecha: _,
@@ -76,7 +73,7 @@ impl Data {
             descripcion,
             historial,
         }: Read,
-    ) -> Self {
+    ) -> Result<Self, ParseOneError> {
         let temas = [tema1, tema2, tema3, tema4]
             .into_iter()
             .filter(|x| !x.is_empty())
@@ -102,8 +99,12 @@ impl Data {
         } else {
             vec![historial]
         };
-        Self {
-            id: id.parse().unwrap(),
+        Ok(Self {
+            id: id.parse().map_err(|err| {
+                ParseOneError::IMessedUp(format!(
+                    "No se pudo interpretar {id} como un número\n{err}"
+                ))
+            })?,
             temas,
             dificultad,
             fuente: descripcion,
@@ -112,22 +113,28 @@ impl Data {
             curso: None,
             enunciado: String::new(),
             paquetes: Vec::new(),
-        }
+        })
     }
 }
 
 #[must_use]
-pub fn read_csv() -> HashMap<usize, Data> {
+pub fn read_csv() -> (HashMap<usize, Data>, Vec<ParseOneError>) {
     let mut output: HashMap<usize, _> = HashMap::new();
     let mut reader = csv::Reader::from_path("Datos.csv").expect("Can't open file?");
+    let mut errors = vec![];
     for result in reader.deserialize() {
         // The iterator yields Result<StringRecord, Error>, so we check the
         // error here.
         let record: Read = result.expect("Record is wrong");
         let record = Data::from_read(record);
-        output.insert(record.id, record);
+        match record {
+            Ok(record) => {
+                output.insert(record.id, record);
+            }
+            Err(err) => errors.push(err),
+        }
     }
-    output
+    (output, errors)
 }
 
 /// .

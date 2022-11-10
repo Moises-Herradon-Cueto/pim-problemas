@@ -3,7 +3,7 @@ use std::{
     fs,
 };
 
-use parse_lib::data::{read_csv, write_html, Data};
+use parse_lib::Data;
 
 fn main() {
     gather_info_copy_files();
@@ -12,10 +12,10 @@ fn main() {
 }
 
 fn gather_info_copy_files() {
-    let data = read_csv();
+    // let data = read_csv();
     // parse_all(&mut data).expect("oops");
     // write_json(&data).expect("oops");
-    write_html(&data);
+    // write_html(&data);
 }
 
 fn _make_problem_list(data: &HashMap<usize, Data>) {

@@ -1,8 +1,8 @@
-use crate::data::Data;
+use crate::parsing;
+use crate::{data::Data, files::ParseOneError};
 
 use crate::preamble::into_template;
 use crate::process_tex::find_year;
-use regex::Regex;
 
 use ParseResult::{Template, ToChange};
 
@@ -11,104 +11,19 @@ pub enum ParseResult {
     ToChange(String),
 }
 
-/// .
-///
-/// # Panics
-///
-/// Panics if I mess up.
-#[must_use]
-#[allow(clippy::too_many_lines)]
-pub fn string_and_data(input: &str, data: &mut Data) -> ParseResult {
-    let problem_regex = Regex::new(r"(?s)\\begin\{ejer\}(.*)\\end\{ejer\}").expect("regex wrong");
-    let problem = problem_regex
-        .captures_iter(input)
-        .next()
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str();
+pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, ParseOneError> {
+    let problem = parsing::problem(data.id, input)?;
 
     data.enunciado = problem.to_owned();
 
-    if is_template(input, data) {
-        return Template;
+    if is_template(input, data)? {
+        return Ok(Template);
     }
-    let sol_regex = [
-        Regex::new(r"(?s)\\begin\{proof\}\[Solución\](.*)\\end\{proof\}").expect("regex wrong"),
-        Regex::new(r"(?s)\{\\bf Soluci\\'on:\}(.*)\\end\{document\}").expect("regex wrong"),
-        Regex::new(r"(?s)\{\\bf Solución:\}(.*)\\end\{document\}").expect("regex wrong"),
-    ];
 
-    let solution = sol_regex
-        .iter()
-        .flat_map(|regex| regex.captures_iter(input))
-        .next()
-        .ok_or(format!("{data:#?}"))
-        .expect("Didn't find solution")
-        .get(1)
-        .unwrap()
-        .as_str();
+    let solution = parsing::solution(data.id, input)?;
 
-    let paquetes_1: String = Regex::new(r"\\usepackage\[(.*)\]\{(.*)}")
-        .expect("messed up")
-        .captures_iter(input)
-        .filter_map(|result| {
-            let option = result.get(1).unwrap().as_str();
-            let package = result.get(2).unwrap().as_str();
-            if [
-                "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath", "amsthm",
-                "verbatim",
-            ]
-            .contains(&package)
-            {
-                return None;
-            }
-            let use_statement = format!("\\usepackage[{option}]{{{package}}}\n");
-            data.paquetes.push(use_statement.clone());
-            Some(use_statement)
-        })
-        .collect();
+    parsing::packages(data, input)?;
 
-    let paquetes_2: String = Regex::new(r"\\usepackage\{(.*)}")
-        .expect("messed up")
-        .captures_iter(input)
-        .flat_map(|result| {
-            let packages = result.get(1).unwrap().as_str().split(',');
-            packages
-                .filter(|package| {
-                    ![
-                        "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath",
-                        "amsthm", "verbatim",
-                    ]
-                    .contains(package)
-                })
-                .map(|package| format!("\\usepackage{{{package}}}\n"))
-        })
-        .collect();
-
-    let more_packages = paquetes_2.split('\n').map(std::borrow::ToOwned::to_owned);
-    data.paquetes.extend(more_packages);
-
-    let tikz_libraries: String = Regex::new(r"\\usetikzlibrary\{(.*)}")
-        .expect("messed up")
-        .captures_iter(input)
-        .map(|result| {
-            let package = result.get(1).unwrap().as_str();
-            data.paquetes
-                .push(format!("\\usetikzlibrary{{{package}}}\n"));
-            format!("\\usetikzlibrary{{{package}}}\n")
-        })
-        .collect();
-
-    let pgfplotsets: String = Regex::new(r"\\pgfplotsset\{(.*)}")
-        .expect("messed up")
-        .captures_iter(input)
-        .map(|result| {
-            let package = result.get(1).unwrap().as_str();
-            data.paquetes.push(format!("\\pgfplotsset{{{package}}}\n"));
-            format!("\\pgfplotsset{{{package}}}\n")
-        })
-        .collect();
     let mut temas = data.temas.join(", ");
 
     if temas.is_empty() {
@@ -129,25 +44,22 @@ pub fn string_and_data(input: &str, data: &mut Data) -> ParseResult {
         comentarios = "%".into();
     }
 
-    ToChange(into_template(
-        &paquetes_1,
-        &paquetes_2,
-        &tikz_libraries,
-        &pgfplotsets,
+    Ok(ToChange(into_template(
+        &data.paquetes.join("\n"),
         &temas,
         &fuente,
         &&comentarios,
         &&id,
         &problem,
         &solution,
-    ))
+    )))
 }
 
-fn is_template(input: &str, data: &mut Data) -> bool {
+fn is_template(input: &str, data: &mut Data) -> Result<bool, ParseOneError> {
     if input.contains("%%% PLANTILLA PARA SUBIR EJERCICIOS A LA BASE DE DATOS DEL PIM") {
-        find_year(input, data);
-        true
+        find_year(input, data)?;
+        Ok(true)
     } else {
-        false
+        Ok(false)
     }
 }

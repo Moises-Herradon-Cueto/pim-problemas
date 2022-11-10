@@ -5,7 +5,7 @@ use yew::prelude::*;
 
 #[cfg(debug_assertions)]
 pub const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
-    "/home/moises/problems_in/"
+    "/home/moises/OneDrive/ejercicios"
 } else {
     "."
 };

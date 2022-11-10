@@ -1,11 +1,8 @@
 use std::fmt::Display;
 
 #[allow(clippy::too_many_arguments)]
-pub fn into_template<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(
-    paquetes_1: &T1,
-    paquetes_2: &T2,
-    tikz_libraries: &T3,
-    pgfplotsets: &T4,
+pub fn into_template<T1, T5, T6, T7, T8, T9, T10>(
+    paquetes: &T1,
     temas: &T5,
     fuente: &T6,
     comentarios: &T7,
@@ -15,9 +12,6 @@ pub fn into_template<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(
 ) -> String
 where
     T1: Display,
-    T2: Display,
-    T3: Display,
-    T4: Display,
     T5: Display,
     T6: Display,
     T7: Display,
@@ -39,10 +33,7 @@ where
 
 % Si necesitas más paquetes, añádelos debajo de la siguiente línea
 %%% Paquetes extra
-{paquetes_1}
-{paquetes_2}
-{tikz_libraries}
-{pgfplotsets}
+{paquetes}
 %%% Fin de paquetes extra
 
 

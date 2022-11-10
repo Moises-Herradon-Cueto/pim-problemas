@@ -1,10 +1,5 @@
 use std::{fs, process::Command};
 
-/// .
-///
-/// # Panics
-///
-/// Panics if .
 pub fn run() {
     let entries = fs::read_dir("ejercicios-out").unwrap();
     let mut count = 0_u8;
