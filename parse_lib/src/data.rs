@@ -118,9 +118,9 @@ impl Data {
 }
 
 #[must_use]
-pub fn read_csv() -> (HashMap<usize, Data>, Vec<ParseOneError>) {
+pub fn read_csv(path: &Path) -> (HashMap<usize, Data>, Vec<ParseOneError>) {
     let mut output: HashMap<usize, _> = HashMap::new();
-    let mut reader = csv::Reader::from_path("Datos.csv").expect("Can't open file?");
+    let mut reader = csv::Reader::from_path(path).expect("Can't open file?");
     let mut errors = vec![];
     for result in reader.deserialize() {
         // The iterator yields Result<StringRecord, Error>, so we check the
@@ -242,6 +242,7 @@ fn _write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
         .expect("Couldn't write entry");
 }
 
+#[derive(Debug)]
 pub enum Error {
     IO(std::io::Error),
     Serde(serde_json::Error),

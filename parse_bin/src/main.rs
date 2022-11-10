@@ -1,9 +1,10 @@
 use std::{
     collections::{HashMap, HashSet},
     fs,
+    path::Path,
 };
 
-use parse_lib::Data;
+use parse_lib::{get_json_string, read_csv, Data};
 
 fn main() {
     gather_info_copy_files();
@@ -12,7 +13,29 @@ fn main() {
 }
 
 fn gather_info_copy_files() {
-    // let data = read_csv();
+    let data_csv = read_csv(Path::new("Datos.csv")).0;
+    let data_json =
+        get_json_string("/home/moises/pim-input/database.json").expect("Failed to open json");
+    let mut data_json: HashMap<usize, Data> =
+        serde_json::from_str(&data_json).expect("Failed to deserialize");
+
+    let mut count = 0_usize;
+
+    for (id, data) in &mut data_json {
+        let Some(other_data) = data_csv.get(id) else {
+            continue;
+        };
+        if data != other_data {
+            println!("Found a difference.\nJson data:\n{data:#?}\nCsv data\n{other_data:#?}");
+            count += 1;
+        }
+    }
+
+    println!(
+        "Count: {count}\ncsv: {}\njson: {}",
+        data_csv.len(),
+        data_json.len()
+    );
     // parse_all(&mut data).expect("oops");
     // write_json(&data).expect("oops");
     // write_html(&data);
