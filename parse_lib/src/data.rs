@@ -143,6 +143,15 @@ impl Data {
                 let data_2 = data_2.to_owned();
                 match (data_1, data_2) {
                     (Id(_), Id(_)) => return Err(String::from("Los ids son diferentes")),
+                    (VecStr(vec_1), VecStr(vec_2)) => {
+                        if vec_1.is_empty() {
+                            field.set(&mut self, vec_2)
+                        } else {
+                            return Err(format!(
+                                "No se pueden combinar {field}:\n{vec_1:?}\n{vec_2:?}"
+                            ));
+                        }
+                    }
                 }
             }
         }
