@@ -41,3 +41,23 @@ jobs:
       with:
         projectPath: pim-aplicacion
         tauriScript: cargo tauri
+    - name: Upload (Unix)
+      if: matrix.platform == 'ubuntu-latest' || matrix.platform == 'macos-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: unix-build
+        path: |
+          target/release/*
+          pim-problemas/target/release/*
+          pim-problemas/pim-problemas/target/release/*
+    - name: Upload (Windows)
+      if: matrix.platform == 'windows-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-build
+        path: |
+          target\release\*
+          pim-problemas\target\release\*
+          pim-problemas\pim-problemas\target\release\*
+          
+        
