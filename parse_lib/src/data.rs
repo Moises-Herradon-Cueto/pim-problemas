@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     files::ParseOneError,
     html::{_POSTAMBLE, _PREAMBLE},
+    table_friendly::TableFriendly,
     Fields,
 };
 
@@ -286,6 +287,14 @@ pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, Error> {
     let string = fs::read_to_string(&json_path)?;
 
     Ok(string)
+}
+
+pub fn write_csv<P: AsRef<Path>>(data: &[TableFriendly], path: P) {
+    let mut writer = csv::Writer::from_path(path).expect("Couldn't create writer");
+    for record in data {
+        writer.serialize(record).expect("failed to serialize");
+    }
+    writer.flush().expect("Failed ot flush, ew");
 }
 
 pub fn _write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {

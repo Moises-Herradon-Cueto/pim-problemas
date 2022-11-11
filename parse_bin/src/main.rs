@@ -4,12 +4,24 @@ use std::{
     path::Path,
 };
 
-use parse_lib::{get_json_string, pdflatex, read_csv, Data};
+use parse_lib::{
+    get_json_string, pdflatex, read_csv, table_friendly::TableFriendly, write_csv, Data,
+};
 
 fn main() {
-    pdflatex::run("/home/moises/pim-input/ejercicios-out");
+    read_json_write_csv();
     // make_problem_list();
     // pdflatex::run();
+}
+
+fn read_json_write_csv() {
+    let data_json =
+        get_json_string("/home/moises/pim-input/database.json").expect("Failed to open json");
+    let data_json: HashMap<usize, Data> =
+        serde_json::from_str(&data_json).expect("Failed to deserialize");
+    let csv_friendly: Vec<TableFriendly> =
+        data_json.into_values().map(|data| data.into()).collect();
+    write_csv(&csv_friendly, "datos-modified.csv");
 }
 
 fn compare_csv_json() {

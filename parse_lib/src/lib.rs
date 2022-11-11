@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 pub use data::get_json_string;
 pub use data::read_csv;
+pub use data::write_csv;
 pub use data::write_json;
 pub use data::Data;
 pub use files::parse_all;
@@ -21,6 +22,7 @@ mod parsing;
 pub mod pdflatex;
 mod preamble;
 mod process_tex;
+pub mod table_friendly;
 
 mod search;
 use Fields::{Comentarios, Difficulty, History, Packages, Problem, Solution, Source, Topics, Year};
