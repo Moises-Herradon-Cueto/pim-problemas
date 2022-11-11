@@ -57,7 +57,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
             let package = result.get(2).unwrap().as_str();
             if [
                 "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath", "amsthm",
-                "verbatim",
+                "verbatim", "gensymb", "mathrsfs", "pgfplots", "textcomp", "tikz",
             ]
             .contains(&package)
             {
@@ -76,7 +76,8 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
                 .filter(|package| {
                     ![
                         "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath",
-                        "amsthm", "verbatim",
+                        "amsthm", "verbatim", "gensymb", "mathrsfs", "pgfplots", "textcomp",
+                        "tikz",
                     ]
                     .contains(package)
                 })

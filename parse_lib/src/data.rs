@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::HashMap,
     fmt::Debug,
     fs,
@@ -133,11 +134,17 @@ impl Data {
         None
     }
 
-    pub fn merge_with(&mut self, other: Self) -> Result<(), String> {
-        use crate::FieldContents::*;
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if
+    /// both entries have non empty data in a field
+    pub fn merge_with(&mut self, other: &Self) -> Result<(), String> {
+        use crate::FieldContents::{Difficulty, Id, Optional, Str, VecStr};
         for field in Fields::ALL {
             let data_1 = field.get(self);
-            let data_2 = field.get(&other);
+            let data_2 = field.get(other);
             if data_1 != data_2 {
                 let data_1 = data_1.to_owned();
                 let data_2 = data_2.to_owned();
@@ -145,17 +152,75 @@ impl Data {
                     (Id(_), Id(_)) => return Err(String::from("Los ids son diferentes")),
                     (VecStr(vec_1), VecStr(vec_2)) => {
                         if vec_1.is_empty() {
-                            field.set(&mut self, vec_2)
-                        } else {
+                            field.set(self, VecStr(vec_2));
+                        } else if !vec_2.is_empty() {
                             return Err(format!(
                                 "No se pueden combinar {field}:\n{vec_1:?}\n{vec_2:?}"
                             ));
                         }
                     }
+                    (Str(str_1), Str(str_2)) => {
+                        if field == Fields::Source {
+                            println!("Comparar {str_1} y {str_2}");
+                        }
+                        if str_1.is_empty() {
+                            println!("Reemplazar");
+                            field.set(self, Str(str_2));
+                            println!("{self:?}");
+                        } else if !str_2.is_empty() {
+                            return Err(format!(
+                                "No se pueden combinar {field}:\n{str_1:?}\n{str_2:?}"
+                            ));
+                        }
+                    }
+                    (Difficulty(d1), Difficulty(d2)) => {
+                        if d1 == u8::MAX {
+                            field.set(self, Difficulty(d2));
+                        } else if d2 != u8::MAX {
+                            return Err(format!("No se pueden combinar {field}:\n{d1:?}\n{d2:?}"));
+                        }
+                    }
+                    (Optional(o1), Optional(o2)) => {
+                        if o1.is_none() {
+                            field.set(self, Optional(o2));
+                        } else if o2.is_some() {
+                            return Err(format!("No se pueden combinar {field}:\n{o1:?}\n{o2:?}"));
+                        }
+                    }
+                    (_, _) => unreachable!("Datos incompatibles"),
                 }
             }
         }
         Ok(())
+    }
+
+    pub fn sort_packages(&mut self) {
+        self.paquetes.sort_by(|x, y| {
+            let pgfplotset = (x.contains("pgfplotsset"), y.contains("pgfplotsset"));
+            match pgfplotset {
+                (true, true) => return x.cmp(y),
+                (true, false) => return Ordering::Greater,
+                (false, true) => return Ordering::Less,
+                (false, false) => {}
+            }
+            let tikzlibrary = (x.contains("usetikzlibrary"), y.contains("usetikzlibrary"));
+            match tikzlibrary {
+                (true, true) | (false, false) => x.cmp(y),
+                (true, false) => Ordering::Greater,
+                (false, true) => Ordering::Less,
+            }
+        });
+
+        self.paquetes.dedup();
+
+        if let Some(i) =
+            self.paquetes
+                .iter()
+                .enumerate()
+                .find_map(|(i, x)| if x.is_empty() { Some(i) } else { None })
+        {
+            self.paquetes.remove(i);
+        }
     }
 }
 

@@ -16,7 +16,7 @@ pub const DEFAULT_DB: &str = if cfg!(debug_assertions) {
 };
 
 pub const DEFAULT_OUTPUT: &str = if cfg!(debug_assertions) {
-    "/home/moises/ejercicios-out"
+    "/home/moises/pim-input/ejercicios-out"
 } else {
     "."
 };

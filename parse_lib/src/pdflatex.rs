@@ -1,7 +1,7 @@
-use std::{fs, process::Command};
+use std::{fs, path::Path, process::Command};
 
-pub fn _run() {
-    let entries = fs::read_dir("ejercicios-out").unwrap();
+pub fn run<P: AsRef<Path>>(path: P) {
+    let entries = fs::read_dir(path).unwrap();
     let mut count = 0_u8;
     for file in entries {
         let file = file.unwrap();

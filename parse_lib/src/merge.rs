@@ -24,6 +24,8 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
 
     parsing::packages(data, input)?;
 
+    data.sort_packages();
+
     let mut temas = data.temas.join(", ");
 
     if temas.is_empty() {
@@ -44,9 +46,16 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
         comentarios = "%".into();
     }
 
+    let dificultad = if data.dificultad == u8::MAX {
+        "%".into()
+    } else {
+        data.dificultad.to_string()
+    };
+
     Ok(ToChange(into_template(
         &data.paquetes.join("\n"),
         &temas,
+        &dificultad,
         &fuente,
         &&comentarios,
         &&id,

@@ -18,14 +18,14 @@ mod files;
 mod html;
 mod merge;
 mod parsing;
-mod pdflatex;
+pub mod pdflatex;
 mod preamble;
 mod process_tex;
 
 mod search;
 use Fields::{Comentarios, Difficulty, History, Packages, Problem, Solution, Source, Topics, Year};
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Fields {
     Problem,
     Solution,
@@ -96,8 +96,42 @@ impl Fields {
             Packages => FieldContentsRef::VecStr(&data.paquetes),
         }
     }
+
+    fn set(self, data: &mut Data, content: FieldContents) {
+        match (self, content) {
+            (Problem, FieldContents::Str(content)) => {
+                data.enunciado = content;
+            }
+            (Solution, FieldContents::Optional(_)) => {
+                println!("La solución no está guardada");
+            }
+            (Difficulty, FieldContents::Difficulty(content)) => {
+                data.dificultad = content;
+            }
+            (Topics, FieldContents::VecStr(content)) => {
+                data.temas = content;
+            }
+            (Source, FieldContents::Str(content)) => {
+                data.fuente = content;
+            }
+            (History, FieldContents::VecStr(content)) => {
+                data.historial = content;
+            }
+            (Comentarios, FieldContents::VecStr(content)) => {
+                data.comentarios = content;
+            }
+            (Year, FieldContents::Optional(content)) => {
+                data.curso = content;
+            }
+            (Packages, FieldContents::VecStr(content)) => {
+                data.paquetes = content;
+            }
+            (_, _) => unreachable!("No se puede insertar este valor en este campo"),
+        }
+    }
 }
 
+#[derive(Debug)]
 pub enum FieldContents {
     Id(usize),
     VecStr(Vec<String>),
