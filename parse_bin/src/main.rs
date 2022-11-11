@@ -4,37 +4,51 @@ use std::{
     path::Path,
 };
 
-use parse_lib::{get_json_string, read_csv, Data};
+use parse_lib::{get_json_string, pdflatex, read_csv, Data};
 
 fn main() {
-    gather_info_copy_files();
+    pdflatex::run("/home/moises/pim-input/ejercicios-out");
     // make_problem_list();
     // pdflatex::run();
 }
 
-fn gather_info_copy_files() {
+fn compare_csv_json() {
     let data_csv = read_csv(Path::new("Datos.csv")).0;
     let data_json =
         get_json_string("/home/moises/pim-input/database.json").expect("Failed to open json");
     let mut data_json: HashMap<usize, Data> =
         serde_json::from_str(&data_json).expect("Failed to deserialize");
+    let json_len = data_json.len();
 
     let mut count = 0_usize;
+    let mut count_errors = 0_usize;
 
     for (id, data) in &mut data_json {
         let Some(other_data) = data_csv.get(id) else {
             continue;
         };
         if other_data.has_more_data_than(data).is_some() {
-            println!("Found more stuff.\nJson data:\n{data:#?}\nCsv data\n{other_data:#?}");
+            let result = data.merge_with(other_data);
+            if let Err(err) = result {
+                println!("In problem {id}\n{err}");
+                println!("Found more stuff.\nJson data:\n{data:#?}\nCsv data\n{other_data:#?}");
+                count_errors += 1;
+            }
             count += 1;
         }
+        data.paquetes.sort();
+        data.paquetes.dedup();
+        let no_empty = data.paquetes.iter().filter(|x| !x.is_empty()).cloned();
+        data.paquetes = no_empty.collect();
     }
+    let data_json = serde_json::to_string(&data_json).expect("Failed to serialize");
+
+    fs::write("/home/moises/pim-input/database-merged.json", data_json).expect("Failed to write");
 
     println!(
-        "Count: {count}\ncsv: {}\njson: {}",
+        "Errors: {count_errors}\nCount: {count}\ncsv: {}\njson: {}",
         data_csv.len(),
-        data_json.len()
+        json_len
     );
     // parse_all(&mut data).expect("oops");
     // write_json(&data).expect("oops");
