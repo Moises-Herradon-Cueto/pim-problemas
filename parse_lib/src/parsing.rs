@@ -8,7 +8,7 @@ pub fn problem(id: usize, input: &str) -> Result<&str, ParseOneError> {
     let output = problem_regex
         .captures_iter(input)
         .next()
-        .ok_or(ParseOneError::NotFound(id, Fields::Problem))?
+        .ok_or(ParseOneError::ProblemNotFound)?
         .get(1)
         .ok_or_else(|| {
             ParseOneError::IMessedUp(format!(
@@ -36,7 +36,7 @@ pub fn solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
         .iter()
         .flat_map(|regex| regex.captures_iter(input))
         .next()
-        .ok_or(ParseOneError::NotFound(id, Fields::Solution))?
+        .ok_or(ParseOneError::SolutionNotFound)?
         .get(1)
         .ok_or_else(|| {
             ParseOneError::IMessedUp(format!(
@@ -106,4 +106,20 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
         });
 
     Ok(())
+}
+
+pub fn find_info_from_template(input: &str) -> Result<(Data, Vec<Fields>), ParseOneError> {
+    let mut missing_data = vec![];
+    let mut new_data = Data::default();
+    for field in Fields::ALL {
+        let info = field
+            .find(input)
+            .map_err(|msg| ParseOneError::IMessedUp(msg))?;
+        if let Some(content) = info {
+            new_data.set(content)
+        } else {
+            missing_data.push(field);
+        }
+    }
+    Ok((new_data, missing_data))
 }

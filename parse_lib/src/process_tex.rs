@@ -7,7 +7,7 @@ pub fn find_year(input: &str, data: &mut Data) -> Result<(), ParseOneError> {
         .map_err(|err| ParseOneError::IMessedUp(format!("I messed up the regex creation: {err}")))?
         .captures_iter(input)
         .next()
-        .unwrap_or_else(|| panic!("El problema {} no tiene curso", data.id))
+        .ok_or_else(|| ParseOneError::IMessedUp(format!("EL problema {} no tiene curso", data.id)))?
         .get(1)
         .ok_or_else(|| {
             ParseOneError::IMessedUp(format!(

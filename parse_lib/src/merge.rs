@@ -1,13 +1,13 @@
-use crate::parsing;
+use crate::files::ParseOneInfo;
+use crate::parsing::{self, find_info_from_template};
 use crate::{data::Data, files::ParseOneError};
 
 use crate::preamble::into_template;
-use crate::process_tex::find_year;
 
 use ParseResult::{Template, ToChange};
 
 pub enum ParseResult {
-    Template,
+    Template(Vec<(usize, ParseOneInfo)>),
     ToChange(String),
 }
 
@@ -16,8 +16,13 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
 
     data.enunciado = problem.to_owned();
 
-    if is_template(input, data)? {
-        return Ok(Template);
+    if let Some((data_in_tex, mut errors)) = is_template(input, data)? {
+        let more_errors = data
+            .merge_with(&data_in_tex)
+            .into_iter()
+            .map(|x| (data.id, x));
+        errors.extend(more_errors);
+        return Ok(Template(errors));
     }
 
     let solution = parsing::solution(data.id, input)?;
@@ -64,11 +69,18 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
     )))
 }
 
-fn is_template(input: &str, data: &mut Data) -> Result<bool, ParseOneError> {
+fn is_template(
+    input: &str,
+    data: &mut Data,
+) -> Result<Option<(Data, Vec<(usize, ParseOneInfo)>)>, ParseOneError> {
     if input.contains("%%% PLANTILLA PARA SUBIR EJERCICIOS A LA BASE DE DATOS DEL PIM") {
-        find_year(input, data)?;
-        Ok(true)
+        let (data_in_template, missing_fields) = find_info_from_template(input)?;
+        let missing_fields = missing_fields
+            .into_iter()
+            .map(|f| (data_in_template.id, ParseOneInfo::MissingInTex(f)))
+            .collect();
+        Ok(Some((data_in_template, missing_fields)))
     } else {
-        Ok(false)
+        Ok(None)
     }
 }

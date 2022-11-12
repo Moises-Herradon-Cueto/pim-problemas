@@ -11,10 +11,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    files::ParseOneError,
+    files::{ParseOneError, ParseOneInfo},
     html::{_POSTAMBLE, _PREAMBLE},
     table_friendly::TableFriendly,
-    Fields,
+    FieldContents, Fields,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -44,6 +44,23 @@ pub struct Data {
     pub enunciado: String,
     pub paquetes: Vec<String>,
 }
+
+impl Default for Data {
+    fn default() -> Self {
+        Self {
+            id: usize::MAX,
+            temas: Default::default(),
+            dificultad: u8::MAX,
+            fuente: Default::default(),
+            historial: Default::default(),
+            comentarios: Default::default(),
+            curso: Default::default(),
+            enunciado: Default::default(),
+            paquetes: Default::default(),
+        }
+    }
+}
+
 impl Data {
     #[must_use]
     pub const fn new(id: usize) -> Self {
@@ -135,64 +152,38 @@ impl Data {
         None
     }
 
+    pub fn set(&mut self, content: FieldContents) {
+        content.set(&mut self);
+    }
+
     /// .
     ///
     /// # Errors
     ///
     /// This function will return an error if
     /// both entries have non empty data in a field
-    pub fn merge_with(&mut self, other: &Self) -> Result<(), String> {
-        use crate::FieldContents::{Difficulty, Id, Optional, Str, VecStr};
+    pub fn merge_with(&mut self, tex_data: &Self) -> Vec<ParseOneInfo> {
+        let mut discrepancies = vec![];
         for field in Fields::ALL {
             let data_1 = field.get(self);
-            let data_2 = field.get(other);
+            let data_2 = field.get(tex_data);
             if data_1 != data_2 {
                 let data_1 = data_1.to_owned();
                 let data_2 = data_2.to_owned();
-                match (data_1, data_2) {
-                    (Id(_), Id(_)) => return Err(String::from("Los ids son diferentes")),
-                    (VecStr(vec_1), VecStr(vec_2)) => {
-                        if vec_1.is_empty() {
-                            field.set(self, VecStr(vec_2));
-                        } else if !vec_2.is_empty() {
-                            return Err(format!(
-                                "No se pueden combinar {field}:\n{vec_1:?}\n{vec_2:?}"
-                            ));
-                        }
-                    }
-                    (Str(str_1), Str(str_2)) => {
-                        if field == Fields::Source {
-                            println!("Comparar {str_1} y {str_2}");
-                        }
-                        if str_1.is_empty() {
-                            println!("Reemplazar");
-                            field.set(self, Str(str_2));
-                            println!("{self:?}");
-                        } else if !str_2.is_empty() {
-                            return Err(format!(
-                                "No se pueden combinar {field}:\n{str_1:?}\n{str_2:?}"
-                            ));
-                        }
-                    }
-                    (Difficulty(d1), Difficulty(d2)) => {
-                        if d1 == u8::MAX {
-                            field.set(self, Difficulty(d2));
-                        } else if d2 != u8::MAX {
-                            return Err(format!("No se pueden combinar {field}:\n{d1:?}\n{d2:?}"));
-                        }
-                    }
-                    (Optional(o1), Optional(o2)) => {
-                        if o1.is_none() {
-                            field.set(self, Optional(o2));
-                        } else if o2.is_some() {
-                            return Err(format!("No se pueden combinar {field}:\n{o1:?}\n{o2:?}"));
-                        }
-                    }
-                    (_, _) => unreachable!("Datos incompatibles"),
+                if data_1.is_empty() {
+                    self.set(data_2);
+                    discrepancies.push(ParseOneInfo::MissingInDb(field));
+                } else if data_2.is_empty() {
+                    discrepancies.push(ParseOneInfo::MissingInTex(field));
+                } else {
+                    discrepancies.push(ParseOneInfo::Incompatible {
+                        db: data_1,
+                        tex: data_2,
+                    });
                 }
             }
         }
-        Ok(())
+        discrepancies
     }
 
     pub fn sort_packages(&mut self) {

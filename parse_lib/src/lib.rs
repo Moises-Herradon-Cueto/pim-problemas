@@ -4,6 +4,7 @@
 use std::borrow::Cow;
 use std::fmt::Display;
 
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 pub use data::get_json_string;
@@ -25,17 +26,20 @@ mod process_tex;
 pub mod table_friendly;
 
 mod search;
-use Fields::{Comentarios, Difficulty, History, Packages, Problem, Solution, Source, Topics, Year};
+use Fields::{
+    Comments, Difficulty, History, Id, Packages, Problem, Solution, Source, Topics, Year,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Fields {
+    Id,
     Problem,
     Solution,
     Topics,
     Difficulty,
     Source,
     History,
-    Comentarios,
+    Comments,
     Year,
     Packages,
 }
@@ -43,13 +47,14 @@ pub enum Fields {
 impl Display for Fields {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Id => f.write_str("Id"),
             Problem => f.write_str("Enunciado"),
             Solution => f.write_str("Solución"),
             Topics => f.write_str("Temas"),
             Difficulty => f.write_str("Dificultad"),
             Source => f.write_str("Fuente"),
             History => f.write_str("Historial"),
-            Comentarios => f.write_str("Comentarios"),
+            Comments => f.write_str("Comentarios"),
             Year => f.write_str("Curso"),
             Packages => f.write_str("Paquetes usados"),
         }
@@ -58,27 +63,20 @@ impl Display for Fields {
 
 impl Fields {
     pub const ALL: [Self; 9] = [
-        Problem,
-        Solution,
-        Topics,
-        Difficulty,
-        Source,
-        History,
-        Comentarios,
-        Year,
-        Packages,
+        Problem, Solution, Topics, Difficulty, Source, History, Comments, Year, Packages,
     ];
 
     #[must_use]
     pub fn get_string(self, data: &Data) -> Cow<str> {
         match self {
+            Id => Cow::Owned(data.id.to_string()),
             Problem => Cow::Borrowed(&data.enunciado),
             Solution => Cow::Borrowed("No están guardadas las soluciones"),
             Topics => Cow::Owned(data.temas.join(", ")),
             Difficulty => Cow::Owned(data.dificultad.to_string()),
             Source => Cow::Borrowed(&data.fuente),
             History => Cow::Owned(data.historial.join("\n")),
-            Comentarios => Cow::Owned(data.comentarios.join("\n")),
+            Comments => Cow::Owned(data.comentarios.join("\n")),
             Year => Cow::Owned(data.curso.clone().unwrap_or_default()),
             Packages => Cow::Owned(data.paquetes.join("\n")),
         }
@@ -87,79 +85,207 @@ impl Fields {
     #[must_use]
     pub fn get(self, data: &Data) -> FieldContentsRef {
         match self {
-            Problem => FieldContentsRef::Str(&data.enunciado),
-            Solution => FieldContentsRef::Optional(&None),
-            Difficulty => FieldContentsRef::Difficulty(&data.dificultad),
-            Topics => FieldContentsRef::VecStr(&data.temas),
-            Source => FieldContentsRef::Str(&data.fuente),
-            History => FieldContentsRef::VecStr(&data.historial),
-            Comentarios => FieldContentsRef::VecStr(&data.comentarios),
-            Year => FieldContentsRef::Optional(&data.curso),
-            Packages => FieldContentsRef::VecStr(&data.paquetes),
+            Id => FieldContentsRef::Id(data.id),
+            Problem => FieldContentsRef::Problem(&data.enunciado),
+            Solution => FieldContentsRef::Solution,
+            Difficulty => FieldContentsRef::Difficulty(data.dificultad),
+            Topics => FieldContentsRef::Topics(&data.temas),
+            Source => FieldContentsRef::Source(&data.fuente),
+            History => FieldContentsRef::History(&data.historial),
+            Comments => FieldContentsRef::Comments(&data.comentarios),
+            Year => FieldContentsRef::Year(&data.curso),
+            Packages => FieldContentsRef::Packages(&data.paquetes),
         }
     }
 
-    fn set(self, data: &mut Data, content: FieldContents) {
-        match (self, content) {
-            (Problem, FieldContents::Str(content)) => {
-                data.enunciado = content;
+    pub const fn is_in_template(self) -> bool {
+        !matches!(self, Self::Solution)
+    }
+
+    pub fn regex(self) -> Regex {
+        let attempt = match self {
+            Problem => Regex::new(r"(?s)\\begin\{ejer\}\s*(.*?)\s*\\end\{ejer\}"),
+            Solution => Regex::new(r"$."),
+            Topics => Regex::new(r"\temas\{\s*(.*?)\s*\}"),
+            Difficulty => Regex::new(r"\dificultad\{\s*(.*?)\s*\}"),
+            Source => Regex::new(r"\fuente\{\s*(.*?)\s*\}"),
+            History => Regex::new(r"\historial\{\s*(.*?)\s*\}"),
+            Comments => Regex::new(r"\comentarios\{\s*(.*?)\s*\}"),
+            Year => Regex::new(r"\curso\{\s*(.*?)\s*\}"),
+            Packages => Regex::new(r"(?s)%%% Paquetes extra\s*(.*?)\s*%%% Fin de paquetes extra"),
+            Fields::Id => Regex::new(r"\id\{\s*(.*?)\s*\}"),
+        };
+        attempt.expect("I messed up making the regex")
+    }
+
+    fn parse(self, input: &str) -> Result<FieldContents, String> {
+        match self {
+            Id => Ok(FieldContents::Id(
+                input
+                    .parse()
+                    .map_err(|err| format!("Error parsing: {err}"))?,
+            )),
+            Problem => Ok(FieldContents::Problem(input.to_owned())),
+            Solution => Ok(FieldContents::Solution),
+            Topics => Ok(FieldContents::Topics(
+                input
+                    .split(",")
+                    .map(|topic| topic.trim().to_owned())
+                    .collect(),
+            )),
+            Difficulty => Ok(FieldContents::Difficulty(
+                input
+                    .parse()
+                    .map_err(|err| format!("Error parsing: {err}"))?,
+            )),
+            Source => Ok(FieldContents::Source(input.to_owned())),
+            History => Ok(FieldContents::History(
+                input
+                    .split(",")
+                    .map(|topic| topic.trim().to_owned())
+                    .collect(),
+            )),
+            Comments => Ok(FieldContents::Comments(
+                input
+                    .split(",")
+                    .map(|topic| topic.trim().to_owned())
+                    .collect(),
+            )),
+            Year => {
+                if input.is_empty() || input == "%" {
+                    Ok(FieldContents::Year(None))
+                } else {
+                    Ok(FieldContents::Year(Some(input.to_owned())))
+                }
             }
-            (Solution, FieldContents::Optional(_)) => {
-                println!("La solución no está guardada");
-            }
-            (Difficulty, FieldContents::Difficulty(content)) => {
-                data.dificultad = content;
-            }
-            (Topics, FieldContents::VecStr(content)) => {
-                data.temas = content;
-            }
-            (Source, FieldContents::Str(content)) => {
-                data.fuente = content;
-            }
-            (History, FieldContents::VecStr(content)) => {
-                data.historial = content;
-            }
-            (Comentarios, FieldContents::VecStr(content)) => {
-                data.comentarios = content;
-            }
-            (Year, FieldContents::Optional(content)) => {
-                data.curso = content;
-            }
-            (Packages, FieldContents::VecStr(content)) => {
-                data.paquetes = content;
-            }
-            (_, _) => unreachable!("No se puede insertar este valor en este campo"),
+            Packages => Ok(FieldContents::Packages(
+                input
+                    .split("\n")
+                    .map(|topic| topic.trim().to_owned())
+                    .collect(),
+            )),
         }
+    }
+
+    pub fn find(self, input: &str) -> Result<Option<FieldContents>, String> {
+        if !self.is_in_template() {
+            return Ok(None);
+        }
+        let regex = self.regex();
+        let capture = regex.captures_iter(input).next();
+        let Some(capture) = capture else {return Ok(None)};
+        let found_info = capture
+            .get(1)
+            .expect("Messed up the regex, there should be one capture group")
+            .as_str();
+        Ok(Some(self.parse(found_info)?))
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum FieldContents {
     Id(usize),
-    VecStr(Vec<String>),
+    Problem(String),
+    Solution,
+    Topics(Vec<String>),
     Difficulty(u8),
-    Str(String),
-    Optional(Option<String>),
+    Source(String),
+    History(Vec<String>),
+    Comments(Vec<String>),
+    Year(Option<String>),
+    Packages(Vec<String>),
 }
 
 #[derive(PartialEq, Eq)]
 pub enum FieldContentsRef<'a> {
-    Id(&'a usize),
-    VecStr(&'a [String]),
-    Difficulty(&'a u8),
-    Str(&'a str),
-    Optional(&'a Option<String>),
+    Id(usize),
+    Problem(&'a str),
+    Solution,
+    Topics(&'a [String]),
+    Difficulty(u8),
+    Source(&'a str),
+    History(&'a [String]),
+    Comments(&'a [String]),
+    Year(&'a Option<String>),
+    Packages(&'a [String]),
 }
 
 impl<'a> FieldContentsRef<'a> {
     #[must_use]
     pub fn to_owned(&self) -> FieldContents {
         match self {
-            Self::Id(x) => FieldContents::Id(**x),
-            Self::VecStr(x) => FieldContents::VecStr((*x).to_vec()),
-            Self::Difficulty(x) => FieldContents::Difficulty(**x),
-            Self::Str(x) => FieldContents::Str((*x).to_owned()),
-            Self::Optional(x) => FieldContents::Optional(x.as_ref().cloned()),
+            FieldContentsRef::Id(x) => FieldContents::Id(*x),
+            FieldContentsRef::Difficulty(x) => FieldContents::Difficulty(*x),
+            FieldContentsRef::Problem(x) => FieldContents::Problem((*x).to_owned()),
+            FieldContentsRef::Solution => FieldContents::Solution,
+            FieldContentsRef::Source(x) => FieldContents::Source((*x).to_owned()),
+            FieldContentsRef::Topics(x) => FieldContents::Topics((*x).to_vec()),
+            FieldContentsRef::History(x) => FieldContents::History((*x).to_vec()),
+            FieldContentsRef::Comments(x) => FieldContents::Comments((*x).to_vec()),
+            FieldContentsRef::Packages(x) => FieldContents::Packages((*x).to_vec()),
+            FieldContentsRef::Year(x) => FieldContents::Year(x.as_ref().cloned()),
         }
+    }
+}
+impl FieldContents {
+    fn set(self, data: &mut Data) {
+        match self {
+            Self::Id(content) => data.id = content,
+            Self::Problem(content) => data.enunciado = content,
+            Self::Solution => println!("La solución no está guardada"),
+            Self::Difficulty(content) => data.dificultad = content,
+            Self::Topics(content) => data.temas = content,
+            Self::Source(content) => data.fuente = content,
+            Self::History(content) => data.historial = content,
+            Self::Comments(content) => data.comentarios = content,
+            Self::Year(content) => data.curso = content,
+            Self::Packages(content) => data.paquetes = content,
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        use FieldContents::*;
+        match self {
+            Id(x) => *x == usize::MAX,
+            Difficulty(x) => *x == u8::MAX,
+            Problem(x) | Source(x) => x.is_empty() || x == "%",
+            Topics(x) | History(x) | Comments(x) | Packages(x) => x.is_empty(),
+            Year(x) => x.is_none(),
+            Solution => true,
+        }
+    }
+}
+
+impl From<&FieldContents> for Fields {
+    fn from(value: &FieldContents) -> Self {
+        match value {
+            FieldContents::Id(_) => Fields::Id,
+            FieldContents::Problem(_) => Fields::Problem,
+            FieldContents::Solution => Fields::Solution,
+            FieldContents::Topics(_) => Fields::Topics,
+            FieldContents::Difficulty(_) => Fields::Difficulty,
+            FieldContents::Source(_) => Fields::Source,
+            FieldContents::History(_) => Fields::History,
+            FieldContents::Comments(_) => Fields::Comments,
+            FieldContents::Year(_) => Fields::Year,
+            FieldContents::Packages(_) => Fields::Packages,
+        }
+    }
+}
+
+impl Display for FieldContents {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use FieldContents::*;
+        let string = match self {
+            Id(x) => Cow::Owned(x.to_string()),
+            Difficulty(x) => Cow::Owned(x.to_string()),
+            Problem(x) | Source(x) => Cow::Borrowed(x),
+            Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
+            Year(x) => x
+                .as_ref()
+                .map_or_else(|| Cow::Owned(String::new()), |x| Cow::Borrowed(x)),
+            Solution => Cow::Owned(String::new()),
+        };
+        write!(f, "{}: {string}", Fields::from(self))
     }
 }
