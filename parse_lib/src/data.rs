@@ -49,14 +49,14 @@ impl Default for Data {
     fn default() -> Self {
         Self {
             id: usize::MAX,
-            temas: Default::default(),
+            temas: Vec::new(),
             dificultad: u8::MAX,
-            fuente: Default::default(),
-            historial: Default::default(),
-            comentarios: Default::default(),
-            curso: Default::default(),
-            enunciado: Default::default(),
-            paquetes: Default::default(),
+            fuente: String::new(),
+            historial: Vec::new(),
+            comentarios: Vec::new(),
+            curso: None,
+            enunciado: String::new(),
+            paquetes: Vec::new(),
         }
     }
 }
@@ -214,6 +214,27 @@ impl Data {
             self.paquetes.remove(i);
         }
     }
+
+    pub fn trim(&mut self) {
+        split_vec(&mut self.temas);
+        split_vec(&mut self.historial);
+        split_vec(&mut self.comentarios);
+        self.paquetes
+            .iter_mut()
+            .for_each(|t| *t = t.trim().to_owned());
+        self.fuente = self.fuente.trim().to_owned();
+        self.enunciado = self.enunciado.trim().to_owned();
+        self.curso = self.curso.as_mut().map(|c| c.trim().to_owned());
+    }
+}
+
+fn split_vec(vec: &mut Vec<String>) {
+    let new_vec = vec
+        .iter()
+        .flat_map(|x| x.split(',').map(str::trim).filter(|x| !x.is_empty()))
+        .map(std::borrow::ToOwned::to_owned)
+        .collect();
+    *vec = new_vec;
 }
 
 #[must_use]

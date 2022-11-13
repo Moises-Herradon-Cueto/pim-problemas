@@ -11,7 +11,7 @@ use std::{
 use crate::{
     data::Data,
     merge::{self, ParseResult},
-    FieldContents, Fields,
+    FieldContents, Fields, MsgList,
 };
 use encoding_rs::mem::convert_latin1_to_utf8;
 use serde::{Deserialize, Serialize};
@@ -159,9 +159,9 @@ fn parse_one<T: BuildHasher>(
     entry: Result<DirEntry, io::Error>,
     output_dir: &Path,
     data: &mut HashMap<usize, Data, T>,
-) -> Result<Vec<(usize, ParseOneInfo)>, ParseOneError> {
+) -> Result<MsgList, ParseOneError> {
     let (path, id) = check_file(entry)?;
-    let name = id.to_string();
+    let name = format!("{id}.tex");
     let in_string = decode_file(path)?;
     let out_path =
         output_dir.join(PathBuf::from_str(&name).map_err(|_| {
@@ -188,7 +188,7 @@ pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     problems_dir: P,
     output_dir: &Path,
     data: &mut HashMap<usize, Data, T>,
-) -> Result<Vec<Result<Vec<(usize, ParseOneInfo)>, ParseOneError>>, io::Error> {
+) -> Result<Vec<Result<MsgList, ParseOneError>>, io::Error> {
     let entries = fs::read_dir(problems_dir)?;
 
     let mut output = vec![];
@@ -205,7 +205,7 @@ fn merge_file_data<T: BuildHasher, P: std::fmt::Debug + Clone + AsRef<Path>>(
     data: &mut HashMap<usize, Data, T>,
     tex_string: &str,
     out_path: P,
-) -> Result<Vec<(usize, ParseOneInfo)>, ParseOneError> {
+) -> Result<MsgList, ParseOneError> {
     let mut placeholder = Data::new(id);
     let mut to_insert = false;
     let mut return_errs = vec![];

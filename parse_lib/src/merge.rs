@@ -1,34 +1,37 @@
 use crate::files::ParseOneInfo;
 use crate::parsing::{self, find_info_from_template};
-use crate::Fields;
 use crate::{data::Data, files::ParseOneError};
+use crate::{Fields, MsgList};
 
 use crate::preamble::into_template;
 
 use ParseResult::{Template, ToChange};
 
 pub enum ParseResult {
-    Template(Vec<(usize, ParseOneInfo)>),
-    ToChange(String, Vec<(usize, ParseOneInfo)>),
+    Template(MsgList),
+    ToChange(String, MsgList),
 }
 
 pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, ParseOneError> {
     let problem = parsing::problem(data.id, input)?;
 
-    data.enunciado = problem.to_owned();
+    data.enunciado = problem.trim().to_owned();
 
     let mut errors = vec![];
 
-    if let Some((data_in_tex, mut errors)) = is_template(input, data)? {
-        let more_errors = data
-            .merge_with(&data_in_tex)
-            .into_iter()
-            .map(|x| (data.id, x));
+    if let Some((data_in_tex, mut errors)) = is_template(input)? {
+        let more_errors = data.merge_with(&data_in_tex);
+        if data.id == 2200069 {
+            println!("{more_errors:#?}");
+        }
+        if more_errors.is_empty() {
+            return Ok(Template(errors));
+        }
+        let more_errors = more_errors.into_iter().map(|x| (data.id, x));
         errors.extend(more_errors);
-        return Ok(Template(errors));
     }
 
-    let solution = parsing::solution(data.id, input)?;
+    let solution = parsing::solution(data.id, input)?.trim();
 
     parsing::packages(data, input)?;
 
@@ -50,6 +53,12 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
         fuente = &percent;
     }
     let mut comentarios = data.comentarios.join(", ");
+
+    let curso = if data.curso.is_none() {
+        "%"
+    } else {
+        data.curso.as_ref().unwrap()
+    };
 
     if comentarios.is_empty() {
         comentarios = "%".into();
@@ -73,9 +82,10 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
             &temas,
             &dificultad,
             &historial,
+            &curso,
             &fuente,
-            &&comentarios,
-            &&id,
+            &comentarios,
+            &id,
             &problem,
             &solution,
         ),
@@ -83,10 +93,7 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
     ))
 }
 
-fn is_template(
-    input: &str,
-    data: &mut Data,
-) -> Result<Option<(Data, Vec<(usize, ParseOneInfo)>)>, ParseOneError> {
+fn is_template(input: &str) -> Result<Option<(Data, MsgList)>, ParseOneError> {
     if input.contains("%%% PLANTILLA PARA SUBIR EJERCICIOS A LA BASE DE DATOS DEL PIM") {
         let (data_in_template, missing_fields) = find_info_from_template(input)?;
         let missing_fields = missing_fields

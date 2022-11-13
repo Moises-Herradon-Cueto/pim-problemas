@@ -63,7 +63,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
             {
                 return;
             }
-            let use_statement = format!("\\usepackage[{option}]{{{package}}}\n");
+            let use_statement = format!("\\usepackage[{option}]{{{package}}}");
             data.paquetes.push(use_statement);
         });
 
@@ -81,7 +81,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
                     ]
                     .contains(package)
                 })
-                .map(|package| format!("\\usepackage{{{package}}}\n"))
+                .map(|package| format!("\\usepackage{{{package}}}"))
         })
         .collect();
 
@@ -93,8 +93,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
         .captures_iter(input)
         .for_each(|result| {
             let package = result.get(1).unwrap().as_str();
-            data.paquetes
-                .push(format!("\\usetikzlibrary{{{package}}}\n"));
+            data.paquetes.push(format!("\\usetikzlibrary{{{package}}}"));
         });
 
     Regex::new(r"\\pgfplotsset\{(.*)}")
@@ -102,8 +101,14 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
         .captures_iter(input)
         .for_each(|result| {
             let package = result.get(1).unwrap().as_str();
-            data.paquetes.push(format!("\\pgfplotsset{{{package}}}\n"));
+            data.paquetes.push(format!("\\pgfplotsset{{{package}}}"));
         });
+
+    data.sort_packages();
+
+    if data.id == 2200046 {
+        println!("{:#?}", data.paquetes);
+    }
 
     Ok(())
 }
@@ -112,14 +117,13 @@ pub fn find_info_from_template(input: &str) -> Result<(Data, Vec<Fields>), Parse
     let mut missing_data = vec![];
     let mut new_data = Data::default();
     for field in Fields::ALL {
-        let info = field
-            .find(input)
-            .map_err(|msg| ParseOneError::IMessedUp(msg))?;
-        if let Some(content) = info {
-            new_data.set(content)
-        } else {
-            missing_data.push(field);
-        }
+        let info = field.find(input).map_err(ParseOneError::IMessedUp)?;
+        info.map_or_else(
+            || {
+                missing_data.push(field);
+            },
+            |content| new_data.set(content),
+        );
     }
     Ok((new_data, missing_data))
 }
