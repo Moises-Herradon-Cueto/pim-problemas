@@ -8,7 +8,7 @@ pub fn problem(id: usize, input: &str) -> Result<&str, ParseOneError> {
     let output = problem_regex
         .captures_iter(input)
         .next()
-        .ok_or(ParseOneError::NotFound(id, Fields::Problem))?
+        .ok_or(ParseOneError::ProblemNotFound(id))?
         .get(1)
         .ok_or_else(|| {
             ParseOneError::IMessedUp(format!(
@@ -36,7 +36,7 @@ pub fn solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
         .iter()
         .flat_map(|regex| regex.captures_iter(input))
         .next()
-        .ok_or(ParseOneError::NotFound(id, Fields::Solution))?
+        .ok_or(ParseOneError::SolutionNotFound(id))?
         .get(1)
         .ok_or_else(|| {
             ParseOneError::IMessedUp(format!(
@@ -57,13 +57,13 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
             let package = result.get(2).unwrap().as_str();
             if [
                 "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath", "amsthm",
-                "verbatim",
+                "verbatim", "gensymb", "mathrsfs", "pgfplots", "textcomp", "tikz",
             ]
             .contains(&package)
             {
                 return;
             }
-            let use_statement = format!("\\usepackage[{option}]{{{package}}}\n");
+            let use_statement = format!("\\usepackage[{option}]{{{package}}}");
             data.paquetes.push(use_statement);
         });
 
@@ -76,11 +76,12 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
                 .filter(|package| {
                     ![
                         "inputenc", "babel", "pim", "graphicx", "amssymb", "latexsym", "amsmath",
-                        "amsthm", "verbatim",
+                        "amsthm", "verbatim", "gensymb", "mathrsfs", "pgfplots", "textcomp",
+                        "tikz",
                     ]
                     .contains(package)
                 })
-                .map(|package| format!("\\usepackage{{{package}}}\n"))
+                .map(|package| format!("\\usepackage{{{package}}}"))
         })
         .collect();
 
@@ -92,8 +93,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
         .captures_iter(input)
         .for_each(|result| {
             let package = result.get(1).unwrap().as_str();
-            data.paquetes
-                .push(format!("\\usetikzlibrary{{{package}}}\n"));
+            data.paquetes.push(format!("\\usetikzlibrary{{{package}}}"));
         });
 
     Regex::new(r"\\pgfplotsset\{(.*)}")
@@ -101,8 +101,31 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
         .captures_iter(input)
         .for_each(|result| {
             let package = result.get(1).unwrap().as_str();
-            data.paquetes.push(format!("\\pgfplotsset{{{package}}}\n"));
+            data.paquetes.push(format!("\\pgfplotsset{{{package}}}"));
         });
 
+    data.sort_packages();
+
     Ok(())
+}
+
+pub fn find_info_from_template(
+    id: usize,
+    input: &str,
+) -> Result<(Data, Vec<Fields>), ParseOneError> {
+    let mut missing_data = vec![];
+    let mut new_data = Data::new(id);
+    for field in Fields::ALL {
+        if !field.is_in_template() {
+            continue;
+        }
+        let info = field.find(input).map_err(ParseOneError::IMessedUp)?;
+        info.map_or_else(
+            || {
+                missing_data.push(field);
+            },
+            |content| new_data.set(content),
+        );
+    }
+    Ok((new_data, missing_data))
 }

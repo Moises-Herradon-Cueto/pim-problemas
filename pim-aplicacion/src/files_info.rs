@@ -1,7 +1,7 @@
 use std::{path::PathBuf, str::FromStr};
-
-use web_sys::HtmlInputElement;
 use yew::prelude::*;
+
+use crate::aux::get_value_from_ref;
 
 pub const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
     "/home/moises/OneDrive/ejercicios"
@@ -10,13 +10,13 @@ pub const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
 };
 
 pub const DEFAULT_DB: &str = if cfg!(debug_assertions) {
-    "/home/moises/pim-input/database.json"
+    "/home/moises/OneDrive/ejercicios/database.json"
 } else {
     "."
 };
 
 pub const DEFAULT_OUTPUT: &str = if cfg!(debug_assertions) {
-    "/home/moises/ejercicios-out"
+    "/home/moises/pim-input/ejercicios-out"
 } else {
     "."
 };
@@ -158,13 +158,6 @@ impl Component for Comp {
             </form>
         }
     }
-}
-
-fn get_value_from_ref(elt: &NodeRef) -> String {
-    elt.cast::<HtmlInputElement>().map_or_else(
-        || String::from("Had a big problem, since this is not an input element"),
-        |elt| elt.value(),
-    )
 }
 
 pub fn _default_problem_dir() -> PathBuf {

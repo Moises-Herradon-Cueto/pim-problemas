@@ -1,39 +1,30 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
-use std::fmt::Display;
-
-use serde::{Deserialize, Serialize};
-
 pub use data::get_json_string;
 pub use data::read_csv;
+pub use data::write_csv;
 pub use data::write_json;
 pub use data::Data;
+pub use fields::FieldContents;
+pub use fields::FieldContentsRef;
+pub use fields::Fields;
 pub use files::parse_all;
 pub use files::ParseOneError;
 
+pub mod commands;
 mod data;
+mod fields;
 mod files;
 mod html;
 mod merge;
 mod parsing;
-mod pdflatex;
+pub mod pdflatex;
 mod preamble;
 mod process_tex;
+pub mod table_friendly;
 
 mod search;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub enum Fields {
-    Problem,
-    Solution,
-}
-
-impl Display for Fields {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Problem => f.write_str("enunciado"),
-            Self::Solution => f.write_str("solución"),
-        }
-    }
-}
+pub type MsgList = Vec<(usize, files::ParseOneInfo)>;
+pub type Entry = Result<(usize, files::ParseOneInfo), ParseOneError>;

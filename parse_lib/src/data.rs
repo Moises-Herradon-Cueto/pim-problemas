@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::HashMap,
     fmt::Debug,
     fs,
@@ -10,8 +11,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    files::ParseOneError,
+    files::{ParseOneError, ParseOneInfo},
     html::{_POSTAMBLE, _PREAMBLE},
+    table_friendly::TableFriendly,
+    FieldContents, Fields,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -41,6 +44,7 @@ pub struct Data {
     pub enunciado: String,
     pub paquetes: Vec<String>,
 }
+
 impl Data {
     #[must_use]
     pub const fn new(id: usize) -> Self {
@@ -115,12 +119,112 @@ impl Data {
             paquetes: Vec::new(),
         })
     }
+
+    #[must_use]
+    pub fn has_more_data_than(&self, other: &Self) -> Option<(String, String)> {
+        for f in Fields::ALL {
+            let info_1 = f.get_string(self);
+            let info_2 = f.get_string(other);
+            if info_1 != info_2 {
+                if [String::from("255"), String::new()].contains(&info_2.clone().into_owned()) {
+                    continue;
+                }
+
+                return Some((info_1.into_owned(), info_2.into_owned()));
+            }
+        }
+        None
+    }
+
+    pub fn set(&mut self, content: FieldContents) {
+        content.set(self);
+    }
+
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if
+    /// both entries have non empty data in a field
+    pub fn merge_with(&mut self, tex_data: &Self) -> Vec<ParseOneInfo> {
+        let mut discrepancies = vec![];
+        for field in Fields::ALL {
+            let data_1 = field.get(self);
+            let data_2 = field.get(tex_data);
+            if data_1 != data_2 {
+                let data_1 = data_1.to_owned();
+                let data_2 = data_2.to_owned();
+                if data_1.is_empty() {
+                    self.set(data_2);
+                    discrepancies.push(ParseOneInfo::MissingInDb(field));
+                } else if data_2.is_empty() {
+                    discrepancies.push(ParseOneInfo::MissingInTex(field));
+                } else {
+                    discrepancies.push(ParseOneInfo::Incompatible {
+                        db: data_1,
+                        tex: data_2,
+                    });
+                }
+            }
+        }
+        discrepancies
+    }
+
+    pub fn sort_packages(&mut self) {
+        self.paquetes.sort_by(|x, y| {
+            let pgfplotset = (x.contains("pgfplotsset"), y.contains("pgfplotsset"));
+            match pgfplotset {
+                (true, true) => return x.cmp(y),
+                (true, false) => return Ordering::Greater,
+                (false, true) => return Ordering::Less,
+                (false, false) => {}
+            }
+            let tikzlibrary = (x.contains("usetikzlibrary"), y.contains("usetikzlibrary"));
+            match tikzlibrary {
+                (true, true) | (false, false) => x.cmp(y),
+                (true, false) => Ordering::Greater,
+                (false, true) => Ordering::Less,
+            }
+        });
+
+        self.paquetes.dedup();
+
+        if let Some(i) =
+            self.paquetes
+                .iter()
+                .enumerate()
+                .find_map(|(i, x)| if x.is_empty() { Some(i) } else { None })
+        {
+            self.paquetes.remove(i);
+        }
+    }
+
+    pub fn trim(&mut self) {
+        split_vec(&mut self.temas);
+        split_vec(&mut self.historial);
+        split_vec(&mut self.comentarios);
+        self.paquetes
+            .iter_mut()
+            .for_each(|t| *t = t.trim().to_owned());
+        self.fuente = self.fuente.trim().to_owned();
+        self.enunciado = self.enunciado.trim().to_owned();
+        self.curso = self.curso.as_mut().map(|c| c.trim().to_owned());
+    }
+}
+
+fn split_vec(vec: &mut Vec<String>) {
+    let new_vec = vec
+        .iter()
+        .flat_map(|x| x.split(',').map(str::trim).filter(|x| !x.is_empty()))
+        .map(std::borrow::ToOwned::to_owned)
+        .collect();
+    *vec = new_vec;
 }
 
 #[must_use]
-pub fn read_csv() -> (HashMap<usize, Data>, Vec<ParseOneError>) {
+pub fn read_csv(path: &Path) -> (HashMap<usize, Data>, Vec<ParseOneError>) {
     let mut output: HashMap<usize, _> = HashMap::new();
-    let mut reader = csv::Reader::from_path("Datos.csv").expect("Can't open file?");
+    let mut reader = csv::Reader::from_path(path).expect("Can't open file?");
     let mut errors = vec![];
     for result in reader.deserialize() {
         // The iterator yields Result<StringRecord, Error>, so we check the
@@ -175,10 +279,24 @@ pub fn write_json<P: AsRef<Path>, T: BuildHasher>(
 ///
 /// This function will return an error if
 /// the file can't be opened
-pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, Error> {
-    let string = fs::read_to_string(&json_path)?;
+pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, String> {
+    let string = fs::read_to_string(&json_path).map_err(|err| {
+        println!("{}", json_path.as_ref().display());
+        format!(
+            "Error attempting to read {}.\n{err}",
+            json_path.as_ref().display()
+        )
+    })?;
 
     Ok(string)
+}
+
+pub fn write_csv<P: AsRef<Path>>(data: &[TableFriendly], path: P) {
+    let mut writer = csv::Writer::from_path(path).expect("Couldn't create writer");
+    for record in data {
+        writer.serialize(record).expect("failed to serialize");
+    }
+    writer.flush().expect("Failed ot flush, ew");
 }
 
 pub fn _write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
@@ -242,6 +360,7 @@ fn _write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
         .expect("Couldn't write entry");
 }
 
+#[derive(Debug)]
 pub enum Error {
     IO(std::io::Error),
     Serde(serde_json::Error),

@@ -3,6 +3,8 @@
 #![allow(clippy::let_unit_value)]
 
 mod app;
+mod aux;
+mod column_select;
 mod files_info;
 mod home_button;
 mod main_menu;

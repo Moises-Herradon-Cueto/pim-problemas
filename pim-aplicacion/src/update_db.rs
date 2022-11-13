@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
-use parse_lib::{Data, ParseOneError};
+use parse_lib::{Data, Entry};
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 
@@ -11,13 +11,14 @@ use crate::{
 
 #[derive(Default)]
 pub struct UpdateDb {
-    output: Vec<ParseOneError>,
+    output: Vec<Entry>,
     error: String,
+    updated: bool,
 }
 
 pub enum Msg {
     ParseFiles,
-    UpdateOutput(Vec<ParseOneError>),
+    UpdateOutput(Vec<Entry>),
     UpdateErr(String),
 }
 
@@ -41,24 +42,25 @@ impl Component for UpdateDb {
             Msg::ParseFiles => {
                 log::info!("Parsing");
                 let paths = ctx.props().paths.clone();
-                let db = ctx.props().db.clone().unwrap_or_default();
 
                 ctx.link().send_future(async move {
-                    let parsed = Self::parse_files(paths, &db).await;
+                    let parsed = Self::sync_db(paths).await;
                     log::info!("Parsed: {parsed:#?}");
                     match parsed {
-                        Ok(errors) => Msg::UpdateOutput(errors),
-                        Err(err) => Msg::UpdateErr(err),
+                        Ok(Ok(errors)) => Msg::UpdateOutput(errors),
+                        Ok(Err(err)) | Err(err) => Msg::UpdateErr(err),
                     }
                 });
                 self.error = String::from("Cargando...");
                 true
             }
             Msg::UpdateErr(error) => {
+                self.updated = true;
                 self.error = error;
                 true
             }
             Msg::UpdateOutput(output) => {
+                self.updated = true;
                 self.output = output;
                 self.error = String::new();
                 true
@@ -68,12 +70,17 @@ impl Component for UpdateDb {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let onclick = ctx.link().callback(|_: MouseEvent| Msg::ParseFiles);
+        let list = if self.output.is_empty() && self.updated {
+            html! {<p>{"Base de datos actualizada sin errores"}</p>}
+        } else {
+            self.output.iter().map(show_error).collect::<Html>()
+        };
         html! {
             <div>
             <button onclick={onclick}>{"Actualizar"}</button>
             <p>{&self.error}</p>
             <ul>
-            {self.output.iter().map(show_error).collect::<Html>()}
+            {list}
             </ul>
 
             </div>
@@ -81,16 +88,12 @@ impl Component for UpdateDb {
     }
 }
 
-fn show_error(error: &ParseOneError) -> Html {
-    if matches!(error, ParseOneError::NotTex(_)) {
-        html! {}
-    } else {
-        html!(
-            <li>
-            {error.to_string()}
-            </li>
-        )
-    }
+fn show_error(error: &Entry) -> Html {
+    html!(
+        <li>
+        {format!("{error:?}")}
+        </li>
+    )
 }
 
 #[derive(Serialize, Deserialize)]
@@ -101,16 +104,10 @@ struct UpdateArgs {
     db_path: PathBuf,
     #[serde(rename = "outputPath")]
     output_path: PathBuf,
-    db: String,
 }
 impl UpdateDb {
     #[allow(clippy::future_not_send)]
-    async fn parse_files(
-        paths: Paths,
-        db: &HashMap<usize, Data>,
-    ) -> Result<Vec<ParseOneError>, String> {
-        let db = serde_json::to_string(&db)
-            .map_err(|err| format!("Failed to serialize arguments: {err}"))?;
+    async fn sync_db(paths: Paths) -> Result<Result<Vec<Entry>, String>, String> {
         let problems_path = paths
             .problems
             .unwrap_or_else(|| PathBuf::from(DEFAULT_PROBLEMS));
@@ -122,7 +119,6 @@ impl UpdateDb {
             problems_path,
             db_path,
             output_path,
-            db,
         })
         .expect("Couldn't make into js value🫣");
         let invoke_result = invoke("update_db", args).await;
