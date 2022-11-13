@@ -41,7 +41,7 @@ fn compare_csv_json() {
         };
         if other_data.has_more_data_than(data).is_some() {
             let result = data.merge_with(other_data);
-            if let Err(err) = result {
+            for err in result {
                 println!("In problem {id}\n{err}");
                 println!("Found more stuff.\nJson data:\n{data:#?}\nCsv data\n{other_data:#?}");
                 count_errors += 1;

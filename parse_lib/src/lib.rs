@@ -106,14 +106,14 @@ impl Fields {
         let attempt = match self {
             Problem => Regex::new(r"(?s)\\begin\{ejer\}\s*(.*?)\s*\\end\{ejer\}"),
             Solution => Regex::new(r"$."),
-            Topics => Regex::new(r"\temas\{\s*(.*?)\s*\}"),
-            Difficulty => Regex::new(r"\dificultad\{\s*(.*?)\s*\}"),
-            Source => Regex::new(r"\fuente\{\s*(.*?)\s*\}"),
-            History => Regex::new(r"\historial\{\s*(.*?)\s*\}"),
-            Comments => Regex::new(r"\comentarios\{\s*(.*?)\s*\}"),
-            Year => Regex::new(r"\curso\{\s*(.*?)\s*\}"),
+            Topics => Regex::new(r"\\temas\{\s*(.*?)\s*\}"),
+            Difficulty => Regex::new(r"\\dificultad\{\s*(.*?)\s*\}"),
+            Source => Regex::new(r"\\fuente\{\s*(.*?)\s*\}"),
+            History => Regex::new(r"\\historial\{\s*(.*?)\s*\}"),
+            Comments => Regex::new(r"\\comentarios\{\s*(.*?)\s*\}"),
+            Year => Regex::new(r"\\curso\{\s*(.*?)\s*\}"),
             Packages => Regex::new(r"(?s)%%% Paquetes extra\s*(.*?)\s*%%% Fin de paquetes extra"),
-            Fields::Id => Regex::new(r"\id\{\s*(.*?)\s*\}"),
+            Id => Regex::new(r"\\id\{\s*(.*?)\s*\}"),
         };
         attempt.expect("I messed up making the regex")
     }

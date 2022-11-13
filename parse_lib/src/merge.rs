@@ -1,5 +1,6 @@
 use crate::files::ParseOneInfo;
 use crate::parsing::{self, find_info_from_template};
+use crate::Fields;
 use crate::{data::Data, files::ParseOneError};
 
 use crate::preamble::into_template;
@@ -8,13 +9,15 @@ use ParseResult::{Template, ToChange};
 
 pub enum ParseResult {
     Template(Vec<(usize, ParseOneInfo)>),
-    ToChange(String),
+    ToChange(String, Vec<(usize, ParseOneInfo)>),
 }
 
 pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, ParseOneError> {
     let problem = parsing::problem(data.id, input)?;
 
     data.enunciado = problem.to_owned();
+
+    let mut errors = vec![];
 
     if let Some((data_in_tex, mut errors)) = is_template(input, data)? {
         let more_errors = data
@@ -35,6 +38,7 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
 
     if temas.is_empty() {
         temas = "%".into();
+        errors.push((data.id, ParseOneInfo::MissingInDb(Fields::Topics)));
     }
 
     let id = data.id;
@@ -51,22 +55,32 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
         comentarios = "%".into();
     }
 
+    let mut historial = data.historial.join(", ");
+
+    if historial.is_empty() {
+        historial = "%".into();
+    }
     let dificultad = if data.dificultad == u8::MAX {
+        errors.push((data.id, ParseOneInfo::MissingInDb(Fields::Difficulty)));
         "%".into()
     } else {
         data.dificultad.to_string()
     };
 
-    Ok(ToChange(into_template(
-        &data.paquetes.join("\n"),
-        &temas,
-        &dificultad,
-        &fuente,
-        &&comentarios,
-        &&id,
-        &problem,
-        &solution,
-    )))
+    Ok(ToChange(
+        into_template(
+            &data.paquetes.join("\n"),
+            &temas,
+            &dificultad,
+            &historial,
+            &fuente,
+            &&comentarios,
+            &&id,
+            &problem,
+            &solution,
+        ),
+        errors,
+    ))
 }
 
 fn is_template(

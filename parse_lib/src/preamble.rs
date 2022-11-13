@@ -1,10 +1,11 @@
 use std::fmt::Display;
 
 #[allow(clippy::too_many_arguments)]
-pub fn into_template<T1, T2, T5, T6, T7, T8, T9, T10>(
+pub fn into_template<T1, T2, T3, T5, T6, T7, T8, T9, T10>(
     paquetes: &T1,
     temas: &T5,
     dificultad: &T2,
+    historial: &T3,
     fuente: &T6,
     comentarios: &T7,
     id: &T8,
@@ -14,6 +15,7 @@ pub fn into_template<T1, T2, T5, T6, T7, T8, T9, T10>(
 where
     T1: Display,
     T2: Display,
+    T3: Display,
     T5: Display,
     T6: Display,
     T7: Display,
@@ -89,6 +91,10 @@ where
 
 \\id{{
 {id}
+}}
+
+\\id{{
+{historial}
 }}
 
 \\begin{{document}}

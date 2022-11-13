@@ -153,7 +153,7 @@ impl Data {
     }
 
     pub fn set(&mut self, content: FieldContents) {
-        content.set(&mut self);
+        content.set(self);
     }
 
     /// .

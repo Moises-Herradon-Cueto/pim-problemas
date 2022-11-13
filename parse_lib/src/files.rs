@@ -216,11 +216,12 @@ fn merge_file_data<T: BuildHasher, P: std::fmt::Debug + Clone + AsRef<Path>>(
     });
     let parse_result = merge::string_and_data(tex_string, problem_info)?;
     match parse_result {
-        ParseResult::ToChange(out_string) => {
+        ParseResult::ToChange(out_string, errors) => {
             return_errs.push((
                 id,
                 ParseOneInfo::NotInTemplate(out_path.as_ref().to_string_lossy().into_owned()),
             ));
+            return_errs.extend(errors.into_iter());
             fs::write(out_path.clone(), out_string).map_err(|err| ParseOneError::IO {
                 io_err: err.to_string(),
                 action: format!("Error al escribir el archivo: {out_path:?}"),
@@ -229,7 +230,9 @@ fn merge_file_data<T: BuildHasher, P: std::fmt::Debug + Clone + AsRef<Path>>(
                 data.insert(id, placeholder);
             }
         }
-        ParseResult::Template => {}
+        ParseResult::Template(errors) => {
+            return_errs.extend(errors.into_iter());
+        }
     }
     Ok(return_errs)
 }
