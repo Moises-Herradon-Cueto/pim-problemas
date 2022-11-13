@@ -12,6 +12,7 @@ pub use fields::Fields;
 pub use files::parse_all;
 pub use files::ParseOneError;
 
+pub mod commands;
 mod data;
 mod fields;
 mod files;
@@ -25,4 +26,5 @@ pub mod table_friendly;
 
 mod search;
 
-type MsgList = Vec<(usize, files::ParseOneInfo)>;
+pub type MsgList = Vec<(usize, files::ParseOneInfo)>;
+pub type Entry = Result<(usize, files::ParseOneInfo), ParseOneError>;

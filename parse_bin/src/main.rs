@@ -5,9 +5,10 @@ use std::{
 };
 
 use arguments::Action;
+use clap::Parser;
 use parse_lib::{
-    get_json_string, parse_all, pdflatex, read_csv, table_friendly::TableFriendly, write_csv,
-    write_json, Data, ParseOneError,
+    commands::sync_db, get_json_string, pdflatex, read_csv, table_friendly::TableFriendly,
+    write_csv, Data,
 };
 
 use crate::arguments::MyArgs;
@@ -15,43 +16,39 @@ use crate::arguments::MyArgs;
 mod arguments;
 
 fn main() {
-    let cli = MyArgs::get();
+    let cli = MyArgs::parse();
     match cli.command {
-        Action::WriteCsv => read_json_write_csv(&cli),
-        Action::SyncDb => sync_db(&cli),
-        Action::CompareCsvJson { merged_path } => compare_csv_json(&cli.database_dir, &merged_path),
-        Action::Latex => {
-            let result = pdflatex::run(&cli.output_dir);
+        Action::WriteCsv {
+            database_dir,
+            csv_dir,
+        } => read_json_write_csv(&database_dir, &csv_dir),
+        Action::SyncDb {
+            output_dir,
+            problems_dir,
+            database_dir,
+        } => {
+            let database_dir = database_dir.unwrap_or_else(|| problems_dir.join("database.json"));
+            let result = sync_db(&database_dir, &problems_dir, &output_dir);
+            println!("{result:#?}");
+        }
+        Action::CompareCsvJson {
+            merged_path,
+            database_dir,
+        } => compare_csv_json(&database_dir, &merged_path),
+        Action::Latex { output_dir } => {
+            let result = pdflatex::run(output_dir);
             println!("{result:?}");
         }
     }
 }
 
-fn sync_db(args: &MyArgs) {
-    let data = get_json_string(&args.database_dir).expect("Failed to get json data");
-    let mut data: HashMap<usize, Data> =
-        serde_json::from_str(&data).expect("Failed to deserialize");
-    for value in data.values_mut() {
-        value.trim();
-    }
-    let result =
-        parse_all(&args.problems_dir, &args.output_dir, &mut data).expect("Failed to parse");
-    for item in result {
-        if matches!(item, Err(ParseOneError::NotTex(_))) {
-        } else {
-            println!("{item:#?}");
-        }
-    }
-    write_json(&args.database_dir, &data).expect("Failed to write json");
-}
-
-fn read_json_write_csv(args: &MyArgs) {
-    let data_json = get_json_string(&args.database_dir).expect("Failed to open json");
+fn read_json_write_csv(database_dir: &Path, csv_dir: &Path) {
+    let data_json = get_json_string(database_dir).expect("Failed to open json");
     let data_json: HashMap<usize, Data> =
         serde_json::from_str(&data_json).expect("Failed to deserialize");
     let csv_friendly: Vec<TableFriendly> =
         data_json.into_values().map(|data| data.into()).collect();
-    write_csv(&csv_friendly, "datos-modified.csv");
+    write_csv(&csv_friendly, csv_dir);
 }
 
 fn compare_csv_json(database_dir: &Path, merged_path: &Path) {
