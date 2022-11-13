@@ -4,34 +4,39 @@ use std::{
     path::Path,
 };
 
+use arguments::Action;
 use parse_lib::{
     get_json_string, parse_all, read_csv, table_friendly::TableFriendly, write_csv, write_json,
     Data, ParseOneError,
 };
 
+use crate::arguments::MyArgs;
+
+mod arguments;
+
 fn main() {
-    let data =
-        get_json_string("/home/moises/pim-input/database.json").expect("Failed to get json data");
+    let cli = MyArgs::get();
+    match cli.command {
+        Action::SyncDb => sync_db(&cli),
+    }
+}
+
+fn sync_db(args: &MyArgs) {
+    let data = get_json_string(&args.database_dir).expect("Failed to get json data");
     let mut data: HashMap<usize, Data> =
         serde_json::from_str(&data).expect("Failed to deserialize");
     for value in data.values_mut() {
         value.trim();
     }
-    let result = parse_all(
-        Path::new("/home/moises/OneDrive/ejercicios"),
-        Path::new("/home/moises/pim-input/ejercicios-out"),
-        &mut data,
-    )
-    .expect("Failed to parse");
+    let result =
+        parse_all(&args.problems_dir, &args.output_dir, &mut data).expect("Failed to parse");
     for item in result {
         if matches!(item, Err(ParseOneError::NotTex(_))) {
         } else {
             println!("{item:#?}");
         }
     }
-    write_json("/home/moises/pim-input/database.json", &data).expect("Failed to write json");
-    // make_problem_list();
-    // pdflatex::run();
+    write_json(&args.database_dir, &data).expect("Failed to write json");
 }
 
 fn read_json_write_csv() {

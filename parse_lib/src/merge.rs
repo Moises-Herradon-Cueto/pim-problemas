@@ -8,7 +8,7 @@ use crate::preamble::into_template;
 use ParseResult::{Template, ToChange};
 
 pub enum ParseResult {
-    Template(MsgList),
+    Template,
     ToChange(String, MsgList),
 }
 
@@ -19,13 +19,14 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
 
     let mut errors = vec![];
 
-    if let Some((data_in_tex, mut errors)) = is_template(input)? {
+    if let Some((data_in_tex, _)) = is_template(data.id, input)? {
         let more_errors = data.merge_with(&data_in_tex);
-        if data.id == 2200069 {
-            println!("{more_errors:#?}");
-        }
+        // if data.id == 2200035 {
+        //     println!("{errors:#?}");
+        //     println!("{more_errors:#?}");
+        // }
         if more_errors.is_empty() {
-            return Ok(Template(errors));
+            return Ok(Template);
         }
         let more_errors = more_errors.into_iter().map(|x| (data.id, x));
         errors.extend(more_errors);
@@ -93,9 +94,9 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
     ))
 }
 
-fn is_template(input: &str) -> Result<Option<(Data, MsgList)>, ParseOneError> {
+fn is_template(id: usize, input: &str) -> Result<Option<(Data, MsgList)>, ParseOneError> {
     if input.contains("%%% PLANTILLA PARA SUBIR EJERCICIOS A LA BASE DE DATOS DEL PIM") {
-        let (data_in_template, missing_fields) = find_info_from_template(input)?;
+        let (data_in_template, missing_fields) = find_info_from_template(id, input)?;
         let missing_fields = missing_fields
             .into_iter()
             .map(|f| (data_in_template.id, ParseOneInfo::MissingInTex(f)))

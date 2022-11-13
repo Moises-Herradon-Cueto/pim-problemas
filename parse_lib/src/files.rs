@@ -65,10 +65,10 @@ pub enum ParseOneError {
     NotFile(String),
     NotTex(String),
     Encoding(PathBuf),
-    NotInDb,
+    NotInDb(usize),
     IMessedUp(String),
-    ProblemNotFound,
-    SolutionNotFound,
+    ProblemNotFound(usize),
+    SolutionNotFound(usize),
 }
 
 impl std::error::Error for ParseOneError {}
@@ -85,9 +85,9 @@ impl Display for ParseOneError {
             Self::NotTex(err) => write!(f, "{err} no es un documento .tex"),
             Self::Encoding(err) => write!(f, "En el archivo {} no se pudo encontrar la codificación.
             \nIntenta guardarlo como utf-8, escribiendo % !TeX encoding = UTF-8 en la primera línea", err.to_string_lossy()),
-            Self::NotInDb => write!(f, "El problema no estaba en la base de datos"),
-            Self::ProblemNotFound => write!(f, "No se encontró el enunciado entre \\begin{{ejer}} y \\end{{ejer}}"),
-            Self::SolutionNotFound => write!(f, "No se encontró la solución"),
+            Self::NotInDb(id) => write!(f, "El problema {id} no estaba en la base de datos"),
+            Self::ProblemNotFound(id) => write!(f, "No se encontró el enunciado de {id} entre \\begin{{ejer}} y \\end{{ejer}}"),
+            Self::SolutionNotFound(id) => write!(f, "No se encontró la solución de {id}"),
             Self::IMessedUp(msg) => f.write_str(msg)
         }
     }
@@ -171,6 +171,8 @@ fn parse_one<T: BuildHasher>(
     merge_file_data(id, data, &in_string, out_path)
 }
 
+pub type OneEntry = Result<(usize, ParseOneInfo), ParseOneError>;
+
 /// .
 ///
 /// # Errors
@@ -188,13 +190,17 @@ pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     problems_dir: P,
     output_dir: &Path,
     data: &mut HashMap<usize, Data, T>,
-) -> Result<Vec<Result<MsgList, ParseOneError>>, io::Error> {
+) -> Result<Vec<OneEntry>, io::Error> {
     let entries = fs::read_dir(problems_dir)?;
 
     let mut output = vec![];
 
     for file in entries {
-        output.push(parse_one(file, output_dir, data));
+        let result = parse_one(file, output_dir, data);
+        match result {
+            Ok(infos) => output.extend(infos.into_iter().map(Ok)),
+            Err(error) => output.push(Err(error)),
+        }
     }
 
     Ok(output)
@@ -226,13 +232,11 @@ fn merge_file_data<T: BuildHasher, P: std::fmt::Debug + Clone + AsRef<Path>>(
                 io_err: err.to_string(),
                 action: format!("Error al escribir el archivo: {out_path:?}"),
             })?;
-            if to_insert {
-                data.insert(id, placeholder);
-            }
         }
-        ParseResult::Template(errors) => {
-            return_errs.extend(errors.into_iter());
-        }
+        ParseResult::Template => {}
+    }
+    if to_insert {
+        data.insert(id, placeholder);
     }
     Ok(return_errs)
 }

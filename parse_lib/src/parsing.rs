@@ -8,7 +8,7 @@ pub fn problem(id: usize, input: &str) -> Result<&str, ParseOneError> {
     let output = problem_regex
         .captures_iter(input)
         .next()
-        .ok_or(ParseOneError::ProblemNotFound)?
+        .ok_or(ParseOneError::ProblemNotFound(id))?
         .get(1)
         .ok_or_else(|| {
             ParseOneError::IMessedUp(format!(
@@ -36,7 +36,7 @@ pub fn solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
         .iter()
         .flat_map(|regex| regex.captures_iter(input))
         .next()
-        .ok_or(ParseOneError::SolutionNotFound)?
+        .ok_or(ParseOneError::SolutionNotFound(id))?
         .get(1)
         .ok_or_else(|| {
             ParseOneError::IMessedUp(format!(
@@ -106,17 +106,19 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
 
     data.sort_packages();
 
-    if data.id == 2200046 {
-        println!("{:#?}", data.paquetes);
-    }
-
     Ok(())
 }
 
-pub fn find_info_from_template(input: &str) -> Result<(Data, Vec<Fields>), ParseOneError> {
+pub fn find_info_from_template(
+    id: usize,
+    input: &str,
+) -> Result<(Data, Vec<Fields>), ParseOneError> {
     let mut missing_data = vec![];
-    let mut new_data = Data::default();
+    let mut new_data = Data::new(id);
     for field in Fields::ALL {
+        if !field.is_in_template() {
+            continue;
+        }
         let info = field.find(input).map_err(ParseOneError::IMessedUp)?;
         info.map_or_else(
             || {

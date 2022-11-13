@@ -45,22 +45,6 @@ pub struct Data {
     pub paquetes: Vec<String>,
 }
 
-impl Default for Data {
-    fn default() -> Self {
-        Self {
-            id: usize::MAX,
-            temas: Vec::new(),
-            dificultad: u8::MAX,
-            fuente: String::new(),
-            historial: Vec::new(),
-            comentarios: Vec::new(),
-            curso: None,
-            enunciado: String::new(),
-            paquetes: Vec::new(),
-        }
-    }
-}
-
 impl Data {
     #[must_use]
     pub const fn new(id: usize) -> Self {
