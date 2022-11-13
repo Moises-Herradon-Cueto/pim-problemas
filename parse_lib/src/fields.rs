@@ -11,14 +11,14 @@ use Fields::{
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Fields {
     Id,
-    Problem,
-    Solution,
     Topics,
     Difficulty,
+    Problem,
     Source,
     History,
     Comments,
     Year,
+    Solution,
     Packages,
 }
 
@@ -40,12 +40,13 @@ impl Display for Fields {
 }
 
 impl Fields {
-    pub(crate) const ALL: [Self; 9] = [
-        Problem, Solution, Topics, Difficulty, Source, History, Comments, Year, Packages,
+    pub const N: usize = 10;
+    pub const ALL: [Self; Self::N] = [
+        Id, Problem, Solution, Topics, Difficulty, Source, History, Comments, Year, Packages,
     ];
 
     #[must_use]
-    pub(crate) fn get_string(self, data: &Data) -> Cow<str> {
+    pub fn get_string(self, data: &Data) -> Cow<str> {
         match self {
             Id => Cow::Owned(data.id.to_string()),
             Problem => Cow::Borrowed(&data.enunciado),
@@ -77,7 +78,7 @@ impl Fields {
     }
 
     #[must_use]
-    pub(crate) const fn is_in_template(self) -> bool {
+    pub const fn is_in_template(self) -> bool {
         !matches!(self, Self::Solution)
     }
 

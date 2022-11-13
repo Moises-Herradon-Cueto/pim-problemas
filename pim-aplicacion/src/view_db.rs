@@ -1,10 +1,12 @@
 use std::{collections::HashMap, rc::Rc};
 
-use parse_lib::Data;
+use parse_lib::{Data, Fields};
 use yew::prelude::*;
 
 pub struct ViewDb {
     view: Vec<Data>,
+    shown_fields: [bool; Fields::N],
+    char_length: usize,
 }
 
 pub enum Msg {}
@@ -26,47 +28,68 @@ impl Component for ViewDb {
             .map(|(_, problem_info)| problem_info.clone())
             .collect();
         view.sort_by(|a, b| a.id.cmp(&b.id));
-        Self { view }
+        let mut shown_fields = [true; Fields::N];
+        for (i, f) in Fields::ALL.into_iter().enumerate() {
+            shown_fields[i] = f.is_in_template();
+        }
+        Self {
+            view,
+            shown_fields,
+            char_length: 100,
+        }
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
-        let filas: Html = self.view.iter().map(into_row).collect();
+        let filas: Html = self
+            .view
+            .iter()
+            .map(|data| into_row(data, self.char_length, &self.shown_fields))
+            .collect();
         html! {
-            <table>
-                <tr>
-                    <th>{"Id"}</th>
-                    <th>{"Temas"}</th>
-                    <th>{"Dificultad"}</th>
-                    <th>{"Fuente"}</th>
-                    <th>{"Historial"}</th>
-                    <th>{"Comentarios"}</th>
-                    <th>{"Curso"}</th>
-                    <th>{"Enunciado"}</th>
-                    <th>{"Paquetes usados"}</th>
-                </tr>
+            <div id="db-table-container">
+            <table id="db-table">
+                    {header(&self.shown_fields)}
                 {filas}
             </table>
+            </div>
         }
     }
 }
 
-fn into_row(data: &Data) -> Html {
+fn header(shown_fields: &[bool; Fields::N]) -> Html {
+    let output = shown_fields
+        .iter()
+        .zip(Fields::ALL.into_iter())
+        .filter_map(|(show, field)| {
+            if *show {
+                Some(html! {<th>{field.to_string()}</th>})
+            } else {
+                None
+            }
+        })
+        .collect::<Html>();
     html! {
-        <tr>
-        {into_td(&data.id)}
-        {into_td(&data.temas.join(", "))}
-        {into_td(&data.dificultad)}
-        {into_td(&data.fuente)}
-        {into_td(&data.historial.join("\n"))}
-        {into_td(&data.comentarios.join(","))}
-        {into_td(&data.curso.as_ref().unwrap_or(&String::new()))}
-        {into_td(&data.enunciado.chars().take(100).collect::<String>())}
-        {into_td(&data.paquetes.join("\n"))}
-        </tr>
+        <thead>{output}</thead>
     }
 }
-fn into_td<T: ToString>(x: &T) -> Html {
+
+fn into_row(data: &Data, max_length: usize, shown: &[bool; Fields::N]) -> Html {
+    let entries = shown
+        .iter()
+        .zip(Fields::ALL.into_iter())
+        .filter_map(|(shown, f)| {
+            if !shown {
+                return None;
+            }
+            let msg = f.get_string(data);
+            let string = msg.chars().take(max_length).collect::<String>();
+            Some(html! {<td>{string}</td>})
+        })
+        .collect::<Html>();
+
     html! {
-        <td>{x.to_string()}</td>
+        <tr>
+        {entries}
+        </tr>
     }
 }
