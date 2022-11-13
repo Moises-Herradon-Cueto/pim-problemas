@@ -3,11 +3,9 @@
     windows_subsystem = "windows"
 )]
 
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
-use parse_lib::{
-    parse_all, {get_json_string, write_json, Data},
-};
+use parse_lib::{commands::sync_db, get_json_string};
 
 fn main() {
     tauri::Builder::default()
@@ -32,23 +30,15 @@ fn update_db(
     problems_path: PathBuf,
     db_path: PathBuf,
     output_path: PathBuf,
-    db: String,
 ) -> Result<Result<String, String>, ()> {
-    Ok(update_db_inner(problems_path, db_path, output_path, db))
+    Ok(update_db_inner(problems_path, db_path, output_path))
 }
 
 fn update_db_inner(
     problems_path: PathBuf,
     db_path: PathBuf,
     output_path: PathBuf,
-    db_json: String,
 ) -> Result<String, String> {
-    // println!("Call update_db_inner");
-    let mut db: HashMap<usize, Data> =
-        serde_json::from_str(&db_json).map_err(|err| format!("Error parsing db json: {err}"))?;
-    let errors = parse_all(&problems_path, &output_path, &mut db)
-        .map_err(|err| format!("Error opening directory: {err}"))?;
-    write_json(db_path, &db)
-        .map_err(|err| format!("Found an error when writing to database: {err}"))?;
-    serde_json::to_string(&errors).map_err(|err| format!("Error converting to Json: {err}"))
+    let result = sync_db(&db_path, &problems_path, &output_path);
+    serde_json::to_string(&result).map_err(|err| format!("Error converting to Json: {err}"))
 }

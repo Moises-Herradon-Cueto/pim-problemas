@@ -279,8 +279,14 @@ pub fn write_json<P: AsRef<Path>, T: BuildHasher>(
 ///
 /// This function will return an error if
 /// the file can't be opened
-pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, Error> {
-    let string = fs::read_to_string(&json_path)?;
+pub fn get_json_string<P: AsRef<Path>>(json_path: P) -> Result<String, String> {
+    let string = fs::read_to_string(&json_path).map_err(|err| {
+        println!("{}", json_path.as_ref().display());
+        format!(
+            "Error attempting to read {}.\n{err}",
+            json_path.as_ref().display()
+        )
+    })?;
 
     Ok(string)
 }

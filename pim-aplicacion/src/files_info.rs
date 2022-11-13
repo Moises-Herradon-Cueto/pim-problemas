@@ -10,7 +10,7 @@ pub const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
 };
 
 pub const DEFAULT_DB: &str = if cfg!(debug_assertions) {
-    "/home/moises/pim-input/database.json"
+    "/home/moises/OneDrive/ejercicios/database.json"
 } else {
     "."
 };

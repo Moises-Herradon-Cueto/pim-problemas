@@ -11,10 +11,7 @@ pub fn sync_db(
     problems_dir: &Path,
     output_dir: &Path,
 ) -> Result<Vec<Entry>, String> {
-    let data = get_json_string(database_dir).map_err(|err| match err {
-        crate::data::Error::IO(x) => format!("IO Error: {x}"),
-        crate::data::Error::Serde(x) => format!("Error deserializing: {x}"),
-    })?;
+    let data = get_json_string(database_dir)?;
     let mut data: HashMap<usize, Data> =
         serde_json::from_str(&data).map_err(|err| format!("Error deserializing: {err}"))?;
     for value in data.values_mut() {
