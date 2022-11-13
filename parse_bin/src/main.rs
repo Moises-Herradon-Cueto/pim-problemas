@@ -6,8 +6,8 @@ use std::{
 
 use arguments::Action;
 use parse_lib::{
-    get_json_string, parse_all, read_csv, table_friendly::TableFriendly, write_csv, write_json,
-    Data, ParseOneError,
+    get_json_string, parse_all, pdflatex, read_csv, table_friendly::TableFriendly, write_csv,
+    write_json, Data, ParseOneError,
 };
 
 use crate::arguments::MyArgs;
@@ -17,7 +17,13 @@ mod arguments;
 fn main() {
     let cli = MyArgs::get();
     match cli.command {
+        Action::WriteCsv => read_json_write_csv(&cli),
         Action::SyncDb => sync_db(&cli),
+        Action::CompareCsvJson { merged_path } => compare_csv_json(&cli.database_dir, &merged_path),
+        Action::Latex => {
+            let result = pdflatex::run(&cli.output_dir);
+            println!("{result:?}");
+        }
     }
 }
 
@@ -39,9 +45,8 @@ fn sync_db(args: &MyArgs) {
     write_json(&args.database_dir, &data).expect("Failed to write json");
 }
 
-fn read_json_write_csv() {
-    let data_json =
-        get_json_string("/home/moises/pim-input/database.json").expect("Failed to open json");
+fn read_json_write_csv(args: &MyArgs) {
+    let data_json = get_json_string(&args.database_dir).expect("Failed to open json");
     let data_json: HashMap<usize, Data> =
         serde_json::from_str(&data_json).expect("Failed to deserialize");
     let csv_friendly: Vec<TableFriendly> =
@@ -49,8 +54,8 @@ fn read_json_write_csv() {
     write_csv(&csv_friendly, "datos-modified.csv");
 }
 
-fn compare_csv_json() {
-    let data_csv = read_csv(Path::new("Datos.csv")).0;
+fn compare_csv_json(database_dir: &Path, merged_path: &Path) {
+    let data_csv = read_csv(database_dir).0;
     let data_json =
         get_json_string("/home/moises/pim-input/database.json").expect("Failed to open json");
     let mut data_json: HashMap<usize, Data> =
@@ -80,7 +85,7 @@ fn compare_csv_json() {
     }
     let data_json = serde_json::to_string(&data_json).expect("Failed to serialize");
 
-    fs::write("/home/moises/pim-input/database-merged.json", data_json).expect("Failed to write");
+    fs::write(merged_path, data_json).expect("Failed to write");
 
     println!(
         "Errors: {count_errors}\nCount: {count}\ncsv: {}\njson: {}",

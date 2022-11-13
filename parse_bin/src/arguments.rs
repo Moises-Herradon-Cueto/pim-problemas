@@ -42,4 +42,7 @@ impl MyArgs {
 #[derive(Clone, Debug, Subcommand)]
 pub enum Action {
     SyncDb,
+    CompareCsvJson { merged_path: PathBuf },
+    WriteCsv,
+    Latex,
 }
