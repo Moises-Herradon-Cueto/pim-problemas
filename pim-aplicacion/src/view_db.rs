@@ -1,5 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
+use crate::column_select::Comp as ColumnSelect;
 use parse_lib::{Data, Fields};
 use yew::prelude::*;
 
@@ -9,7 +10,9 @@ pub struct ViewDb {
     char_length: usize,
 }
 
-pub enum Msg {}
+pub enum Msg {
+    View(bool, Fields),
+}
 
 #[derive(Properties, PartialEq, Eq, Clone)]
 pub struct Props {
@@ -39,14 +42,28 @@ impl Component for ViewDb {
         }
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            Msg::View(show, field) => {
+                self.shown_fields[field as usize] = show;
+                true
+            }
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let filas: Html = self
             .view
             .iter()
             .map(|data| into_row(data, self.char_length, &self.shown_fields))
             .collect();
+
+        let show_cb: Callback<(bool, Fields)> =
+            ctx.link().callback(|(show, field)| Msg::View(show, field));
+
         html! {
             <div id="db-table-container">
+            <ColumnSelect show={self.shown_fields} {show_cb}></ColumnSelect>
             <table id="db-table">
                     {header(&self.shown_fields)}
                 {filas}

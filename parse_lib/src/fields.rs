@@ -9,16 +9,17 @@ use Fields::{
     Comments, Difficulty, History, Id, Packages, Problem, Solution, Source, Topics, Year,
 };
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
 pub enum Fields {
     Id,
+    Problem,
+    Solution,
     Topics,
     Difficulty,
-    Problem,
     Source,
     History,
     Comments,
     Year,
-    Solution,
     Packages,
 }
 
@@ -291,5 +292,17 @@ impl Display for FieldContents {
             Solution => Cow::Owned(String::new()),
         };
         write!(f, "{}: {string}", Fields::from(self))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Fields;
+
+    #[test]
+    fn fields_list() {
+        for field in Fields::ALL {
+            assert_eq!(field, Fields::ALL[field as usize]);
+        }
     }
 }
