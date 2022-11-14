@@ -5,6 +5,7 @@
 mod add_filters;
 mod app;
 mod column_select;
+mod field_selector;
 mod files_info;
 mod helper;
 mod home_button;

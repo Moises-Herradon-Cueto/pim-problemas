@@ -1,8 +1,9 @@
 use std::fmt::Display;
 
-use material_yew::select::{ListIndex, MatSelect, SelectedDetail};
+use crate::field_selector::Comp as FieldSelect;
+
 use material_yew::text_inputs::{MatTextField, TextFieldType};
-use material_yew::MatListItem;
+
 use parse_lib::{Data, FieldContents, Fields};
 use yew::{prelude::*, virtual_dom::AttrValue};
 
@@ -147,37 +148,11 @@ impl Component for Comp {
         });
         let oninput = ctx.link().callback(Msg::SearchField);
 
-        let onselected = ctx.link().batch_callback(|x: SelectedDetail| {
-            let selection = x.index;
-            if let ListIndex::Single(Some(i)) = selection {
-                log::info!("Elegido el {i}");
-                Fields::try_from(i).map_or_else(
-                    |_| {
-                        log::info!("Field {i} out of range");
-                        vec![]
-                    },
-                    |field| vec![Msg::FieldType(field)],
-                )
-            } else {
-                log::info!("{selection:?}");
-                vec![]
-            }
-        });
+        let select_cb = ctx.link().callback(Msg::FieldType);
 
-        let fields_list: Html = Fields::ALL
-            .into_iter()
-            .filter(|x| x.is_in_template())
-            .map(|field| {
-                html! {
-                    <MatListItem>{field}</MatListItem>
-                }
-            })
-            .collect();
         html! {
             <form id="filter_add">
-            <MatSelect {onselected}>
-                {fields_list}
-            </MatSelect>
+            <FieldSelect  {select_cb}/>
             <MatTextField
                 field_type={TextFieldType::Search}
                 placeholder={Some(AttrValue::Owned(String::from("geometría")))}
