@@ -13,7 +13,6 @@ use Fields::{
 pub enum Fields {
     Id,
     Problem,
-    Solution,
     Topics,
     Difficulty,
     Source,
@@ -21,6 +20,17 @@ pub enum Fields {
     Comments,
     Year,
     Packages,
+    Solution,
+}
+
+pub struct OutOfRange;
+
+impl TryFrom<usize> for Fields {
+    type Error = OutOfRange;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        Self::ALL.get(value).copied().ok_or(OutOfRange)
+    }
 }
 
 impl Display for Fields {
@@ -43,7 +53,7 @@ impl Display for Fields {
 impl Fields {
     pub const N: usize = 10;
     pub const ALL: [Self; Self::N] = [
-        Id, Problem, Solution, Topics, Difficulty, Source, History, Comments, Year, Packages,
+        Id, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages, Solution,
     ];
 
     #[must_use]
@@ -63,7 +73,7 @@ impl Fields {
     }
 
     #[must_use]
-    pub(crate) fn get(self, data: &Data) -> FieldContentsRef {
+    pub fn get(self, data: &Data) -> FieldContentsRef {
         match self {
             Id => FieldContentsRef::Id(data.id),
             Problem => FieldContentsRef::Problem(&data.enunciado),
@@ -209,6 +219,28 @@ pub enum FieldContentsRef<'a> {
     Comments(&'a [String]),
     Year(&'a Option<String>),
     Packages(&'a [String]),
+}
+
+impl<'a> PartialOrd for FieldContentsRef<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl<'a> Ord for FieldContentsRef<'a> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (FieldContentsRef::Id(id_1), FieldContentsRef::Id(id_2)) => id_1.cmp(id_2),
+            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2))
+            | (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2)) => x_1.cmp(x_2),
+            (FieldContentsRef::Topics(x_1), FieldContentsRef::Topics(x_2))
+            | (FieldContentsRef::History(x_1), FieldContentsRef::History(x_2))
+            | (FieldContentsRef::Comments(x_1), FieldContentsRef::Comments(x_2))
+            | (FieldContentsRef::Packages(x_1), FieldContentsRef::Packages(x_2)) => x_1.cmp(x_2),
+            (FieldContentsRef::Difficulty(x_1), FieldContentsRef::Difficulty(x_2)) => x_1.cmp(x_2),
+            (FieldContentsRef::Year(x_1), FieldContentsRef::Year(x_2)) => x_1.cmp(x_2),
+            (_, _) => std::cmp::Ordering::Equal,
+        }
+    }
 }
 
 impl<'a> FieldContentsRef<'a> {
