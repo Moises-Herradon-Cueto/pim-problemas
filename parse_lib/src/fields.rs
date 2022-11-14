@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::fmt::Display;
 
-use crate::Data;
+use crate::{data::enunciado::Enunciado, Data};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -60,7 +60,7 @@ impl Fields {
     pub fn get_string(self, data: &Data) -> Cow<str> {
         match self {
             Id => Cow::Owned(data.id.to_string()),
-            Problem => Cow::Borrowed(&data.enunciado),
+            Problem => Cow::Borrowed(&data.enunciado.raw),
             Solution => Cow::Borrowed("No están guardadas las soluciones"),
             Topics => Cow::Owned(data.temas.join(", ")),
             Difficulty => Cow::Owned(data.dificultad.to_string()),
@@ -113,7 +113,10 @@ impl Fields {
     const fn empty(self) -> FieldContents {
         match self {
             Id => FieldContents::Id(usize::MAX),
-            Problem => FieldContents::Problem(String::new()),
+            Problem => FieldContents::Problem(Enunciado {
+                raw: String::new(),
+                html: String::new(),
+            }),
             Solution => FieldContents::Solution,
             Topics => FieldContents::Topics(Vec::new()),
             Difficulty => FieldContents::Difficulty(u8::MAX),
@@ -136,7 +139,7 @@ impl Fields {
                     .parse()
                     .map_err(|err| format!("Error parsing: {err}"))?,
             )),
-            Problem => Ok(FieldContents::Problem(input.to_owned())),
+            Problem => Ok(FieldContents::Problem(Enunciado::new(input.to_owned()))),
             Solution => Ok(FieldContents::Solution),
             Topics => Ok(FieldContents::Topics(
                 input
@@ -196,7 +199,7 @@ impl Fields {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum FieldContents {
     Id(usize),
-    Problem(String),
+    Problem(Enunciado),
     Solution,
     Topics(Vec<String>),
     Difficulty(u8),
@@ -210,7 +213,7 @@ pub enum FieldContents {
 #[derive(PartialEq, Eq)]
 pub enum FieldContentsRef<'a> {
     Id(usize),
-    Problem(&'a str),
+    Problem(&'a Enunciado),
     Solution,
     Topics(&'a [String]),
     Difficulty(u8),
@@ -230,8 +233,10 @@ impl<'a> Ord for FieldContentsRef<'a> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
             (FieldContentsRef::Id(id_1), FieldContentsRef::Id(id_2)) => id_1.cmp(id_2),
-            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2))
-            | (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2)) => x_1.cmp(x_2),
+            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2)) => {
+                x_1.raw.cmp(&x_2.raw)
+            }
+            (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Topics(x_1), FieldContentsRef::Topics(x_2))
             | (FieldContentsRef::History(x_1), FieldContentsRef::History(x_2))
             | (FieldContentsRef::Comments(x_1), FieldContentsRef::Comments(x_2))
@@ -249,7 +254,7 @@ impl<'a> FieldContentsRef<'a> {
         match self {
             FieldContentsRef::Id(x) => FieldContents::Id(*x),
             FieldContentsRef::Difficulty(x) => FieldContents::Difficulty(*x),
-            FieldContentsRef::Problem(x) => FieldContents::Problem((*x).to_owned()),
+            FieldContentsRef::Problem(x) => FieldContents::Problem((*x).clone()),
             FieldContentsRef::Solution => FieldContents::Solution,
             FieldContentsRef::Source(x) => FieldContents::Source((*x).to_owned()),
             FieldContentsRef::Topics(x) => FieldContents::Topics((*x).to_vec()),
@@ -283,7 +288,8 @@ impl FieldContents {
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
-            Problem(x) | Source(x) => x.is_empty() || x == "%",
+            Problem(x) => x.raw.is_empty() || x.raw == "%",
+            Source(x) => x.is_empty() || x == "%",
             Topics(x) | History(x) | Comments(x) | Packages(x) => x.is_empty(),
             Year(x) => x.is_none(),
             Solution => true,
@@ -316,7 +322,8 @@ impl Display for FieldContents {
         let string = match self {
             Id(x) => Cow::Owned(x.to_string()),
             Difficulty(x) => Cow::Owned(x.to_string()),
-            Problem(x) | Source(x) => Cow::Borrowed(x),
+            Problem(x) => Cow::Borrowed(&x.raw),
+            Source(x) => Cow::Borrowed(x),
             Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
             Year(x) => x
                 .as_ref()

@@ -12,3 +12,11 @@ regex = "1.6.0"
 serde = { version = "1.0.147", features = ["derive"] }
 
 serde_json = "1.0.87"
+
+
+katex = { version = "0.4.4", optional = true, default-features = false }
+
+[features]
+default = []
+wasm = ["katex/wasm-js"]
+desktop = ["katex/quick-js"]

@@ -1,6 +1,7 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
+pub use data::enunciado::Enunciado;
 pub use data::get_json_string;
 pub use data::read_csv;
 pub use data::write_csv;

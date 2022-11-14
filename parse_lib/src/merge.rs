@@ -1,3 +1,4 @@
+use crate::data::enunciado::Enunciado;
 use crate::files::ParseOneInfo;
 use crate::parsing::{self, find_info_from_template};
 use crate::{data::Data, files::ParseOneError};
@@ -15,7 +16,7 @@ pub enum ParseResult {
 pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, ParseOneError> {
     let problem = parsing::problem(data.id, input)?;
 
-    data.enunciado = problem.trim().to_owned();
+    data.enunciado = Enunciado::new(problem.trim().to_owned());
 
     let mut errors = vec![];
 

@@ -17,6 +17,10 @@ use crate::{
     FieldContents, Fields,
 };
 
+use self::enunciado::Enunciado;
+
+pub mod enunciado;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Read {
     id: String,
@@ -41,7 +45,7 @@ pub struct Data {
     pub historial: Vec<String>,
     pub comentarios: Vec<String>,
     pub curso: Option<String>,
-    pub enunciado: String,
+    pub enunciado: Enunciado,
     pub paquetes: Vec<String>,
 }
 
@@ -56,7 +60,7 @@ impl Data {
             historial: vec![],
             comentarios: vec![],
             curso: None,
-            enunciado: String::new(),
+            enunciado: Enunciado::empty(),
             paquetes: Vec::new(),
         }
     }
@@ -115,7 +119,7 @@ impl Data {
             comentarios,
             historial,
             curso: None,
-            enunciado: String::new(),
+            enunciado: Enunciado::default(),
             paquetes: Vec::new(),
         })
     }
@@ -207,7 +211,6 @@ impl Data {
             .iter_mut()
             .for_each(|t| *t = t.trim().to_owned());
         self.fuente = self.fuente.trim().to_owned();
-        self.enunciado = self.enunciado.trim().to_owned();
         self.curso = self.curso.as_mut().map(|c| c.trim().to_owned());
     }
 }
