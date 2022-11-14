@@ -131,7 +131,7 @@ impl Comp {
             });
         });
         html! {
-            <span  class="file-info" >{format!("{path_to}: ")}<a {onclick}title="Cambiar">{current_path.display()}</a></span>
+            <span  class="file-info" >{format!("{path_to}: ")}<span {onclick} title="Cambiar" class="file-info-link">{current_path.display()}</span></span>
         }
     }
 
