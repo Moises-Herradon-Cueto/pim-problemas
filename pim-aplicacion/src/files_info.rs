@@ -1,7 +1,7 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{borrow::Cow, fmt::Display, path::PathBuf, str::FromStr};
 use yew::prelude::*;
 
-use crate::aux::get_value_from_ref;
+use crate::{app::invoke, helper::GetFolderArgs};
 
 pub const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
     "/home/moises/OneDrive/ejercicios"
@@ -21,14 +21,17 @@ pub const DEFAULT_OUTPUT: &str = if cfg!(debug_assertions) {
     "."
 };
 
+#[derive(Clone, Copy)]
+pub enum PathTo {
+    Problems,
+    Output,
+}
+
 #[derive(Default)]
 pub struct Comp {
     problems_directory: Option<PathBuf>,
     database_directory: Option<PathBuf>,
     output_directory: Option<PathBuf>,
-    problems_ref: NodeRef,
-    database_ref: NodeRef,
-    output_ref: NodeRef,
 }
 
 #[derive(Clone, PartialEq, Eq, Default)]
@@ -39,9 +42,8 @@ pub struct Paths {
 }
 
 pub enum MsgUpdate {
-    Problems(String),
-    Db(String),
-    Output(String),
+    Problems(PathBuf),
+    Output(PathBuf),
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -59,20 +61,17 @@ impl Component for Comp {
             problems_directory: ctx.props().paths.problems.clone(),
             database_directory: ctx.props().paths.database.clone(),
             output_directory: ctx.props().paths.output.clone(),
-            ..Self::default()
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             MsgUpdate::Problems(s) => {
-                self.problems_directory = Some(PathBuf::from_str(&s).unwrap());
-            }
-            MsgUpdate::Db(s) => {
-                self.database_directory = Some(PathBuf::from_str(&s).unwrap());
+                self.problems_directory = Some(s);
             }
             MsgUpdate::Output(s) => {
-                self.output_directory = Some(PathBuf::from_str(&s).unwrap());
+                self.output_directory = Some(s.clone());
+                self.database_directory = Some(s.join("database.json"));
             }
         }
         ctx.props().update_cb.emit(Paths {
@@ -84,78 +83,11 @@ impl Component for Comp {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let problems_ref_2 = self.problems_ref.clone();
-        let input_problem = ctx.link().callback(move |_: InputEvent| {
-            let data = get_value_from_ref(&problems_ref_2);
-            MsgUpdate::Problems(data)
-        });
-
-        let problem = if self.problems_directory.is_none() {
-            html! {
-                <input name="problems_directory" oninput={input_problem} ref={self.problems_ref.clone()} value={DEFAULT_PROBLEMS} />
-            }
-        } else {
-            html! {
-                <input name="problems_directory" oninput={input_problem} ref={self.problems_ref.clone()} />
-            }
-        };
-
-        let database_ref_2 = self.database_ref.clone();
-        let input_database = ctx.link().callback(move |_: InputEvent| {
-            let data = get_value_from_ref(&database_ref_2);
-            MsgUpdate::Db(data)
-        });
-        let database = if self.database_directory.is_none() {
-            html! {
-                <input name="database" oninput={input_database} ref={self.database_ref.clone()} value={DEFAULT_DB} />
-            }
-        } else {
-            html! {
-                <input name="database" oninput={input_database} ref={self.database_ref.clone()} />
-            }
-        };
-
-        let output_ref_2 = self.output_ref.clone();
-        let input_output = ctx.link().callback(move |_: InputEvent| {
-            let data = get_value_from_ref(&output_ref_2);
-            MsgUpdate::Output(data)
-        });
-        let output = if self.output_directory.is_none() {
-            html! {
-                <input name="output" oninput={input_output} ref={self.output_ref.clone()} value={DEFAULT_OUTPUT} />
-            }
-        } else {
-            html! {
-                <input name="output" oninput={input_output} ref={self.output_ref.clone()} />
-            }
-        };
-
         html! {
-            <form class="file_info">
-            <table>
-                <tr>
-                <td>
-                <label for="problems_directory">{"Carpeta con los problemas"}</label>
-                </td><td>
-                {problem}
-                </td>
-                </tr>
-                <tr>
-                <td>
-                <label for="database">{"Base de datos"}</label>
-                </td><td>
-                {database}
-                </td>
-                </tr>
-                <tr>
-                <td>
-                <label for="output_directory">{"Carpeta para guardar los nuevos .tex"}</label>
-                </td><td>
-                {output}
-                </td>
-                </tr>
-                </table>
-            </form>
+            <div class="file-info-container">
+            {self.file_input(PathTo::Problems, ctx)}
+            {self.file_input(PathTo::Output, ctx)}
+            </div>
         }
     }
 }
@@ -166,4 +98,65 @@ pub fn _default_problem_dir() -> PathBuf {
 
 pub fn _default_db_dir() -> PathBuf {
     PathBuf::from_str(DEFAULT_DB).unwrap()
+}
+
+impl Comp {
+    fn file_input(&self, path_to: PathTo, ctx: &Context<Self>) -> Html {
+        let current_path = self
+            .get_path(path_to)
+            .as_ref()
+            .map_or_else(|| Cow::Owned(path_to.default_path()), Cow::Borrowed);
+
+        let link = ctx.link().clone();
+        let onclick = Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            log::info!("CLICK!");
+            link.send_future_batch(async move {
+                let result = invoke(
+                    "get_folder",
+                    serde_wasm_bindgen::to_value(&GetFolderArgs).unwrap(),
+                )
+                .await;
+
+                log::info!("{result:?}");
+
+                let result: Option<PathBuf> = serde_wasm_bindgen::from_value(result).unwrap();
+
+                let Some(result) = result else {return vec![];};
+
+                match path_to {
+                    PathTo::Problems => vec![MsgUpdate::Problems(result)],
+                    PathTo::Output => vec![MsgUpdate::Output(result)],
+                }
+            });
+        });
+        html! {
+            <span  class="file-info" >{format!("{path_to}: ")}<a {onclick}title="Cambiar">{current_path.display()}</a></span>
+        }
+    }
+
+    const fn get_path(&self, path_to: PathTo) -> &Option<PathBuf> {
+        match path_to {
+            PathTo::Problems => &self.problems_directory,
+            PathTo::Output => &self.output_directory,
+        }
+    }
+}
+
+impl PathTo {
+    fn default_path(self) -> PathBuf {
+        match self {
+            Self::Problems => PathBuf::from(DEFAULT_PROBLEMS),
+            Self::Output => PathBuf::from(DEFAULT_OUTPUT),
+        }
+    }
+}
+
+impl Display for PathTo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Problems => write!(f, "Problemas"),
+            Self::Output => write!(f, "Carpeta vacía para escribir nuevos .tex"),
+        }
+    }
 }

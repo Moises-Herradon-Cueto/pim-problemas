@@ -143,3 +143,17 @@ li {
   top: 50%;
   transform: translateY(-50%);
 }
+
+.file-info {
+  display: inline;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.file-info-container {
+  display: inline;
+}
+
+.file-info span {
+  width: fit-content;
+}
