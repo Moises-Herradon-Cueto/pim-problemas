@@ -13,7 +13,6 @@ use Fields::{
 pub enum Fields {
     Id,
     Problem,
-    Solution,
     Topics,
     Difficulty,
     Source,
@@ -21,6 +20,17 @@ pub enum Fields {
     Comments,
     Year,
     Packages,
+    Solution,
+}
+
+pub struct OutOfRange;
+
+impl TryFrom<usize> for Fields {
+    type Error = OutOfRange;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        Self::ALL.get(value).copied().ok_or(OutOfRange)
+    }
 }
 
 impl Display for Fields {
@@ -43,7 +53,7 @@ impl Display for Fields {
 impl Fields {
     pub const N: usize = 10;
     pub const ALL: [Self; Self::N] = [
-        Id, Problem, Solution, Topics, Difficulty, Source, History, Comments, Year, Packages,
+        Id, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages, Solution,
     ];
 
     #[must_use]

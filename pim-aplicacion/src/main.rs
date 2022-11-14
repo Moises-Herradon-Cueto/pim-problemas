@@ -2,6 +2,7 @@
 #![warn(clippy::nursery)]
 #![allow(clippy::let_unit_value)]
 
+mod add_filters;
 mod app;
 mod column_select;
 mod files_info;
