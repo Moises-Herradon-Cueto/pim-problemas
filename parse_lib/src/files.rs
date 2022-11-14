@@ -198,7 +198,7 @@ pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     for file in entries {
         let result = parse_one(file, output_dir, data);
         match result {
-            Err(ParseOneError::NotTex(_)) => return Ok(vec![]),
+            Err(ParseOneError::NotTex(_)) => continue,
             Ok(infos) => output.extend(infos.into_iter().map(Ok)),
             Err(error) => output.push(Err(error)),
         }
