@@ -3,13 +3,18 @@
     windows_subsystem = "windows"
 )]
 
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::mpsc};
 
 use parse_lib::{commands::sync_db, get_json_string};
+use tauri::api::dialog::FileDialogBuilder;
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![get_db_from_json, update_db])
+        .invoke_handler(tauri::generate_handler![
+            get_db_from_json,
+            update_db,
+            get_folder
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -41,4 +46,15 @@ fn update_db_inner(
 ) -> Result<String, String> {
     let result = sync_db(&db_path, &problems_path, &output_path);
     serde_json::to_string(&result).map_err(|err| format!("Error converting to Json: {err}"))
+}
+
+#[tauri::command]
+async fn get_folder() -> Option<PathBuf> {
+    let (tx, rx) = mpsc::channel();
+    FileDialogBuilder::new()
+        .set_directory("/home/moises/OneDrive")
+        .pick_folder(move |f| {
+            tx.send(f).unwrap();
+        });
+    rx.recv().unwrap()
 }
