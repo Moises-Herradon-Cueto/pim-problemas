@@ -19,7 +19,24 @@ pub fn problem(id: usize, input: &str) -> Result<&str, ParseOneError> {
     Ok(output)
 }
 
-pub fn solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
+pub fn document(id: usize, input: &str) -> Result<&str, ParseOneError> {
+    let document_regex = Regex::new(r"(?s)\\begin\{document\}\s*(.*?)\s*\\end\{document\}")
+        .map_err(|err| ParseOneError::IMessedUp(format!("I messed up making the regex: {err}")))?;
+    let output = document_regex
+        .captures_iter(input)
+        .next()
+        .ok_or(ParseOneError::ProblemNotFound(id))?
+        .get(1)
+        .ok_or_else(|| {
+            ParseOneError::IMessedUp(format!(
+                "The captured group should have an entry, parsing problem {id}"
+            ))
+        })?
+        .as_str();
+    Ok(output)
+}
+
+pub fn _solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
     let sol_regex = [
         Regex::new(r"(?s)\\begin\{proof\}\[Solución\](.*)\\end\{proof\}").map_err(|err| {
             ParseOneError::IMessedUp(format!("I messed up making the regex: {err}"))

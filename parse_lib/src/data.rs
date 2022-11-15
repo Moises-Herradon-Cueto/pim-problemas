@@ -17,6 +17,10 @@ use crate::{
     FieldContents, Fields,
 };
 
+use self::enunciado::Enunciado;
+
+pub mod enunciado;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Read {
     id: String,
@@ -43,6 +47,47 @@ pub struct Data {
     pub curso: Option<String>,
     pub enunciado: String,
     pub paquetes: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Old {
+    pub id: usize,
+    pub temas: Vec<String>,
+    pub dificultad: u8,
+    pub fuente: String,
+    pub historial: Vec<String>,
+    pub comentarios: Vec<String>,
+    pub curso: Option<String>,
+    pub enunciado: Enunciado,
+    pub paquetes: Vec<String>,
+}
+
+impl From<Old> for Data {
+    fn from(
+        Old {
+            id,
+            temas,
+            dificultad,
+            fuente,
+            historial,
+            comentarios,
+            curso,
+            enunciado,
+            paquetes,
+        }: Old,
+    ) -> Self {
+        Self {
+            id,
+            temas,
+            dificultad,
+            fuente,
+            historial,
+            comentarios,
+            curso,
+            enunciado: enunciado.raw,
+            paquetes,
+        }
+    }
 }
 
 impl Data {
@@ -147,6 +192,8 @@ impl Data {
     /// This function will return an error if
     /// both entries have non empty data in a field
     pub fn merge_with(&mut self, tex_data: &Self) -> Vec<ParseOneInfo> {
+        let mut missing_in_db = vec![];
+        let mut missing_in_tex = vec![];
         let mut discrepancies = vec![];
         for field in Fields::ALL {
             let data_1 = field.get(self);
@@ -156,9 +203,9 @@ impl Data {
                 let data_2 = data_2.to_owned();
                 if data_1.is_empty() {
                     self.set(data_2);
-                    discrepancies.push(ParseOneInfo::MissingInDb(field));
+                    missing_in_db.push(field);
                 } else if data_2.is_empty() {
-                    discrepancies.push(ParseOneInfo::MissingInTex(field));
+                    missing_in_tex.push(field);
                 } else {
                     discrepancies.push(ParseOneInfo::Incompatible {
                         db: data_1,
@@ -166,6 +213,12 @@ impl Data {
                     });
                 }
             }
+        }
+        if !missing_in_db.is_empty() {
+            discrepancies.push(ParseOneInfo::MissingInDb(missing_in_db));
+        }
+        if !missing_in_tex.is_empty() {
+            discrepancies.push(ParseOneInfo::MissingInTex(missing_in_tex));
         }
         discrepancies
     }
@@ -207,7 +260,6 @@ impl Data {
             .iter_mut()
             .for_each(|t| *t = t.trim().to_owned());
         self.fuente = self.fuente.trim().to_owned();
-        self.enunciado = self.enunciado.trim().to_owned();
         self.curso = self.curso.as_mut().map(|c| c.trim().to_owned());
     }
 }

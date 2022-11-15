@@ -55,14 +55,19 @@ impl Component for MainMenu {
             // log::info!("Deserialized DB: {db:?}");
             match db {
                 Ok(Ok(db)) => {
+                    // log::info!("Received:\n{db}");
                     let db = serde_json::from_str(&db);
                     match db {
                         Ok(db) => Msg::UpdateDb(Rc::new(db)),
-                        Err(err) => Msg::UpdateErr(format!("Error parsing response: {err}")),
+                        Err(err) => {
+                            Msg::UpdateErr(format!("Error parsing response with serde-json: {err}"))
+                        }
                     }
                 }
                 Ok(Err(err)) => Msg::UpdateErr(err),
-                Err(parse_err) => Msg::UpdateErr(format!("Error parsing response: {parse_err}")),
+                Err(parse_err) => {
+                    Msg::UpdateErr(format!("Error parsing response js value: {parse_err}"))
+                }
             }
         });
         Self {

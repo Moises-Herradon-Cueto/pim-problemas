@@ -32,7 +32,9 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
         errors.extend(more_errors);
     }
 
-    let solution = parsing::solution(data.id, input)?.trim();
+    let mut missing_in_db = vec![];
+
+    let document = parsing::document(data.id, input)?;
 
     parsing::packages(data, input)?;
 
@@ -42,7 +44,7 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
 
     if temas.is_empty() {
         temas = "%".into();
-        errors.push((data.id, ParseOneInfo::MissingInDb(Fields::Topics)));
+        missing_in_db.push(Fields::Topics);
     }
 
     let id = data.id;
@@ -71,11 +73,15 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
         historial = "%".into();
     }
     let dificultad = if data.dificultad == u8::MAX {
-        errors.push((data.id, ParseOneInfo::MissingInDb(Fields::Difficulty)));
+        missing_in_db.push(Fields::Difficulty);
         "%".into()
     } else {
         data.dificultad.to_string()
     };
+
+    if !missing_in_db.is_empty() {
+        errors.push((data.id, ParseOneInfo::MissingInDb(missing_in_db)));
+    }
 
     Ok(ToChange(
         into_template(
@@ -87,21 +93,26 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
             &fuente,
             &comentarios,
             &id,
-            &problem,
-            &solution,
+            &document,
         ),
         errors,
     ))
 }
 
-fn is_template(id: usize, input: &str) -> Result<Option<(Data, MsgList)>, ParseOneError> {
+fn is_template(
+    id: usize,
+    input: &str,
+) -> Result<Option<(Data, Option<ParseOneInfo>)>, ParseOneError> {
     if input.contains("%%% PLANTILLA PARA SUBIR EJERCICIOS A LA BASE DE DATOS DEL PIM") {
         let (data_in_template, missing_fields) = find_info_from_template(id, input)?;
-        let missing_fields = missing_fields
-            .into_iter()
-            .map(|f| (data_in_template.id, ParseOneInfo::MissingInTex(f)))
-            .collect();
-        Ok(Some((data_in_template, missing_fields)))
+        if missing_fields.is_empty() {
+            Ok(Some((data_in_template, None)))
+        } else {
+            Ok(Some((
+                data_in_template,
+                Some(ParseOneInfo::MissingInTex(missing_fields)),
+            )))
+        }
     } else {
         Ok(None)
     }

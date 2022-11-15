@@ -49,8 +49,8 @@ pub enum ParseOneInfo {
     NotInDb,
     NotInTemplate(String),
     NotFound(Fields),
-    MissingInTex(Fields),
-    MissingInDb(Fields),
+    MissingInTex(Vec<Fields>),
+    MissingInDb(Vec<Fields>),
     IMessedUp(String),
     Incompatible {
         db: FieldContents,
@@ -107,8 +107,16 @@ impl Display for ParseOneInfo {
                 write!(f, "No se encontró el campo {field}")
             }
             Self::IMessedUp(msg) => f.write_str(msg),
-            Self::MissingInTex(field) => write!(f, "El campo {field} no está en el archivo .tex"),
-            Self::MissingInDb(field) => write!(f, "El campo {field} no está en la base de datos"),
+            Self::MissingInTex(fields) => write!(
+                f,
+                "Los campos {} no está en el archivo .tex",
+                fields.iter().map(|f| format!("{f}, ")).collect::<String>()
+            ),
+            Self::MissingInDb(fields) => write!(
+                f,
+                "Los campos {} no está en la base de datos",
+                fields.iter().map(|f| format!("{f}, ")).collect::<String>()
+            ),
             Self::Incompatible { db, tex } => write!(
                 f,
                 "Un campo aparece en la base de datos como \n{db}\ny en el tex como\n{tex}"
@@ -198,7 +206,7 @@ pub fn parse_all<T: BuildHasher, P: AsRef<Path>>(
     for file in entries {
         let result = parse_one(file, output_dir, data);
         match result {
-            Err(ParseOneError::NotTex(_)) => return Ok(vec![]),
+            Err(ParseOneError::NotTex(_)) => continue,
             Ok(infos) => output.extend(infos.into_iter().map(Ok)),
             Err(error) => output.push(Err(error)),
         }

@@ -45,9 +45,6 @@ impl Filter {
             Fields::Problem => Some(Self {
                 contents: FieldContents::Problem(contents.to_lowercase()),
             }),
-            Fields::Solution => Some(Self {
-                contents: FieldContents::Solution,
-            }),
             Fields::Topics => Some(Self {
                 contents: FieldContents::Topics(vec![contents.to_lowercase()]),
             }),
@@ -76,7 +73,6 @@ impl Filter {
         match &self.contents {
             FieldContents::Id(contents) => data.id == *contents,
             FieldContents::Problem(contents) => data.enunciado.to_lowercase().contains(contents),
-            FieldContents::Solution => false,
             FieldContents::Topics(contents) => matches(contents, &data.temas),
             FieldContents::Difficulty(contents) => data.dificultad == *contents,
             FieldContents::Source(contents) => data.fuente.to_lowercase().contains(contents),

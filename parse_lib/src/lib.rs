@@ -1,16 +1,19 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
+pub use data::enunciado::Enunciado;
 pub use data::get_json_string;
 pub use data::read_csv;
 pub use data::write_csv;
 pub use data::write_json;
 pub use data::Data;
+pub use data::Old as OldData;
 pub use fields::FieldContents;
 pub use fields::FieldContentsRef;
 pub use fields::Fields;
 pub use files::parse_all;
 pub use files::ParseOneError;
+pub use files::ParseOneInfo;
 
 pub mod commands;
 mod data;
