@@ -151,6 +151,8 @@ impl Data {
     /// This function will return an error if
     /// both entries have non empty data in a field
     pub fn merge_with(&mut self, tex_data: &Self) -> Vec<ParseOneInfo> {
+        let mut missing_in_db = vec![];
+        let mut missing_in_tex = vec![];
         let mut discrepancies = vec![];
         for field in Fields::ALL {
             let data_1 = field.get(self);
@@ -160,9 +162,9 @@ impl Data {
                 let data_2 = data_2.to_owned();
                 if data_1.is_empty() {
                     self.set(data_2);
-                    discrepancies.push(ParseOneInfo::MissingInDb(field));
+                    missing_in_db.push(field);
                 } else if data_2.is_empty() {
-                    discrepancies.push(ParseOneInfo::MissingInTex(field));
+                    missing_in_tex.push(field);
                 } else {
                     discrepancies.push(ParseOneInfo::Incompatible {
                         db: data_1,
@@ -170,6 +172,12 @@ impl Data {
                     });
                 }
             }
+        }
+        if !missing_in_db.is_empty() {
+            discrepancies.push(ParseOneInfo::MissingInDb(missing_in_db));
+        }
+        if !missing_in_tex.is_empty() {
+            discrepancies.push(ParseOneInfo::MissingInTex(missing_in_tex));
         }
         discrepancies
     }
