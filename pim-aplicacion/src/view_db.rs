@@ -125,6 +125,14 @@ impl Component for ViewDb {
                 <span>{"Ordenar"}</span>
                 <FieldSelect {select_cb}/>
                 <MatIconButtonToggle {onchange} off_icon={Some(AttrValue::Static("⬆️"))} on_icon={Some(AttrValue::Static("⬇️"))}/>
+                // <MatIconButtonToggle {onchange}>
+                // <MatOnIconButtonToggle>
+                // <i class="fa-solid fa-arrow-down-long"></i>
+                // </MatOnIconButtonToggle>
+                // <MatOffIconButtonToggle>
+                // <i class="fa-solid fa-arrow-up-long"></i>
+                // </MatOffIconButtonToggle>
+                // </MatIconButtonToggle>
             </div>
             <FilterAdd {filter_cb}/>
             <div id="filters">{filters}</div>
