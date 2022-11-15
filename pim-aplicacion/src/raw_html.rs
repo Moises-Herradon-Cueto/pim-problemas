@@ -4,8 +4,6 @@ use yew::{
     virtual_dom::{VNode, VTag},
 };
 
-use crate::app::typeset;
-
 #[derive(Debug, Clone, Eq, PartialEq, Properties)]
 pub struct Props {
     pub inner_html: String,
