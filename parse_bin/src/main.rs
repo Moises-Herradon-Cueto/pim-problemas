@@ -17,6 +17,13 @@ mod arguments;
 
 fn main() {
     let cli = MyArgs::parse();
+    // let cli = MyArgs {
+    //     command: Action::SyncDb {
+    //         output_dir: std::path::PathBuf::from("/home/moises/pim-input/ejercicios-out"),
+    //         problems_dir: std::path::PathBuf::from("/home/moises/OneDrive/ejercicios"),
+    //         database_dir: None,
+    //     },
+    // };
     match cli.command {
         Action::WriteCsv {
             database_dir,

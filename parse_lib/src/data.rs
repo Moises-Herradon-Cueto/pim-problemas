@@ -389,3 +389,15 @@ impl std::fmt::Display for Error {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Data;
+
+    #[test]
+    fn try_serde() {
+        let data = Data::new(0);
+        let data_json = serde_json::to_string(&data).unwrap();
+        println!("{data_json}");
+    }
+}

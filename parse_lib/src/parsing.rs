@@ -120,6 +120,7 @@ pub fn find_info_from_template(
             continue;
         }
         let info = field.find(input).map_err(ParseOneError::IMessedUp)?;
+
         info.map_or_else(
             || {
                 missing_data.push(field);
