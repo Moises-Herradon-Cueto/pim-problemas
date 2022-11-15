@@ -34,4 +34,10 @@ pub enum Action {
         #[arg(short, long)]
         output_dir: PathBuf,
     },
+    Migrate {
+        #[arg(short, long)]
+        database_dir: PathBuf,
+        #[arg(short, long)]
+        new_database_dir: PathBuf,
+    },
 }

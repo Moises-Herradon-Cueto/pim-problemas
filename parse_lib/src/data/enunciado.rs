@@ -10,11 +10,12 @@ pub struct Enunciado {
 
 impl Enunciado {
     #[must_use]
-    pub fn new(raw: String) -> Self {
-        let html = katex::render(&raw).unwrap_or_else(|_err| {
-            // println!("Error parsing latex: {err:?}");
-            String::new()
-        });
+    pub const fn new(raw: String) -> Self {
+        let html = String::new();
+        // katex::render(&raw).unwrap_or_else(|_err| {
+        //     // println!("Error parsing latex: {err:?}");
+        //     String::new()
+        // });
         Self { raw, html }
     }
 

@@ -37,7 +37,7 @@ impl From<Data> for TableFriendly {
             historial: historial.join(","),
             comentarios: comentarios.join("\n"),
             curso,
-            enunciado: enunciado.raw,
+            enunciado,
             paquetes: paquetes.join("\n"),
         }
     }

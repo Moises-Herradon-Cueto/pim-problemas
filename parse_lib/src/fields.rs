@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::fmt::Display;
 
-use crate::{data::enunciado::Enunciado, Data};
+use crate::Data;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -56,7 +56,7 @@ impl Fields {
     pub fn get_string(self, data: &Data) -> Cow<str> {
         match self {
             Id => Cow::Owned(data.id.to_string()),
-            Problem => Cow::Borrowed(&data.enunciado.raw),
+            Problem => Cow::Borrowed(&data.enunciado),
             Topics => Cow::Owned(data.temas.join(", ")),
             Difficulty => Cow::Owned(data.dificultad.to_string()),
             Source => Cow::Borrowed(&data.fuente),
@@ -106,10 +106,7 @@ impl Fields {
     const fn empty(self) -> FieldContents {
         match self {
             Id => FieldContents::Id(usize::MAX),
-            Problem => FieldContents::Problem(Enunciado {
-                raw: String::new(),
-                html: String::new(),
-            }),
+            Problem => FieldContents::Problem(String::new()),
             Topics => FieldContents::Topics(Vec::new()),
             Difficulty => FieldContents::Difficulty(u8::MAX),
             Source => FieldContents::Source(String::new()),
@@ -131,7 +128,7 @@ impl Fields {
                     .parse()
                     .map_err(|err| format!("Error parsing: {err}"))?,
             )),
-            Problem => Ok(FieldContents::Problem(Enunciado::new(input.to_owned()))),
+            Problem => Ok(FieldContents::Problem(input.to_owned())),
             Topics => Ok(FieldContents::Topics(
                 input
                     .split(',')
@@ -190,7 +187,7 @@ impl Fields {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum FieldContents {
     Id(usize),
-    Problem(Enunciado),
+    Problem(String),
     Topics(Vec<String>),
     Difficulty(u8),
     Source(String),
@@ -203,7 +200,7 @@ pub enum FieldContents {
 #[derive(PartialEq, Eq)]
 pub enum FieldContentsRef<'a> {
     Id(usize),
-    Problem(&'a Enunciado),
+    Problem(&'a String),
     Topics(&'a [String]),
     Difficulty(u8),
     Source(&'a str),
@@ -222,9 +219,7 @@ impl<'a> Ord for FieldContentsRef<'a> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
             (FieldContentsRef::Id(id_1), FieldContentsRef::Id(id_2)) => id_1.cmp(id_2),
-            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2)) => {
-                x_1.raw.cmp(&x_2.raw)
-            }
+            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Topics(x_1), FieldContentsRef::Topics(x_2))
             | (FieldContentsRef::History(x_1), FieldContentsRef::History(x_2))
@@ -275,8 +270,7 @@ impl FieldContents {
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
-            Problem(x) => x.raw.is_empty() || x.raw == "%",
-            Source(x) => x.is_empty() || x == "%",
+            Problem(x) | Source(x) => x.is_empty() || x == "%",
             Topics(x) | History(x) | Comments(x) | Packages(x) => x.is_empty(),
             Year(x) => x.is_none(),
         }
@@ -289,8 +283,7 @@ impl FieldContents {
         match self {
             Id(x) => Cow::Owned(x.to_string()),
             Difficulty(x) => Cow::Owned(x.to_string()),
-            Problem(x) => Cow::Borrowed(&x.raw),
-            Source(x) => Cow::Borrowed(x),
+            Problem(x) | Source(x) => Cow::Borrowed(x),
             Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
             Year(x) => x
                 .as_ref()

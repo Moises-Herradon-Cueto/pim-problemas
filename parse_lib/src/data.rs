@@ -45,8 +45,49 @@ pub struct Data {
     pub historial: Vec<String>,
     pub comentarios: Vec<String>,
     pub curso: Option<String>,
+    pub enunciado: String,
+    pub paquetes: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
+pub struct Old {
+    pub id: usize,
+    pub temas: Vec<String>,
+    pub dificultad: u8,
+    pub fuente: String,
+    pub historial: Vec<String>,
+    pub comentarios: Vec<String>,
+    pub curso: Option<String>,
     pub enunciado: Enunciado,
     pub paquetes: Vec<String>,
+}
+
+impl From<Old> for Data {
+    fn from(
+        Old {
+            id,
+            temas,
+            dificultad,
+            fuente,
+            historial,
+            comentarios,
+            curso,
+            enunciado,
+            paquetes,
+        }: Old,
+    ) -> Self {
+        Self {
+            id,
+            temas,
+            dificultad,
+            fuente,
+            historial,
+            comentarios,
+            curso,
+            enunciado: enunciado.raw,
+            paquetes,
+        }
+    }
 }
 
 impl Data {
@@ -60,7 +101,7 @@ impl Data {
             historial: vec![],
             comentarios: vec![],
             curso: None,
-            enunciado: Enunciado::empty(),
+            enunciado: String::new(),
             paquetes: Vec::new(),
         }
     }
@@ -119,7 +160,7 @@ impl Data {
             comentarios,
             historial,
             curso: None,
-            enunciado: Enunciado::default(),
+            enunciado: String::new(),
             paquetes: Vec::new(),
         })
     }

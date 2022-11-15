@@ -7,6 +7,7 @@ pub use data::read_csv;
 pub use data::write_csv;
 pub use data::write_json;
 pub use data::Data;
+pub use data::Old as OldData;
 pub use fields::FieldContents;
 pub use fields::FieldContentsRef;
 pub use fields::Fields;

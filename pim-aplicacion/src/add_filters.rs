@@ -4,7 +4,7 @@ use crate::field_selector::Comp as FieldSelect;
 
 use material_yew::text_inputs::{MatTextField, TextFieldType};
 
-use parse_lib::{Data, Enunciado, FieldContents, Fields};
+use parse_lib::{Data, FieldContents, Fields};
 use yew::{prelude::*, virtual_dom::AttrValue};
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl Filter {
                 contents: FieldContents::Id(contents.parse().ok()?),
             }),
             Fields::Problem => Some(Self {
-                contents: FieldContents::Problem(Enunciado::new(contents.to_lowercase())),
+                contents: FieldContents::Problem(contents.to_lowercase()),
             }),
             Fields::Topics => Some(Self {
                 contents: FieldContents::Topics(vec![contents.to_lowercase()]),
@@ -72,9 +72,7 @@ impl Filter {
     pub fn passes(&self, data: &Data) -> bool {
         match &self.contents {
             FieldContents::Id(contents) => data.id == *contents,
-            FieldContents::Problem(contents) => {
-                data.enunciado.raw.to_lowercase().contains(&contents.raw)
-            }
+            FieldContents::Problem(contents) => data.enunciado.to_lowercase().contains(contents),
             FieldContents::Topics(contents) => matches(contents, &data.temas),
             FieldContents::Difficulty(contents) => data.dificultad == *contents,
             FieldContents::Source(contents) => data.fuente.to_lowercase().contains(contents),
