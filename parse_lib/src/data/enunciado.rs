@@ -11,8 +11,8 @@ pub struct Enunciado {
 impl Enunciado {
     #[must_use]
     pub fn new(raw: String) -> Self {
-        let html = katex::render(&raw).unwrap_or_else(|err| {
-            println!("Error parsing latex: {err:?}");
+        let html = katex::render(&raw).unwrap_or_else(|_err| {
+            // println!("Error parsing latex: {err:?}");
             String::new()
         });
         Self { raw, html }

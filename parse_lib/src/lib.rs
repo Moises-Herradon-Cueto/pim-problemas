@@ -12,6 +12,7 @@ pub use fields::FieldContentsRef;
 pub use fields::Fields;
 pub use files::parse_all;
 pub use files::ParseOneError;
+pub use files::ParseOneInfo;
 
 pub mod commands;
 mod data;

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
-use parse_lib::{Data, Entry};
+use parse_lib::{Data, Entry, ParseOneError};
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 
@@ -89,11 +89,21 @@ impl Component for UpdateDb {
 }
 
 fn show_error(error: &Entry) -> Html {
-    html!(
-        <li>
-        {format!("{error:?}")}
-        </li>
-    )
+    error
+        .as_ref()
+        .map_or_else(show_parse_error, show_parse_info)
+}
+
+fn show_parse_info((id, info): &(usize, parse_lib::ParseOneInfo)) -> Html {
+    html! {
+        <li class="info">{format!("En el problema {id}: {info}")}</li>
+    }
+}
+
+fn show_parse_error(err: &ParseOneError) -> Html {
+    html! {
+        <li class="error">{err}</li>
+    }
 }
 
 #[derive(Serialize, Deserialize)]
