@@ -1,6 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use crate::add_filters::{Comp as FilterAdd, Filter, FilterAction};
+use crate::app::typeset;
 use crate::column_select::Comp as ColumnSelect;
 use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
@@ -133,6 +134,10 @@ impl Component for ViewDb {
             </table>
             </div>
         }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        typeset();
     }
 }
 

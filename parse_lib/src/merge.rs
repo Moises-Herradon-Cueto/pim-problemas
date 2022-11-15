@@ -35,7 +35,7 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
 
     let mut missing_in_db = vec![];
 
-    let solution = parsing::solution(data.id, input)?.trim();
+    let document = parsing::document(data.id, input)?;
 
     parsing::packages(data, input)?;
 
@@ -94,8 +94,7 @@ pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, Pars
             &fuente,
             &comentarios,
             &id,
-            &problem,
-            &solution,
+            &document,
         ),
         errors,
     ))

@@ -1,7 +1,5 @@
-use parse_lib::{Enunciado, FieldContents};
+use parse_lib::FieldContents;
 use yew::prelude::*;
-
-use crate::raw_html;
 
 pub struct Comp;
 
@@ -22,16 +20,19 @@ impl Component for Comp {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        match &ctx.props().item {
-            // FieldContents::Problem(Enunciado { raw: _, html }) => {
-            //     html! {
-            //         <raw_html::Comp tag={String::from("td")} inner_html={html.clone()}/>
-            //     }
-            // }
-            x => {
-                let x = x.string_contents();
-                html! {<td>{x}</td>}
-            }
+        html! {
+            <td>{ctx.props().item.string_contents()}</td>
         }
+        // match &ctx.props().item {
+        //     // FieldContents::Problem(Enunciado { raw: _, html }) => {
+        //     //     html! {
+        //     //         <raw_html::Comp tag={String::from("td")} inner_html={html.clone()}/>
+        //     //     }
+        //     // }
+        //     x => {
+        //         let x = x.string_contents();
+        //         html! {<td>{x}</td>}
+        //     }
+        // }
     }
 }
