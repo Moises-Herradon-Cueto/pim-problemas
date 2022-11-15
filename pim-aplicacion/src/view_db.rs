@@ -2,6 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 
 use crate::add_filters::{Comp as FilterAdd, Filter, FilterAction};
 use crate::column_select::Comp as ColumnSelect;
+use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
 use material_yew::MatIconButtonToggle;
 use parse_lib::{Data, Fields};
@@ -160,9 +161,8 @@ fn into_row(data: &Data, max_length: usize, shown: &[bool; Fields::N]) -> Html {
             if !shown {
                 return None;
             }
-            let msg = f.get_string(data);
-            let string = msg.chars().take(max_length).collect::<String>();
-            Some(html! {<td>{string}</td>})
+            let item = f.get(data).to_owned();
+            Some(html! {<FieldDisplay {max_length} {item}   />})
         })
         .collect::<Html>();
 

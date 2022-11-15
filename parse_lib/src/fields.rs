@@ -196,7 +196,7 @@ impl Fields {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum FieldContents {
     Id(usize),
     Problem(Enunciado),
@@ -295,6 +295,23 @@ impl FieldContents {
             Solution => true,
         }
     }
+
+    pub fn string_contents(&self) -> Cow<String> {
+        use FieldContents::{
+            Comments, Difficulty, History, Id, Packages, Problem, Solution, Source, Topics, Year,
+        };
+        match self {
+            Id(x) => Cow::Owned(x.to_string()),
+            Difficulty(x) => Cow::Owned(x.to_string()),
+            Problem(x) => Cow::Borrowed(&x.raw),
+            Source(x) => Cow::Borrowed(x),
+            Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
+            Year(x) => x
+                .as_ref()
+                .map_or_else(|| Cow::Owned(String::new()), Cow::Borrowed),
+            Solution => Cow::Owned(String::new()),
+        }
+    }
 }
 
 impl From<&FieldContents> for Fields {
@@ -316,20 +333,7 @@ impl From<&FieldContents> for Fields {
 
 impl Display for FieldContents {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use FieldContents::{
-            Comments, Difficulty, History, Id, Packages, Problem, Solution, Source, Topics, Year,
-        };
-        let string = match self {
-            Id(x) => Cow::Owned(x.to_string()),
-            Difficulty(x) => Cow::Owned(x.to_string()),
-            Problem(x) => Cow::Borrowed(&x.raw),
-            Source(x) => Cow::Borrowed(x),
-            Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
-            Year(x) => x
-                .as_ref()
-                .map_or_else(|| Cow::Owned(String::new()), Cow::Borrowed),
-            Solution => Cow::Owned(String::new()),
-        };
+        let string = self.string_contents();
         write!(f, "{}: {string}", Fields::from(self))
     }
 }
