@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 #[allow(clippy::too_many_arguments)]
-pub fn into_template<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(
+pub fn into_template<T1, T2, T3, T4, T5, T6, T7, T8, T9>(
     paquetes: &T1,
     temas: &T5,
     dificultad: &T2,
@@ -10,8 +10,7 @@ pub fn into_template<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(
     fuente: &T6,
     comentarios: &T7,
     id: &T8,
-    problem: &T9,
-    solution: &T10,
+    document: &T9,
 ) -> String
 where
     T1: Display,
@@ -23,7 +22,6 @@ where
     T7: Display,
     T8: Display,
     T9: Display,
-    T10: Display,
 {
     format!(
         "% !TeX encoding = UTF-8
@@ -100,26 +98,7 @@ where
 }}
 
 \\begin{{document}}
-
-\\datos
-
-
-
- 
-\\begin{{ejer}}{problem}\\end{{ejer}}
-
-
- 
-
- 
- 
-\\begin{{proof}}[Solución]
-{solution}
-\\end{{proof}}
-
-\\end{{document}}
-
-    
-    "
+{document}
+\\end{{document}}"
     )
 }

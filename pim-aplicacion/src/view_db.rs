@@ -1,7 +1,10 @@
 use std::{collections::HashMap, rc::Rc};
 
 use crate::add_filters::{Comp as FilterAdd, Filter, FilterAction};
+use crate::app::typeset;
 use crate::column_select::Comp as ColumnSelect;
+use crate::edit_entry::Comp as EditEntry;
+use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
 use material_yew::MatIconButtonToggle;
 use parse_lib::{Data, Fields};
@@ -35,6 +38,7 @@ pub enum Msg {
     EditFilter(FilterAction),
     SortField(Fields),
     SortAsc(bool),
+    EditInfo(Data),
 }
 
 #[derive(Properties, PartialEq, Eq, Clone)]
@@ -66,6 +70,10 @@ impl Component for ViewDb {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::EditInfo(data) => {
+                log::info!("{data:#?}");
+                return false;
+            }
             Msg::View(show, field) => {
                 self.shown_fields[field as usize] = show;
             }
@@ -91,10 +99,18 @@ impl Component for ViewDb {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let edit_cb = ctx.link().callback(Msg::EditInfo);
         let filas: Html = self
             .view
             .iter()
-            .map(|data| into_row(data, self.char_length, &self.shown_fields))
+            .map(|data| {
+                into_row(
+                    Rc::new(data.clone()),
+                    self.char_length,
+                    &self.shown_fields,
+                    edit_cb.clone(),
+                )
+            })
             .collect();
 
         let show_cb: Callback<(bool, Fields)> =
@@ -123,6 +139,14 @@ impl Component for ViewDb {
                 <span>{"Ordenar"}</span>
                 <FieldSelect {select_cb}/>
                 <MatIconButtonToggle {onchange} off_icon={Some(AttrValue::Static("⬆️"))} on_icon={Some(AttrValue::Static("⬇️"))}/>
+                // <MatIconButtonToggle {onchange}>
+                // <MatOnIconButtonToggle>
+                // <i class="fa-solid fa-arrow-down-long"></i>
+                // </MatOnIconButtonToggle>
+                // <MatOffIconButtonToggle>
+                // <i class="fa-solid fa-arrow-up-long"></i>
+                // </MatOffIconButtonToggle>
+                // </MatIconButtonToggle>
             </div>
             <FilterAdd {filter_cb}/>
             <div id="filters">{filters}</div>
@@ -132,6 +156,10 @@ impl Component for ViewDb {
             </table>
             </div>
         }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        typeset();
     }
 }
 
@@ -148,11 +176,16 @@ fn header(shown_fields: &[bool; Fields::N]) -> Html {
         })
         .collect::<Html>();
     html! {
-        <thead>{output}</thead>
+        <thead><th></th>{output}</thead>
     }
 }
 
-fn into_row(data: &Data, max_length: usize, shown: &[bool; Fields::N]) -> Html {
+fn into_row(
+    data: Rc<Data>,
+    max_length: usize,
+    shown: &[bool; Fields::N],
+    edit_cb: Callback<Data>,
+) -> Html {
     let entries = shown
         .iter()
         .zip(Fields::ALL.into_iter())
@@ -160,14 +193,14 @@ fn into_row(data: &Data, max_length: usize, shown: &[bool; Fields::N]) -> Html {
             if !shown {
                 return None;
             }
-            let msg = f.get_string(data);
-            let string = msg.chars().take(max_length).collect::<String>();
-            Some(html! {<td>{string}</td>})
+            let item = f.get(&data).to_owned();
+            Some(html! {<FieldDisplay {max_length} {item}   />})
         })
         .collect::<Html>();
 
     html! {
         <tr>
+        <EditEntry {edit_cb} id={data.id} input_data={data}/>
         {entries}
         </tr>
     }
@@ -190,6 +223,6 @@ impl ViewDb {
             }
             f_a.cmp(&f_b)
         });
-        self.view = view;
+        self.view = view.into_iter().take(5).collect();
     }
 }

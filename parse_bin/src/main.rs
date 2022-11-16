@@ -8,7 +8,7 @@ use arguments::Action;
 use clap::Parser;
 use parse_lib::{
     commands::sync_db, get_json_string, pdflatex, read_csv, table_friendly::TableFriendly,
-    write_csv, Data,
+    write_csv, Data, OldData,
 };
 
 use crate::arguments::MyArgs;
@@ -46,6 +46,10 @@ fn main() {
             let result = pdflatex::run(output_dir);
             println!("{result:?}");
         }
+        Action::Migrate {
+            database_dir,
+            new_database_dir,
+        } => migrate(&database_dir, &new_database_dir),
     }
 }
 
@@ -117,4 +121,17 @@ fn _make_problem_list(data: &HashMap<usize, Data>) {
     let packages: String = packages.into_iter().cloned().collect();
     fs::write("problemas_juntos.tex", problems).expect("Failed to write");
     fs::write("paquetes_juntos.tex", packages).expect("Failed to write");
+}
+
+fn migrate(old: &Path, new: &Path) {
+    let data_json = get_json_string(old).expect("Failed to open json");
+    let old_data: HashMap<usize, OldData> =
+        serde_json::from_str(&data_json).expect("Failed to deserialize");
+    let new_data: HashMap<usize, Data> = old_data
+        .into_iter()
+        .map(|(i, problem)| (i, Data::from(problem)))
+        .collect();
+    let data_json = serde_json::to_string(&new_data).expect("Failed to serialize");
+
+    fs::write(new, data_json).expect("Failed to write");
 }

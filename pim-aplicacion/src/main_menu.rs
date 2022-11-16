@@ -55,7 +55,7 @@ impl Component for MainMenu {
             // log::info!("Deserialized DB: {db:?}");
             match db {
                 Ok(Ok(db)) => {
-                    log::info!("Received:\n{db}");
+                    // log::info!("Received:\n{db}");
                     let db = serde_json::from_str(&db);
                     match db {
                         Ok(db) => Msg::UpdateDb(Rc::new(db)),

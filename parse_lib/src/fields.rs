@@ -1,13 +1,11 @@
 use std::borrow::Cow;
 use std::fmt::Display;
 
-use crate::{data::enunciado::Enunciado, Data};
+use crate::Data;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use Fields::{
-    Comments, Difficulty, History, Id, Packages, Problem, Solution, Source, Topics, Year,
-};
+use Fields::{Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year};
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Fields {
@@ -20,7 +18,6 @@ pub enum Fields {
     Comments,
     Year,
     Packages,
-    Solution,
 }
 
 pub struct OutOfRange;
@@ -38,7 +35,6 @@ impl Display for Fields {
         match self {
             Id => f.write_str("Id"),
             Problem => f.write_str("Enunciado"),
-            Solution => f.write_str("Solución"),
             Topics => f.write_str("Temas"),
             Difficulty => f.write_str("Dificultad"),
             Source => f.write_str("Fuente"),
@@ -51,17 +47,16 @@ impl Display for Fields {
 }
 
 impl Fields {
-    pub const N: usize = 10;
+    pub const N: usize = 9;
     pub const ALL: [Self; Self::N] = [
-        Id, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages, Solution,
+        Id, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages,
     ];
 
     #[must_use]
     pub fn get_string(self, data: &Data) -> Cow<str> {
         match self {
             Id => Cow::Owned(data.id.to_string()),
-            Problem => Cow::Borrowed(&data.enunciado.raw),
-            Solution => Cow::Borrowed("No están guardadas las soluciones"),
+            Problem => Cow::Borrowed(&data.enunciado),
             Topics => Cow::Owned(data.temas.join(", ")),
             Difficulty => Cow::Owned(data.dificultad.to_string()),
             Source => Cow::Borrowed(&data.fuente),
@@ -77,7 +72,6 @@ impl Fields {
         match self {
             Id => FieldContentsRef::Id(data.id),
             Problem => FieldContentsRef::Problem(&data.enunciado),
-            Solution => FieldContentsRef::Solution,
             Difficulty => FieldContentsRef::Difficulty(data.dificultad),
             Topics => FieldContentsRef::Topics(&data.temas),
             Source => FieldContentsRef::Source(&data.fuente),
@@ -90,14 +84,13 @@ impl Fields {
 
     #[must_use]
     pub const fn is_in_template(self) -> bool {
-        !matches!(self, Self::Solution)
+        true
     }
 
     #[must_use]
     pub(crate) fn regex(self) -> Regex {
         let attempt = match self {
             Problem => Regex::new(r"(?s)\\begin\{ejer\}\s*(.*?)\s*\\end\{ejer\}"),
-            Solution => Regex::new(r"$."),
             Topics => Regex::new(r"\\temas\{\s*(.*?)\s*\}"),
             Difficulty => Regex::new(r"\\dificultad\{\s*(.*?)\s*\}"),
             Source => Regex::new(r"\\fuente\{\s*(.*?)\s*\}"),
@@ -113,11 +106,7 @@ impl Fields {
     const fn empty(self) -> FieldContents {
         match self {
             Id => FieldContents::Id(usize::MAX),
-            Problem => FieldContents::Problem(Enunciado {
-                raw: String::new(),
-                html: String::new(),
-            }),
-            Solution => FieldContents::Solution,
+            Problem => FieldContents::Problem(String::new()),
             Topics => FieldContents::Topics(Vec::new()),
             Difficulty => FieldContents::Difficulty(u8::MAX),
             Source => FieldContents::Source(String::new()),
@@ -128,7 +117,13 @@ impl Fields {
         }
     }
 
-    fn parse(self, input: &str) -> Result<FieldContents, String> {
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if
+    /// it doesn't parse correctly
+    pub fn parse(self, input: &str) -> Result<FieldContents, String> {
         let input = input.trim();
         if input.is_empty() || input == "%" {
             return Ok(self.empty());
@@ -139,8 +134,7 @@ impl Fields {
                     .parse()
                     .map_err(|err| format!("Error parsing: {err}"))?,
             )),
-            Problem => Ok(FieldContents::Problem(Enunciado::new(input.to_owned()))),
-            Solution => Ok(FieldContents::Solution),
+            Problem => Ok(FieldContents::Problem(input.to_owned())),
             Topics => Ok(FieldContents::Topics(
                 input
                     .split(',')
@@ -196,11 +190,10 @@ impl Fields {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum FieldContents {
     Id(usize),
-    Problem(Enunciado),
-    Solution,
+    Problem(String),
     Topics(Vec<String>),
     Difficulty(u8),
     Source(String),
@@ -213,8 +206,7 @@ pub enum FieldContents {
 #[derive(PartialEq, Eq)]
 pub enum FieldContentsRef<'a> {
     Id(usize),
-    Problem(&'a Enunciado),
-    Solution,
+    Problem(&'a String),
     Topics(&'a [String]),
     Difficulty(u8),
     Source(&'a str),
@@ -233,9 +225,7 @@ impl<'a> Ord for FieldContentsRef<'a> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
             (FieldContentsRef::Id(id_1), FieldContentsRef::Id(id_2)) => id_1.cmp(id_2),
-            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2)) => {
-                x_1.raw.cmp(&x_2.raw)
-            }
+            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Topics(x_1), FieldContentsRef::Topics(x_2))
             | (FieldContentsRef::History(x_1), FieldContentsRef::History(x_2))
@@ -255,7 +245,6 @@ impl<'a> FieldContentsRef<'a> {
             FieldContentsRef::Id(x) => FieldContents::Id(*x),
             FieldContentsRef::Difficulty(x) => FieldContents::Difficulty(*x),
             FieldContentsRef::Problem(x) => FieldContents::Problem((*x).clone()),
-            FieldContentsRef::Solution => FieldContents::Solution,
             FieldContentsRef::Source(x) => FieldContents::Source((*x).to_owned()),
             FieldContentsRef::Topics(x) => FieldContents::Topics((*x).to_vec()),
             FieldContentsRef::History(x) => FieldContents::History((*x).to_vec()),
@@ -270,7 +259,6 @@ impl FieldContents {
         match self {
             Self::Id(content) => data.id = content,
             Self::Problem(content) => data.enunciado = content,
-            Self::Solution => println!("La solución no está guardada"),
             Self::Difficulty(content) => data.dificultad = content,
             Self::Topics(content) => data.temas = content,
             Self::Source(content) => data.fuente = content,
@@ -283,16 +271,29 @@ impl FieldContents {
 
     pub(crate) fn is_empty(&self) -> bool {
         use FieldContents::{
-            Comments, Difficulty, History, Id, Packages, Problem, Solution, Source, Topics, Year,
+            Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
         };
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
-            Problem(x) => x.raw.is_empty() || x.raw == "%",
-            Source(x) => x.is_empty() || x == "%",
+            Problem(x) | Source(x) => x.is_empty() || x == "%",
             Topics(x) | History(x) | Comments(x) | Packages(x) => x.is_empty(),
             Year(x) => x.is_none(),
-            Solution => true,
+        }
+    }
+
+    pub fn string_contents(&self) -> Cow<String> {
+        use FieldContents::{
+            Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
+        };
+        match self {
+            Id(x) => Cow::Owned(x.to_string()),
+            Difficulty(x) => Cow::Owned(x.to_string()),
+            Problem(x) | Source(x) => Cow::Borrowed(x),
+            Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
+            Year(x) => x
+                .as_ref()
+                .map_or_else(|| Cow::Owned(String::new()), Cow::Borrowed),
         }
     }
 }
@@ -302,7 +303,6 @@ impl From<&FieldContents> for Fields {
         match value {
             FieldContents::Id(_) => Self::Id,
             FieldContents::Problem(_) => Self::Problem,
-            FieldContents::Solution => Self::Solution,
             FieldContents::Topics(_) => Self::Topics,
             FieldContents::Difficulty(_) => Self::Difficulty,
             FieldContents::Source(_) => Self::Source,
@@ -316,20 +316,7 @@ impl From<&FieldContents> for Fields {
 
 impl Display for FieldContents {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use FieldContents::{
-            Comments, Difficulty, History, Id, Packages, Problem, Solution, Source, Topics, Year,
-        };
-        let string = match self {
-            Id(x) => Cow::Owned(x.to_string()),
-            Difficulty(x) => Cow::Owned(x.to_string()),
-            Problem(x) => Cow::Borrowed(&x.raw),
-            Source(x) => Cow::Borrowed(x),
-            Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
-            Year(x) => x
-                .as_ref()
-                .map_or_else(|| Cow::Owned(String::new()), Cow::Borrowed),
-            Solution => Cow::Owned(String::new()),
-        };
+        let string = self.string_contents();
         write!(f, "{}: {string}", Fields::from(self))
     }
 }
