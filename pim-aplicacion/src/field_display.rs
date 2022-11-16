@@ -21,7 +21,7 @@ impl Component for Comp {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <td>{ctx.props().item.string_contents()}<button class="edit-button"><i class="fa-solid fa-pen-to-square"></i></button></td>
+            <td>{ctx.props().item.string_contents()}</td>
         }
         // match &ctx.props().item {
         //     // FieldContents::Problem(Enunciado { raw: _, html }) => {

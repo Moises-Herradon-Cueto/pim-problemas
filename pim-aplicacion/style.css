@@ -169,3 +169,57 @@ li {
   height: 20px;
   font-size: 12px;
 }
+
+
+.edit-problem {
+  position: fixed;
+  width: calc(100vw - 20px);
+  height: calc(100vh - 20px);
+  z-index: 10;
+  top: 10px;
+  left: 10px;
+  background-color: aliceblue;
+  overflow: scroll;
+}
+
+.edit-problem * {
+  z-index: 10;
+}
+
+.edit-problem fieldset {
+  border: none;
+}
+
+.edit-problem fieldset div {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.close-edit-button {
+  width: 35px;
+  height: 35px;
+  background-color: red;
+  padding: 0;
+  font-size: 26px;
+  color: white;
+  position: absolute;
+  right: 20px;
+}
+
+.edit-problem textarea {
+  width: 100%;
+  overflow: scroll;
+}
+
+.edit-problem div {
+  display: block;
+}
+
+.edit-problem form {
+  height: calc(100vh - 20px);
+  overflow: scroll;
+}
+
+#problem-preview {
+  white-space: pre-wrap;
+}

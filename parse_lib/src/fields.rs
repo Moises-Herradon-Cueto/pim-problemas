@@ -117,7 +117,13 @@ impl Fields {
         }
     }
 
-    fn parse(self, input: &str) -> Result<FieldContents, String> {
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if
+    /// it doesn't parse correctly
+    pub fn parse(self, input: &str) -> Result<FieldContents, String> {
         let input = input.trim();
         if input.is_empty() || input == "%" {
             return Ok(self.empty());
