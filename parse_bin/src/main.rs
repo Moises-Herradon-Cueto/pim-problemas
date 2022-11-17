@@ -128,7 +128,7 @@ fn make_problem_list(database_path: &Path, start: usize, end: usize, output: &Pa
         .into_iter()
         .map(|(id, diff, problem_statement)| {
             format!(
-                "\\begin{{ejer}}\n% Problema {id}\nDificultad: {diff}\n\n{problem_statement}\n\\end{{ejer}}\n\n"
+                "\\begin{{ejer}}\n% Problema {id}\n% Dificultad: {diff}\n\n{problem_statement}\n\\end{{ejer}}\n\n"
             )
         })
         .collect();
