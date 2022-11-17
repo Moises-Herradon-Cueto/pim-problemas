@@ -50,6 +50,12 @@ fn main() {
             database_dir,
             new_database_dir,
         } => migrate(&database_dir, &new_database_dir),
+        Action::MakeProblemList {
+            database_path,
+            start,
+            end,
+            output,
+        } => make_problem_list(&database_path, start, end, &output),
     }
 }
 
@@ -105,22 +111,30 @@ fn compare_csv_json(database_dir: &Path, merged_path: &Path) {
     // write_html(&data);
 }
 
-fn _make_problem_list(data: &HashMap<usize, Data>) {
+fn make_problem_list(database_path: &Path, start: usize, end: usize, output: &Path) {
+    let data_json = get_json_string(database_path).expect("Failed to open json");
+    let data: HashMap<usize, Data> =
+        serde_json::from_str(&data_json).expect("Failed to deserialize");
     let mut packages = HashSet::new();
-    let problems: String = (2200070..2200130_usize)
+    let mut id_difficulty: Vec<(usize, u8, String)> = (start..=end)
         .filter_map(|i| {
             let problem_info = data.get(&i)?;
-            let problem_statement = &problem_info.enunciado;
-            let id = problem_info.id;
             packages.extend(problem_info.paquetes.iter());
-            Some(format!(
-                "\\begin{{ejer}}\n% Problema {id}\n\n{problem_statement}\n\\end{{ejer}}\n\n\n"
-            ))
+            Some((i, problem_info.dificultad, problem_info.enunciado.clone()))
         })
         .collect();
-    let packages: String = packages.into_iter().cloned().collect();
-    fs::write("problemas_juntos.tex", problems).expect("Failed to write");
-    fs::write("paquetes_juntos.tex", packages).expect("Failed to write");
+    id_difficulty.sort_by(|(_, d1, _), (_, d2, _)| d1.cmp(d2));
+    let problems: String = id_difficulty
+        .into_iter()
+        .map(|(id, diff, problem_statement)| {
+            format!(
+                "\\begin{{ejer}}\n% Problema {id}\nDificultad: {diff}\n\n{problem_statement}\n\\end{{ejer}}\n\n"
+            )
+        })
+        .collect();
+    let packages: String = packages.into_iter().map(|p| format!("{p}\n")).collect();
+    let all = format!("%%% Paquetes\n\n{packages}\n\n%%%%%%\n\n%%%%% Problemas\n\n{problems}");
+    fs::write(output, all).expect("Failed to write");
 }
 
 fn migrate(old: &Path, new: &Path) {
