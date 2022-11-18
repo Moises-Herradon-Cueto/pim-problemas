@@ -12,7 +12,9 @@ pub fn run<P: AsRef<Path>>(path: P) -> Result<(), io::Error> {
             println!("Failed to open file {file:?}");
             continue;
         };
-        if file.file_name().to_string_lossy() != "pim.sty" {
+        if file.file_name().to_string_lossy() != "pim.sty"
+            && file.file_name().to_string_lossy().ends_with(".tex")
+        {
             let path = file.path();
             let mut command = Command::new("pdflatex");
             command.arg("-interaction=nonstopmode").arg(path);
