@@ -8,6 +8,7 @@ use crate::edit_entry::Comp as EditEntry;
 use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
 use crate::files_info::{PathTo, Paths};
+use crate::result_range::{self, Comp as RangeSelector};
 use material_yew::MatIconButtonToggle;
 use parse_lib::{Data, Fields, ParseOneError};
 use yew::prelude::*;
@@ -15,11 +16,13 @@ use yew::virtual_dom::AttrValue;
 
 pub struct ViewDb {
     view: Vec<Data>,
+    window: Vec<Data>,
     shown_fields: [bool; Fields::N],
     char_length: usize,
     filters: Vec<Filter>,
     sort: Sort,
     error: Option<ParseOneError>,
+    range: (usize, usize),
 }
 
 struct Sort {
@@ -43,6 +46,7 @@ pub enum Msg {
     SortAsc(bool),
     EditInfo(Data),
     SetError(ParseOneError),
+    Range(usize, result_range::Which),
     ReloadDb,
 }
 
@@ -72,11 +76,13 @@ impl Component for ViewDb {
         }
         let mut output = Self {
             view: vec![],
+            window: vec![],
             shown_fields,
             char_length: 100,
             filters: vec![],
             sort: Sort::default(),
             error: None,
+            range: (0, 20),
         };
 
         output.calculate_view(ctx);
@@ -127,6 +133,14 @@ impl Component for ViewDb {
                 self.sort.ascending = bool;
                 self.calculate_view(ctx);
             }
+            Msg::Range(x, result_range::Which::Start) => {
+                self.range.0 = x;
+                self.calculate_window();
+            }
+            Msg::Range(x, result_range::Which::End) => {
+                self.range.1 = x;
+                self.calculate_window();
+            }
         }
         true
     }
@@ -134,7 +148,7 @@ impl Component for ViewDb {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let edit_cb = ctx.link().callback(Msg::EditInfo);
         let filas: Html = self
-            .view
+            .window
             .iter()
             .map(|data| {
                 into_row(
@@ -170,6 +184,8 @@ impl Component for ViewDb {
             .as_ref()
             .map_or_else(|| html! {}, |err| html! {<p class="error">{err}</p>});
 
+        let range_cb = ctx.link().callback(|(x, y)| Msg::Range(x, y));
+
         html! {
             <div id="db-table-container">
             {error}
@@ -186,6 +202,7 @@ impl Component for ViewDb {
                 // <i class="fa-solid fa-arrow-up-long"></i>
                 // </MatOffIconButtonToggle>
                 // </MatIconButtonToggle>
+                <RangeSelector cb={range_cb} start={self.range.0} end={self.range.1}/>
             </div>
             <FilterAdd {filter_cb}/>
             <div id="filters">{filters}</div>
@@ -247,14 +264,14 @@ fn into_row(
 
 impl ViewDb {
     fn calculate_view(&mut self, ctx: &Context<Self>) {
-        let mut view: Vec<_> = ctx
+        self.view = ctx
             .props()
             .db
             .iter()
             .map(|(_, problem_info)| problem_info.clone())
             .filter(|data| self.filters.iter().all(|filter| filter.passes(data)))
             .collect();
-        view.sort_by(|a, b| {
+        self.view.sort_by(|a, b| {
             let mut f_a = self.sort.by.get(a);
             let mut f_b = self.sort.by.get(b);
             if !self.sort.ascending {
@@ -262,6 +279,16 @@ impl ViewDb {
             }
             f_a.cmp(&f_b)
         });
-        self.view = view.into_iter().take(20).collect();
+        self.calculate_window();
+    }
+
+    fn calculate_window(&mut self) {
+        self.window = self
+            .view
+            .iter()
+            .skip(self.range.0)
+            .take(self.range.1.saturating_sub(self.range.0))
+            .cloned()
+            .collect();
     }
 }
