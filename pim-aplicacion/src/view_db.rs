@@ -3,11 +3,13 @@ use std::{collections::HashMap, rc::Rc};
 use crate::add_filters::{Comp as FilterAdd, Filter, FilterAction};
 use crate::app::typeset;
 use crate::column_select::Comp as ColumnSelect;
+use crate::commands::insert_db_info;
 use crate::edit_entry::Comp as EditEntry;
 use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
+use crate::files_info::{PathTo, Paths};
 use material_yew::MatIconButtonToggle;
-use parse_lib::{Data, Fields};
+use parse_lib::{Data, Fields, ParseOneError};
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
 
@@ -17,6 +19,7 @@ pub struct ViewDb {
     char_length: usize,
     filters: Vec<Filter>,
     sort: Sort,
+    error: Option<ParseOneError>,
 }
 
 struct Sort {
@@ -39,11 +42,15 @@ pub enum Msg {
     SortField(Fields),
     SortAsc(bool),
     EditInfo(Data),
+    SetError(ParseOneError),
+    ReloadDb,
 }
 
-#[derive(Properties, PartialEq, Eq, Clone)]
+#[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub db: Rc<HashMap<usize, Data>>,
+    pub reload_db_cb: Callback<()>,
+    pub paths: Paths,
 }
 
 impl Component for ViewDb {
@@ -61,6 +68,7 @@ impl Component for ViewDb {
             char_length: 100,
             filters: vec![],
             sort: Sort::default(),
+            error: None,
         };
 
         output.calculate_view(ctx);
@@ -70,8 +78,20 @@ impl Component for ViewDb {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::SetError(err) => {
+                self.error = Some(err);
+            }
+            Msg::ReloadDb => {
+                ctx.props().reload_db_cb.emit(());
+                return false;
+            }
             Msg::EditInfo(data) => {
-                log::info!("{data:#?}");
+                let problems_path = ctx.props().paths.get(PathTo::Problems).into_owned();
+                let db_path = ctx.props().paths.get(PathTo::Db).into_owned();
+                ctx.link().send_future(async move {
+                    let result = insert_db_info(&problems_path, &db_path, data).await;
+                    result.map_or_else(Msg::SetError, |_| Msg::ReloadDb)
+                });
                 return false;
             }
             Msg::View(show, field) => {
@@ -82,7 +102,6 @@ impl Component for ViewDb {
                 self.calculate_view(ctx);
             }
             Msg::EditFilter(FilterAction::Add(filter)) => {
-                log::info!("Filter: {filter:?}");
                 self.filters.push(filter);
                 self.calculate_view(ctx);
             }
@@ -132,8 +151,14 @@ impl Component for ViewDb {
 
         let onchange = ctx.link().callback(Msg::SortAsc);
 
+        let error = self
+            .error
+            .as_ref()
+            .map_or_else(|| html! {}, |err| html! {<p class="error">{err}</p>});
+
         html! {
             <div id="db-table-container">
+            {error}
             <ColumnSelect show={self.shown_fields} {show_cb}></ColumnSelect>
             <div>
                 <span>{"Ordenar"}</span>

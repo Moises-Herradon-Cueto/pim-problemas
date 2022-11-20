@@ -1,21 +1,25 @@
-use std::{borrow::Cow, fmt::Display, path::PathBuf, str::FromStr};
+use std::{
+    borrow::Cow,
+    fmt::Display,
+    path::{Path, PathBuf},
+};
 use yew::prelude::*;
 
 use crate::{app::invoke, helper::GetFolderArgs};
 
-pub const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
+const DEFAULT_PROBLEMS: &str = if cfg!(debug_assertions) {
     "/home/moises/OneDrive/ejercicios"
 } else {
     ""
 };
 
-pub const DEFAULT_DB: &str = if cfg!(debug_assertions) {
+const DEFAULT_DB: &str = if cfg!(debug_assertions) {
     "/home/moises/OneDrive/ejercicios/database.json"
 } else {
     "."
 };
 
-pub const DEFAULT_OUTPUT: &str = if cfg!(debug_assertions) {
+const DEFAULT_OUTPUT: &str = if cfg!(debug_assertions) {
     "/home/moises/pim-input/ejercicios-out"
 } else {
     "."
@@ -25,6 +29,7 @@ pub const DEFAULT_OUTPUT: &str = if cfg!(debug_assertions) {
 pub enum PathTo {
     Problems,
     Output,
+    Db,
 }
 
 #[derive(Default)]
@@ -41,9 +46,23 @@ pub struct Paths {
     pub output: Option<PathBuf>,
 }
 
+impl Paths {
+    pub fn get(&self, path_to: PathTo) -> Cow<Path> {
+        let maybe_path = match path_to {
+            PathTo::Problems => &self.problems,
+            PathTo::Output => &self.output,
+            PathTo::Db => &self.database,
+        };
+        maybe_path
+            .as_ref()
+            .map_or_else(|| path_to.default_path().into(), std::convert::Into::into)
+    }
+}
+
 pub enum MsgUpdate {
     Problems(PathBuf),
     Output(PathBuf),
+    _Db(PathBuf),
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -73,6 +92,9 @@ impl Component for Comp {
                 self.output_directory = Some(s.clone());
                 self.database_directory = Some(s.join("database.json"));
             }
+            MsgUpdate::_Db(_) => {
+                unreachable!()
+            }
         }
         ctx.props().update_cb.emit(Paths {
             problems: self.problems_directory.clone(),
@@ -90,14 +112,6 @@ impl Component for Comp {
             </div>
         }
     }
-}
-
-pub fn _default_problem_dir() -> PathBuf {
-    PathBuf::from_str(DEFAULT_PROBLEMS).unwrap()
-}
-
-pub fn _default_db_dir() -> PathBuf {
-    PathBuf::from_str(DEFAULT_DB).unwrap()
 }
 
 impl Comp {
@@ -127,6 +141,7 @@ impl Comp {
                 match path_to {
                     PathTo::Problems => vec![MsgUpdate::Problems(result)],
                     PathTo::Output => vec![MsgUpdate::Output(result)],
+                    PathTo::Db => vec![MsgUpdate::_Db(result)],
                 }
             });
         });
@@ -139,15 +154,17 @@ impl Comp {
         match path_to {
             PathTo::Problems => &self.problems_directory,
             PathTo::Output => &self.output_directory,
+            PathTo::Db => &self.database_directory,
         }
     }
 }
 
 impl PathTo {
-    fn default_path(self) -> PathBuf {
+    pub fn default_path(self) -> PathBuf {
         match self {
             Self::Problems => PathBuf::from(DEFAULT_PROBLEMS),
             Self::Output => PathBuf::from(DEFAULT_OUTPUT),
+            Self::Db => PathBuf::from(DEFAULT_DB),
         }
     }
 }
@@ -157,6 +174,7 @@ impl Display for PathTo {
         match self {
             Self::Problems => write!(f, "Problemas"),
             Self::Output => write!(f, "Carpeta vacía para escribir nuevos .tex"),
+            Self::Db => write!(f, "Archivo con la base de datos (.json)"),
         }
     }
 }

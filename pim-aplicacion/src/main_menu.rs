@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 
 use crate::app::invoke;
-use crate::files_info::{Comp as FilesInfo, Paths, DEFAULT_DB};
+use crate::files_info::{Comp as FilesInfo, PathTo, Paths};
 use crate::update_db::{self, UpdateDb as Update};
 use crate::view_db::ViewDb as View;
 use crate::{home_button, view_db};
@@ -29,6 +29,7 @@ pub enum Msg {
     UpdatePaths(Paths),
     UpdateDb(Rc<HashMap<usize, Data>>),
     UpdateErr(String),
+    GetDb,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -42,34 +43,7 @@ impl Component for MainMenu {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        ctx.link().send_future(async move {
-            // log::info!("Trying to invoke");
-            let args = serde_wasm_bindgen::to_value(&GetJsonArgs {
-                json_path: PathBuf::from(DEFAULT_DB),
-            })
-            .expect("Couldn't make into js value🫣");
-            // log::info!("Made args:\n{args:#?}");
-            let db = invoke("get_db_from_json", args).await;
-            // log::info!("Created db: {db:#?}");
-            let db: Result<Result<String, String>, _> = serde_wasm_bindgen::from_value(db);
-            // log::info!("Deserialized DB: {db:?}");
-            match db {
-                Ok(Ok(db)) => {
-                    // log::info!("Received:\n{db}");
-                    let db = serde_json::from_str(&db);
-                    match db {
-                        Ok(db) => Msg::UpdateDb(Rc::new(db)),
-                        Err(err) => {
-                            Msg::UpdateErr(format!("Error parsing response with serde-json: {err}"))
-                        }
-                    }
-                }
-                Ok(Err(err)) => Msg::UpdateErr(err),
-                Err(parse_err) => {
-                    Msg::UpdateErr(format!("Error parsing response js value: {parse_err}"))
-                }
-            }
-        });
+        Self::get_db(ctx);
         Self {
             main_app: AppType::Start,
             paths: Paths::default(),
@@ -78,7 +52,7 @@ impl Component for MainMenu {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::ChangeApps(app) => {
                 self.main_app = app;
@@ -90,11 +64,15 @@ impl Component for MainMenu {
             }
             Msg::UpdateDb(db) => {
                 self.db = Some(db);
-                false
+                true
             }
             Msg::UpdateErr(err) => {
                 self.error = err;
                 true
+            }
+            Msg::GetDb => {
+                Self::get_db(ctx);
+                false
             }
         }
     }
@@ -120,6 +98,36 @@ impl Component for MainMenu {
 }
 
 impl MainMenu {
+    fn get_db(ctx: &Context<Self>) {
+        ctx.link().send_future(async move {
+            // log::info!("Trying to invoke");
+            let args = serde_wasm_bindgen::to_value(&GetJsonArgs {
+                json_path: PathTo::Db.default_path(),
+            })
+            .expect("Couldn't make into js value🫣");
+            // log::info!("Made args:\n{args:#?}");
+            let db = invoke("get_db_from_json", args).await;
+            // log::info!("Created db: {db:#?}");
+            let db: Result<Result<String, String>, _> = serde_wasm_bindgen::from_value(db);
+            // log::info!("Deserialized DB: {db:?}");
+            match db {
+                Ok(Ok(db)) => {
+                    // log::info!("Received:\n{db}");
+                    let db = serde_json::from_str(&db);
+                    match db {
+                        Ok(db) => Msg::UpdateDb(Rc::new(db)),
+                        Err(err) => {
+                            Msg::UpdateErr(format!("Error parsing response with serde-json: {err}"))
+                        }
+                    }
+                }
+                Ok(Err(err)) => Msg::UpdateErr(err),
+                Err(parse_err) => {
+                    Msg::UpdateErr(format!("Error parsing response js value: {parse_err}"))
+                }
+            }
+        });
+    }
     fn view_start(ctx: &Context<Self>) -> Html {
         let update_db = ctx
             .link()
@@ -152,9 +160,10 @@ impl MainMenu {
     fn view_db(&self, ctx: &Context<Self>) -> Html {
         self.db.as_ref().map_or_else(|| self.view_update(ctx), |db| {
             let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
+            let reload_db_cb = ctx.link().callback(|_| Msg::GetDb);
             html! {
                 <>
-                <home_button::With<View> props={view_db::Props {db:db.clone()}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={view_db::Props {db:db.clone(), paths:self.paths.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })

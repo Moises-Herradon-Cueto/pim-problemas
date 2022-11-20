@@ -50,4 +50,10 @@ pub enum Action {
         #[arg(short, long)]
         output: PathBuf,
     },
+    CleanPackages {
+        #[arg(short, long)]
+        database_path: PathBuf,
+        #[arg(short, long)]
+        output_path: Option<PathBuf>,
+    },
 }

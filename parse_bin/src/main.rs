@@ -7,8 +7,8 @@ use std::{
 use arguments::Action;
 use clap::Parser;
 use parse_lib::{
-    commands::sync_db, get_json_string, pdflatex, read_csv, table_friendly::TableFriendly,
-    write_csv, Data, OldData,
+    clean_packages, commands::sync_db, get_json_string, pdflatex, read_csv,
+    table_friendly::TableFriendly, write_csv, Data, OldData,
 };
 
 use crate::arguments::MyArgs;
@@ -56,7 +56,21 @@ fn main() {
             end,
             output,
         } => make_problem_list(&database_path, start, end, &output),
+        Action::CleanPackages {
+            database_path,
+            output_path,
+        } => clean_packages_db(&database_path, output_path.as_deref()),
     }
+}
+
+fn clean_packages_db(database_path: &Path, output: Option<&Path>) {
+    let output = output.unwrap_or(database_path);
+    let data_json = get_json_string(database_path).expect("Failed to open json");
+    let mut data_json: HashMap<usize, Data> =
+        serde_json::from_str(&data_json).expect("Failed to deserialize");
+    data_json.values_mut().for_each(clean_packages);
+    let data_json = serde_json::to_string(&data_json).expect("Failed to serialize");
+    fs::write(output, data_json).expect("Failed to write");
 }
 
 fn read_json_write_csv(database_dir: &Path, csv_dir: &Path) {

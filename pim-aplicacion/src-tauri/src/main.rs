@@ -12,7 +12,9 @@ use std::{
     sync::{mpsc, Mutex},
 };
 
-use parse_lib::{commands::sync_db, get_json_string, Data};
+use parse_lib::{
+    commands::sync_db, get_json_string, overwrite_file_data, write_json, Data, ParseOneError,
+};
 use tauri::{api::dialog::FileDialogBuilder, State};
 type Db = HashMap<usize, Data>;
 
@@ -21,7 +23,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_db_from_json,
             update_db,
-            get_folder
+            get_folder,
+            insert_db_info
         ])
         .manage(Mutex::new(HashMap::<usize, Data>::new()))
         .run(tauri::generate_context!())
@@ -85,4 +88,33 @@ fn get_folder() -> Option<PathBuf> {
             tx.send(f).unwrap();
         });
     rx.recv().unwrap()
+}
+
+#[tauri::command]
+#[allow(clippy::needless_pass_by_value)]
+#[allow(clippy::unnecessary_wraps)] // Err makes promise fail
+fn insert_db_info<'r>(
+    problems_path: PathBuf,
+    db_path: PathBuf,
+    data: Data,
+    db: State<'r, Mutex<Db>>,
+) -> Result<Result<(), ParseOneError>, ()> {
+    Ok(insert_db_info_inner(&problems_path, &db_path, data, &db))
+}
+
+fn insert_db_info_inner<'r>(
+    problems_path: &Path,
+    db_path: &Path,
+    data: Data,
+    db: &State<'r, Mutex<Db>>,
+) -> Result<(), ParseOneError> {
+    let mut db = db.lock().unwrap();
+    let id = data.id;
+    db.insert(data.id, data);
+    let data = db.get(&id).unwrap();
+    overwrite_file_data(problems_path, data)?;
+    write_json(db_path, &*db).map_err(|err| ParseOneError::IO {
+        io_err: err.to_string(),
+        action: format!("Error writing to {}", db_path.display()),
+    })
 }

@@ -117,6 +117,11 @@ impl Fields {
         }
     }
 
+    #[must_use]
+    pub const fn is_optional(self) -> bool {
+        matches!(self, History | Comments | Packages)
+    }
+
     /// .
     ///
     /// # Errors
@@ -169,7 +174,14 @@ impl Fields {
             Packages => Ok(FieldContents::Packages(
                 input
                     .split('\n')
-                    .map(|topic| topic.trim().to_owned())
+                    .filter_map(|topic| {
+                        let trim = topic.trim();
+                        if trim.is_empty() {
+                            None
+                        } else {
+                            Some(trim.to_owned())
+                        }
+                    })
                     .collect(),
             )),
         }
@@ -216,6 +228,22 @@ pub enum FieldContentsRef<'a> {
     Packages(&'a [String]),
 }
 
+impl<'a> FieldContentsRef<'a> {
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        use FieldContentsRef::{
+            Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
+        };
+        match self {
+            Id(x) => *x == usize::MAX,
+            Difficulty(x) => *x == u8::MAX,
+            Problem(x) => x.is_empty() || *x == "%",
+            Source(x) => x.is_empty() || *x == "%",
+            Topics(x) | History(x) | Comments(x) | Packages(x) => x.is_empty(),
+            Year(x) => x.is_none(),
+        }
+    }
+}
 impl<'a> PartialOrd for FieldContentsRef<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
@@ -269,7 +297,8 @@ impl FieldContents {
         }
     }
 
-    pub(crate) fn is_empty(&self) -> bool {
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
         use FieldContents::{
             Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
         };

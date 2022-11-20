@@ -66,7 +66,7 @@ pub fn _solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
 }
 
 pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
-    Regex::new(r"\\usepackage\[(.*)\]\{(.*)}")
+    Regex::new(r"\\usepackage\[\s*(.*?)\s*\]\{\s*(.*?)\s*}")
         .map_err(|err| ParseOneError::IMessedUp(format!("I messed up making the regex: {err}")))?
         .captures_iter(input)
         .for_each(|result| {
@@ -84,7 +84,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
             data.paquetes.push(use_statement);
         });
 
-    let paquetes_2: String = Regex::new(r"\\usepackage\{(.*)}")
+    let paquetes_2: String = Regex::new(r"\\usepackage\{\s*(.*?)\s*}")
         .map_err(|err| ParseOneError::IMessedUp(format!("I messed up making the regex: {err}")))?
         .captures_iter(input)
         .flat_map(|result| {
@@ -105,7 +105,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
     let more_packages = paquetes_2.split('\n').map(std::borrow::ToOwned::to_owned);
     data.paquetes.extend(more_packages);
 
-    Regex::new(r"\\usetikzlibrary\{(.*)}")
+    Regex::new(r"\\usetikzlibrary\{\s*(.*?)\s*}")
         .map_err(|err| ParseOneError::IMessedUp(format!("I messed up making the regex: {err}")))?
         .captures_iter(input)
         .for_each(|result| {
@@ -113,7 +113,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
             data.paquetes.push(format!("\\usetikzlibrary{{{package}}}"));
         });
 
-    Regex::new(r"\\pgfplotsset\{(.*)}")
+    Regex::new(r"\\pgfplotsset\{\s*(.*?)\s*}")
         .map_err(|err| ParseOneError::IMessedUp(format!("I messed up making the regex: {err}")))?
         .captures_iter(input)
         .for_each(|result| {

@@ -20,6 +20,7 @@ use crate::{
 use self::enunciado::Enunciado;
 
 pub mod enunciado;
+pub mod packages;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Read {
