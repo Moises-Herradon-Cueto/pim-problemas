@@ -64,7 +64,6 @@ impl Component for Comp {
         });
 
         html! {
-            <td>
             <div class="edit-problem">
             <form>
             <fieldset>
@@ -76,7 +75,6 @@ impl Component for Comp {
             </fieldset>
             </form>
             </div>
-            </td>
         }
     }
 }

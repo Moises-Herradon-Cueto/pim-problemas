@@ -1,3 +1,4 @@
+use std::time::Duration;
 use std::{collections::HashMap, rc::Rc};
 
 use crate::add_filters::{Comp as FilterAdd, Filter, FilterAction};
@@ -23,6 +24,7 @@ pub struct ViewDb {
     sort: Sort,
     error: Option<ParseOneError>,
     range: (usize, usize),
+    cached_range: (usize, usize),
     editing: Option<usize>,
 }
 
@@ -86,6 +88,7 @@ impl Component for ViewDb {
             sort: Sort::default(),
             error: None,
             range: (0, 20),
+            cached_range: (0, 0),
             editing: None,
         };
 
@@ -103,7 +106,7 @@ impl Component for ViewDb {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::StopEditing => {
-                self.editing = None;
+                self.stop_editing(ctx);
             }
             Msg::SetError(err) => {
                 self.error = Some(err);
@@ -119,7 +122,7 @@ impl Component for ViewDb {
                     let result = insert_db_info(&problems_path, &db_path, data).await;
                     result.map_or_else(Msg::SetError, |_| Msg::ReloadDb)
                 });
-                self.editing = None;
+                self.stop_editing(ctx);
             }
             Msg::View(show, field) => {
                 self.shown_fields[field as usize] = show;
@@ -150,6 +153,7 @@ impl Component for ViewDb {
             }
             Msg::Edit(id) => {
                 self.editing = Some(id);
+                self.cached_range = self.range;
             }
         }
         true
@@ -310,5 +314,19 @@ impl ViewDb {
             .take(self.range.1.saturating_sub(self.range.0))
             .cloned()
             .collect();
+    }
+
+    fn stop_editing(&mut self, ctx: &Context<Self>) {
+        self.editing = None;
+        let start = self.cached_range.0;
+        let end = self.cached_range.1;
+        ctx.link().send_future(async move {
+            std::thread::sleep(Duration::from_millis(1000));
+            Msg::Range(start, result_range::Which::Start)
+        });
+        ctx.link().send_future(async move {
+            std::thread::sleep(Duration::from_millis(1000));
+            Msg::Range(end, result_range::Which::End)
+        });
     }
 }
