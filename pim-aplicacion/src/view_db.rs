@@ -23,6 +23,7 @@ pub struct ViewDb {
     sort: Sort,
     error: Option<ParseOneError>,
     range: (usize, usize),
+    editing: Option<usize>,
 }
 
 struct Sort {
@@ -47,6 +48,8 @@ pub enum Msg {
     EditInfo(Data),
     SetError(ParseOneError),
     Range(usize, result_range::Which),
+    Edit(usize),
+    StopEditing,
     ReloadDb,
 }
 
@@ -83,6 +86,7 @@ impl Component for ViewDb {
             sort: Sort::default(),
             error: None,
             range: (0, 20),
+            editing: None,
         };
 
         output.calculate_view(ctx);
@@ -98,6 +102,9 @@ impl Component for ViewDb {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::StopEditing => {
+                self.editing = None;
+            }
             Msg::SetError(err) => {
                 self.error = Some(err);
             }
@@ -112,7 +119,7 @@ impl Component for ViewDb {
                     let result = insert_db_info(&problems_path, &db_path, data).await;
                     result.map_or_else(Msg::SetError, |_| Msg::ReloadDb)
                 });
-                return false;
+                self.editing = None;
             }
             Msg::View(show, field) => {
                 self.shown_fields[field as usize] = show;
@@ -141,23 +148,30 @@ impl Component for ViewDb {
                 self.range.1 = x;
                 self.calculate_window();
             }
+            Msg::Edit(id) => {
+                self.editing = Some(id);
+            }
         }
         true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let edit_cb = ctx.link().callback(Msg::EditInfo);
+        if let Some(id) = self.editing {
+            let close_cb = ctx.link().callback(|()| Msg::StopEditing);
+            let edit_cb = ctx.link().callback(Msg::EditInfo);
+            let input_data = Rc::new(
+                ctx.props()
+                    .db
+                    .get(&id)
+                    .cloned()
+                    .unwrap_or_else(|| Data::new(id)),
+            );
+            return html! {<EditEntry {close_cb} {edit_cb} {id} {input_data}/>};
+        }
         let filas: Html = self
             .window
             .iter()
-            .map(|data| {
-                into_row(
-                    Rc::new(data.clone()),
-                    self.char_length,
-                    &self.shown_fields,
-                    edit_cb.clone(),
-                )
-            })
+            .map(|data| into_row(ctx, data, self.char_length, &self.shown_fields))
             .collect();
 
         let show_cb: Callback<(bool, Fields)> =
@@ -193,7 +207,7 @@ impl Component for ViewDb {
             <div>
                 <span>{"Ordenar"}</span>
                 <FieldSelect {select_cb}/>
-                <MatIconButtonToggle {onchange} off_icon={Some(AttrValue::Static("⬆️"))} on_icon={Some(AttrValue::Static("⬇️"))}/>
+                <MatIconButtonToggle {onchange} on={self.sort.ascending} off_icon={Some(AttrValue::Static("⬆️"))} on_icon={Some(AttrValue::Static("⬇️"))}/>
                 // <MatIconButtonToggle {onchange}>
                 // <MatOnIconButtonToggle>
                 // <i class="fa-solid fa-arrow-down-long"></i>
@@ -237,10 +251,10 @@ fn header(shown_fields: &[bool; Fields::N]) -> Html {
 }
 
 fn into_row(
-    data: Rc<Data>,
+    ctx: &Context<ViewDb>,
+    data: &Data,
     max_length: usize,
     shown: &[bool; Fields::N],
-    edit_cb: Callback<Data>,
 ) -> Html {
     let entries = shown
         .iter()
@@ -249,14 +263,20 @@ fn into_row(
             if !shown {
                 return None;
             }
-            let item = f.get(&data).to_owned();
+            let item = f.get(data).to_owned();
             Some(html! {<FieldDisplay {max_length} {item}   />})
         })
         .collect::<Html>();
 
+    let id = data.id;
+    let onclick = ctx.link().callback(move |e: MouseEvent| {
+        e.prevent_default();
+        Msg::Edit(id)
+    });
+
     html! {
         <tr>
-        <EditEntry {edit_cb} id={data.id} input_data={data}/>
+        <td><button class="edit-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button></td>
         {entries}
         </tr>
     }
