@@ -5,7 +5,10 @@
 mod add_filters;
 mod app;
 mod column_select;
+mod commands;
+mod edit_entry;
 mod field_display;
+mod field_edit_entry;
 mod field_selector;
 mod files_info;
 mod helper;

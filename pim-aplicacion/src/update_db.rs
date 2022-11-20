@@ -6,7 +6,7 @@ use yew::prelude::*;
 
 use crate::{
     app::invoke,
-    files_info::{Paths, DEFAULT_DB, DEFAULT_OUTPUT, DEFAULT_PROBLEMS},
+    files_info::{PathTo, Paths},
 };
 
 #[derive(Default)]
@@ -118,13 +118,9 @@ struct UpdateArgs {
 impl UpdateDb {
     #[allow(clippy::future_not_send)]
     async fn sync_db(paths: Paths) -> Result<Result<Vec<Entry>, String>, String> {
-        let problems_path = paths
-            .problems
-            .unwrap_or_else(|| PathBuf::from(DEFAULT_PROBLEMS));
-        let db_path = paths.database.unwrap_or_else(|| PathBuf::from(DEFAULT_DB));
-        let output_path = paths
-            .output
-            .unwrap_or_else(|| PathBuf::from(DEFAULT_OUTPUT));
+        let problems_path = paths.get(PathTo::Problems).into_owned();
+        let db_path = paths.get(PathTo::Db).into_owned();
+        let output_path = paths.get(PathTo::Output).into_owned();
         let args = serde_wasm_bindgen::to_value(&UpdateArgs {
             problems_path,
             db_path,

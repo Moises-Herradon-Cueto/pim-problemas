@@ -40,4 +40,20 @@ pub enum Action {
         #[arg(short, long)]
         new_database_dir: PathBuf,
     },
+    MakeProblemList {
+        #[arg(short, long)]
+        database_path: PathBuf,
+        #[arg(short, long)]
+        start: usize,
+        #[arg(short, long)]
+        end: usize,
+        #[arg(short, long)]
+        output: PathBuf,
+    },
+    CleanPackages {
+        #[arg(short, long)]
+        database_path: PathBuf,
+        #[arg(short, long)]
+        output_path: Option<PathBuf>,
+    },
 }

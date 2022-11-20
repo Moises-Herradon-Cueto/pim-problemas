@@ -10,14 +10,14 @@ use std::{
 
 use crate::{
     data::Data,
-    merge::{self, ParseResult},
+    merge::{self, overwrite_document_data, ParseResult},
     FieldContents, Fields, MsgList,
 };
 use encoding_rs::mem::convert_latin1_to_utf8;
 use serde::{Deserialize, Serialize};
 
-fn decode_file(path: PathBuf) -> Result<String, ParseOneError> {
-    let mut file = fs::File::open(path.clone()).map_err(|err| ParseOneError::IO {
+fn decode_file(path: &Path) -> Result<String, ParseOneError> {
+    let mut file = fs::File::open(path).map_err(|err| ParseOneError::IO {
         io_err: err.to_string(),
         action: format!("Error al abrir el archivo: {path:?}"),
     })?;
@@ -41,7 +41,7 @@ fn decode_file(path: PathBuf) -> Result<String, ParseOneError> {
 
     converted_buffer.truncate(written);
 
-    String::from_utf8(converted_buffer).map_err(|_| ParseOneError::Encoding(path))
+    String::from_utf8(converted_buffer).map_err(|_| ParseOneError::Encoding(path.to_path_buf()))
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -170,7 +170,7 @@ fn parse_one<T: BuildHasher>(
 ) -> Result<MsgList, ParseOneError> {
     let (path, id) = check_file(entry)?;
     let name = format!("{id}.tex");
-    let in_string = decode_file(path)?;
+    let in_string = decode_file(&path)?;
     let out_path =
         output_dir.join(PathBuf::from_str(&name).map_err(|_| {
             ParseOneError::IMessedUp("I'm not concatenating paths right".to_string())
@@ -231,12 +231,18 @@ fn merge_file_data<T: BuildHasher, P: std::fmt::Debug + Clone + AsRef<Path>>(
     });
     let parse_result = merge::string_and_data(tex_string, problem_info)?;
     match parse_result {
-        ParseResult::ToChange(out_string, errors) => {
-            return_errs.push((
-                id,
-                ParseOneInfo::NotInTemplate(out_path.as_ref().to_string_lossy().into_owned()),
-            ));
-            return_errs.extend(errors.into_iter());
+        ParseResult::ToChange {
+            content: out_string,
+            error,
+            is_in_template,
+        } => {
+            if !is_in_template {
+                return_errs.push((
+                    id,
+                    ParseOneInfo::NotInTemplate(out_path.as_ref().to_string_lossy().into_owned()),
+                ));
+            }
+            return_errs.extend(error.into_iter());
             fs::write(out_path.clone(), out_string).map_err(|err| ParseOneError::IO {
                 io_err: err.to_string(),
                 action: format!("Error al escribir el archivo: {out_path:?}"),
@@ -248,4 +254,26 @@ fn merge_file_data<T: BuildHasher, P: std::fmt::Debug + Clone + AsRef<Path>>(
         data.insert(id, placeholder);
     }
     Ok(return_errs)
+}
+
+/// .
+///
+/// # Errors
+///
+/// This function will return an error if
+/// * There's a problem reading or decoding
+/// the file
+/// * The bit between begin document and
+/// end document can't be found
+/// * There's a problem writing the file
+pub fn overwrite_file_data(problems_path: &Path, data: &Data) -> Result<(), ParseOneError> {
+    let path = problems_path.join(format!("{}.tex", data.id));
+    let file_content = decode_file(&path)?;
+    let new_content = overwrite_document_data(&file_content, data)?;
+
+    fs::write(&path, new_content).map_err(|err| ParseOneError::IO {
+        io_err: err.to_string(),
+        action: format!("Error al escribir el archivo: {path:?}"),
+    })?;
+    Ok(())
 }

@@ -20,6 +20,7 @@ use crate::{
 use self::enunciado::Enunciado;
 
 pub mod enunciado;
+pub mod packages;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Read {
@@ -436,5 +437,17 @@ impl std::fmt::Display for Error {
             Self::IO(err) => write!(f, "Error reading file: {err}"),
             Self::Serde(err) => write!(f, "Error parsing JSON: {err}"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Data;
+
+    #[test]
+    fn try_serde() {
+        let data = Data::new(0);
+        let data_json = serde_json::to_string(&data).unwrap();
+        println!("{data_json}");
     }
 }

@@ -3,10 +3,13 @@ use std::{collections::HashMap, rc::Rc};
 use crate::add_filters::{Comp as FilterAdd, Filter, FilterAction};
 use crate::app::typeset;
 use crate::column_select::Comp as ColumnSelect;
+use crate::commands::insert_db_info;
+use crate::edit_entry::Comp as EditEntry;
 use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
+use crate::files_info::{PathTo, Paths};
 use material_yew::MatIconButtonToggle;
-use parse_lib::{Data, Fields};
+use parse_lib::{Data, Fields, ParseOneError};
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
 
@@ -16,6 +19,7 @@ pub struct ViewDb {
     char_length: usize,
     filters: Vec<Filter>,
     sort: Sort,
+    error: Option<ParseOneError>,
 }
 
 struct Sort {
@@ -37,11 +41,24 @@ pub enum Msg {
     EditFilter(FilterAction),
     SortField(Fields),
     SortAsc(bool),
+    EditInfo(Data),
+    SetError(ParseOneError),
+    ReloadDb,
 }
 
-#[derive(Properties, PartialEq, Eq, Clone)]
+#[derive(Properties, Clone)]
 pub struct Props {
     pub db: Rc<HashMap<usize, Data>>,
+    pub reload_db_cb: Callback<()>,
+    pub paths: Paths,
+}
+
+impl PartialEq for Props {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.db, &other.db)
+            && self.reload_db_cb == other.reload_db_cb
+            && self.paths == other.paths
+    }
 }
 
 impl Component for ViewDb {
@@ -59,6 +76,7 @@ impl Component for ViewDb {
             char_length: 100,
             filters: vec![],
             sort: Sort::default(),
+            error: None,
         };
 
         output.calculate_view(ctx);
@@ -66,8 +84,30 @@ impl Component for ViewDb {
         output
     }
 
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+        self.calculate_view(ctx);
+
+        true
+    }
+
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::SetError(err) => {
+                self.error = Some(err);
+            }
+            Msg::ReloadDb => {
+                ctx.props().reload_db_cb.emit(());
+                return false;
+            }
+            Msg::EditInfo(data) => {
+                let problems_path = ctx.props().paths.get(PathTo::Problems).into_owned();
+                let db_path = ctx.props().paths.get(PathTo::Db).into_owned();
+                ctx.link().send_future(async move {
+                    let result = insert_db_info(&problems_path, &db_path, data).await;
+                    result.map_or_else(Msg::SetError, |_| Msg::ReloadDb)
+                });
+                return false;
+            }
             Msg::View(show, field) => {
                 self.shown_fields[field as usize] = show;
             }
@@ -76,7 +116,6 @@ impl Component for ViewDb {
                 self.calculate_view(ctx);
             }
             Msg::EditFilter(FilterAction::Add(filter)) => {
-                log::info!("Filter: {filter:?}");
                 self.filters.push(filter);
                 self.calculate_view(ctx);
             }
@@ -93,10 +132,18 @@ impl Component for ViewDb {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let edit_cb = ctx.link().callback(Msg::EditInfo);
         let filas: Html = self
             .view
             .iter()
-            .map(|data| into_row(data, self.char_length, &self.shown_fields))
+            .map(|data| {
+                into_row(
+                    Rc::new(data.clone()),
+                    self.char_length,
+                    &self.shown_fields,
+                    edit_cb.clone(),
+                )
+            })
             .collect();
 
         let show_cb: Callback<(bool, Fields)> =
@@ -118,8 +165,14 @@ impl Component for ViewDb {
 
         let onchange = ctx.link().callback(Msg::SortAsc);
 
+        let error = self
+            .error
+            .as_ref()
+            .map_or_else(|| html! {}, |err| html! {<p class="error">{err}</p>});
+
         html! {
             <div id="db-table-container">
+            {error}
             <ColumnSelect show={self.shown_fields} {show_cb}></ColumnSelect>
             <div>
                 <span>{"Ordenar"}</span>
@@ -162,11 +215,16 @@ fn header(shown_fields: &[bool; Fields::N]) -> Html {
         })
         .collect::<Html>();
     html! {
-        <thead>{output}</thead>
+        <thead><th></th>{output}</thead>
     }
 }
 
-fn into_row(data: &Data, max_length: usize, shown: &[bool; Fields::N]) -> Html {
+fn into_row(
+    data: Rc<Data>,
+    max_length: usize,
+    shown: &[bool; Fields::N],
+    edit_cb: Callback<Data>,
+) -> Html {
     let entries = shown
         .iter()
         .zip(Fields::ALL.into_iter())
@@ -174,13 +232,14 @@ fn into_row(data: &Data, max_length: usize, shown: &[bool; Fields::N]) -> Html {
             if !shown {
                 return None;
             }
-            let item = f.get(data).to_owned();
+            let item = f.get(&data).to_owned();
             Some(html! {<FieldDisplay {max_length} {item}   />})
         })
         .collect::<Html>();
 
     html! {
         <tr>
+        <EditEntry {edit_cb} id={data.id} input_data={data}/>
         {entries}
         </tr>
     }
@@ -203,6 +262,6 @@ impl ViewDb {
             }
             f_a.cmp(&f_b)
         });
-        self.view = view;
+        self.view = view.into_iter().take(20).collect();
     }
 }

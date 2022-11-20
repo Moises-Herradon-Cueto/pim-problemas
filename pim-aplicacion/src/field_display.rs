@@ -20,8 +20,16 @@ impl Component for Comp {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <td>{ctx.props().item.string_contents()}<button class="edit-button"><i class="fa-solid fa-pen-to-square"></i></button></td>
+        if matches!(ctx.props().item, FieldContents::Problem(_)) {
+            html! {
+                <td>
+                <p class={"problem-preview"}>{ctx.props().item.string_contents()}</p>
+                </td>
+            }
+        } else {
+            html! {
+                <td>{ctx.props().item.string_contents()}</td>
+            }
         }
         // match &ctx.props().item {
         //     // FieldContents::Problem(Enunciado { raw: _, html }) => {
