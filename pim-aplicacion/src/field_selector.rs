@@ -33,7 +33,6 @@ impl Component for Comp {
         let onselected = ctx.link().batch_callback(|x: SelectedDetail| {
             let selection = x.index;
             if let ListIndex::Single(Some(i)) = selection {
-                log::info!("Elegido el {i}");
                 Fields::try_from(i).map_or_else(
                     |_| {
                         log::info!("Field {i} out of range");

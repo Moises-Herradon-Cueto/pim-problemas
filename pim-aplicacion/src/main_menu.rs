@@ -72,6 +72,7 @@ impl Component for MainMenu {
             }
             Msg::GetDb => {
                 Self::get_db(ctx);
+                self.db = None;
                 false
             }
         }

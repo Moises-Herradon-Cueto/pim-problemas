@@ -46,11 +46,19 @@ pub enum Msg {
     ReloadDb,
 }
 
-#[derive(Properties, PartialEq, Clone)]
+#[derive(Properties, Clone)]
 pub struct Props {
     pub db: Rc<HashMap<usize, Data>>,
     pub reload_db_cb: Callback<()>,
     pub paths: Paths,
+}
+
+impl PartialEq for Props {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.db, &other.db)
+            && self.reload_db_cb == other.reload_db_cb
+            && self.paths == other.paths
+    }
 }
 
 impl Component for ViewDb {
@@ -74,6 +82,12 @@ impl Component for ViewDb {
         output.calculate_view(ctx);
 
         output
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>) -> bool {
+        self.calculate_view(ctx);
+
+        true
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -248,6 +262,6 @@ impl ViewDb {
             }
             f_a.cmp(&f_b)
         });
-        self.view = view.into_iter().take(5).collect();
+        self.view = view.into_iter().take(20).collect();
     }
 }
