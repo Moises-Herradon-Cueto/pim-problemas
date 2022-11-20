@@ -56,4 +56,14 @@ pub enum Action {
         #[arg(short, long)]
         output_path: Option<PathBuf>,
     },
+    MakeProblemSheet {
+        #[arg(short, long)]
+        input_path: PathBuf,
+        #[arg(short, long)]
+        problems_path: PathBuf,
+        #[arg(short, long)]
+        output_no_solutions: PathBuf,
+        #[arg(short = 's', long)]
+        output_with_solutions: PathBuf,
+    },
 }

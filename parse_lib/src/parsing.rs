@@ -36,7 +36,7 @@ pub fn document(id: usize, input: &str) -> Result<&str, ParseOneError> {
     Ok(output)
 }
 
-pub fn _solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
+pub fn solution(id: usize, input: &str) -> Result<&str, ParseOneError> {
     let sol_regex = [
         Regex::new(r"(?s)\\begin\{proof\}\[Solución\](.*)\\end\{proof\}").map_err(|err| {
             ParseOneError::IMessedUp(format!("I messed up making the regex: {err}"))

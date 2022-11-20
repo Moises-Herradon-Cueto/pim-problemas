@@ -7,7 +7,7 @@ use std::{
 use arguments::Action;
 use clap::Parser;
 use parse_lib::{
-    clean_packages, commands::sync_db, get_json_string, pdflatex, read_csv,
+    clean_packages, commands::sync_db, get_json_string, make_problem_sheet, pdflatex, read_csv,
     table_friendly::TableFriendly, write_csv, Data, OldData,
 };
 
@@ -60,6 +60,20 @@ fn main() {
             database_path,
             output_path,
         } => clean_packages_db(&database_path, output_path.as_deref()),
+        Action::MakeProblemSheet {
+            input_path,
+            problems_path,
+            output_no_solutions,
+            output_with_solutions,
+        } => {
+            let output = make_problem_sheet(
+                &input_path,
+                &problems_path,
+                &output_no_solutions,
+                &output_with_solutions,
+            );
+            println!("{output:#?}");
+        }
     }
 }
 

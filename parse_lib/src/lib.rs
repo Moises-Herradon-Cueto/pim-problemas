@@ -12,6 +12,7 @@ pub use data::Old as OldData;
 pub use fields::FieldContents;
 pub use fields::FieldContentsRef;
 pub use fields::Fields;
+pub use files::make_problem_sheet;
 pub use files::overwrite_file_data;
 pub use files::parse_all;
 pub use files::ParseOneError;

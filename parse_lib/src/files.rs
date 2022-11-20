@@ -10,12 +10,13 @@ use std::{
 use crate::{
     data::Data,
     merge::{self, overwrite_document_data, ParseResult},
-    MsgList,
+    parsing, MsgList,
 };
 use encoding_rs::mem::convert_latin1_to_utf8;
 mod errors;
 pub use errors::ParseOneError;
 pub use errors::ParseOneInfo;
+use regex::{Captures, Regex};
 
 fn decode_file(path: &Path) -> Result<String, ParseOneError> {
     let mut file = fs::File::open(path).map_err(|err| ParseOneError::IO {
@@ -196,4 +197,52 @@ pub fn overwrite_file_data(problems_path: &Path, data: &Data) -> Result<(), Pars
         action: format!("Error al escribir el archivo: {path:?}"),
     })?;
     Ok(())
+}
+
+#[allow(clippy::missing_panics_doc)]
+#[allow(clippy::missing_errors_doc)]
+pub fn make_problem_sheet(
+    input_path: &Path,
+    problems_path: &Path,
+    output_no_solutions: &Path,
+    output_with_solutions: &Path,
+) -> Result<(), ParseOneError> {
+    let input = decode_file(input_path)?;
+    let placeholder_regex =
+        Regex::new(r"\s*%+\s*Insertar\s*(22\d\d\d\d\d?)").expect("Messed up the regex");
+    let with_solutions = placeholder_regex.replace_all(&input, |capture: &Captures| {
+        let id: usize = capture.get(1).unwrap().as_str().parse().unwrap();
+        let (problem, solution) = get_problem_solution(id, problems_path).unwrap_or_else(|err| {
+            (
+                format!("No se ha podido encontrar el problema {id}:\n{err}"),
+                String::new(),
+            )
+        });
+
+        format!("\n\\begin{{ejer}}\n% {id}\n{problem}\n\\end{{ejer}}\n\n\\begin{{proof}}[Solución]% Automática\n{solution}\\end{{proof}}")
+    });
+    let solution_regex =
+        Regex::new(r"(?s)\\begin\{proof\}\[Solución\]% Automática.*?\\end\{proof\}")
+            .expect("Messed up the regex");
+    let no_solutions = solution_regex.replace_all(&with_solutions, "");
+    fs::write(output_with_solutions, with_solutions.as_ref()).map_err(|err| ParseOneError::IO {
+        io_err: err.to_string(),
+        action: format!("Trying to write to {}", output_with_solutions.display()),
+    })?;
+    fs::write(output_no_solutions, no_solutions.as_ref()).map_err(|err| ParseOneError::IO {
+        io_err: err.to_string(),
+        action: format!("Trying to write to {}", output_no_solutions.display()),
+    })?;
+    Ok(())
+}
+
+fn get_problem_solution(
+    id: usize,
+    problems_path: &Path,
+) -> Result<(String, String), ParseOneError> {
+    let file = problems_path.join(format!("{id}.tex"));
+    let contents = decode_file(&file)?;
+    let problem = parsing::problem(id, &contents)?;
+    let solution = parsing::solution(id, &contents)?;
+    Ok((problem.to_owned(), solution.to_owned()))
 }
