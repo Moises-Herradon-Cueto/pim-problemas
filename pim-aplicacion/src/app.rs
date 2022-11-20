@@ -1,4 +1,3 @@
-use crate::main_menu::MainMenu;
 use serde::{Deserialize, Serialize};
 use serde_wasm_bindgen::to_value;
 use wasm_bindgen::prelude::*;
@@ -67,7 +66,7 @@ pub fn app() -> Html {
     };
 
     html! {
-        <MainMenu></MainMenu>
+        <crate::start::Comp />
     }
 
     // html! {

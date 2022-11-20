@@ -16,6 +16,7 @@ mod home_button;
 mod main_menu;
 mod raw_html;
 mod result_range;
+mod start;
 mod update_db;
 mod view_db;
 

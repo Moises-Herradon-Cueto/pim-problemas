@@ -32,6 +32,10 @@ pub enum Msg {
     GetDb,
 }
 
+#[derive(Properties, Clone, PartialEq, Eq)]
+pub struct Props {
+    pub paths: Paths,
+}
 #[derive(Serialize, Deserialize)]
 pub struct GetJsonArgs {
     #[serde(rename = "jsonPath")]
@@ -40,13 +44,13 @@ pub struct GetJsonArgs {
 
 impl Component for MainMenu {
     type Message = Msg;
-    type Properties = ();
+    type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
         Self::get_db(ctx);
         Self {
             main_app: AppType::Start,
-            paths: Paths::default(),
+            paths: ctx.props().paths.clone(),
             db: None,
             error: String::new(),
         }
