@@ -9,6 +9,7 @@ use crate::edit_entry::Comp as EditEntry;
 use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
 use crate::files_info::{PathTo, Paths};
+use crate::helper::sleep;
 use crate::result_range::{self, Comp as RangeSelector};
 use material_yew::MatIconButtonToggle;
 use parse_lib::{Data, Fields, ParseOneError};
@@ -98,6 +99,7 @@ impl Component for ViewDb {
     }
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
+        log::info!("Changed, recalculating");
         self.calculate_view(ctx);
 
         true
@@ -321,11 +323,13 @@ impl ViewDb {
         let start = self.cached_range.0;
         let end = self.cached_range.1;
         ctx.link().send_future(async move {
-            std::thread::sleep(Duration::from_millis(1000));
+            log::info!("Going to sleep");
+            sleep(Duration::from_millis(1000)).await;
+            log::info!("Wake up");
             Msg::Range(start, result_range::Which::Start)
         });
         ctx.link().send_future(async move {
-            std::thread::sleep(Duration::from_millis(1000));
+            sleep(Duration::from_millis(1000)).await;
             Msg::Range(end, result_range::Which::End)
         });
     }

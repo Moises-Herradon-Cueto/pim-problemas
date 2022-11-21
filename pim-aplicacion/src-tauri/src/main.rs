@@ -10,6 +10,7 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
     sync::{mpsc, Mutex},
+    time::Duration,
 };
 
 use parse_lib::{
@@ -24,7 +25,8 @@ fn main() {
             get_db_from_json,
             update_db,
             get_folder,
-            insert_db_info
+            insert_db_info,
+            sleep
         ])
         .manage(Mutex::new(HashMap::<usize, Data>::new()))
         .run(tauri::generate_context!())
@@ -117,4 +119,9 @@ fn insert_db_info_inner<'r>(
         io_err: err.to_string(),
         action: format!("Error writing to {}", db_path.display()),
     })
+}
+
+#[tauri::command]
+fn sleep(duration: Duration) {
+    std::thread::sleep(duration);
 }
