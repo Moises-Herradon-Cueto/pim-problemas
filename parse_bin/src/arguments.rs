@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use parse_lib::Fields;
 
 #[derive(Parser, Debug)]
 pub struct MyArgs {
@@ -71,5 +72,17 @@ pub enum Action {
         database_path: PathBuf,
         #[arg(short, long)]
         output_path: PathBuf,
+    },
+    Regex {
+        #[arg(short = 's', long)]
+        regex: String,
+        #[arg(short, long)]
+        replacement: String,
+        #[arg(value_enum, short, long)]
+        field: Option<Fields>,
+        #[arg(short, long)]
+        database_path: PathBuf,
+        #[arg(short, long)]
+        output_path: Option<PathBuf>,
     },
 }

@@ -1,6 +1,9 @@
 #![warn(clippy::pedantic)]
 #![warn(clippy::nursery)]
 
+use std::collections::HashMap;
+
+pub use crate::regex::apply as apply_regex;
 pub use data::enunciado::Enunciado;
 pub use data::get_json_string;
 pub use data::packages::clean as clean_packages;
@@ -29,9 +32,12 @@ mod parsing;
 pub mod pdflatex;
 mod preamble;
 mod process_tex;
+mod regex;
 pub mod table_friendly;
 
 mod search;
 
 pub type MsgList = Vec<(usize, files::ParseOneInfo)>;
 pub type Entry = Result<(usize, files::ParseOneInfo), ParseOneError>;
+
+pub type Db<K> = HashMap<usize, Data, K>;

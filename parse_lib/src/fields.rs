@@ -2,11 +2,12 @@ use std::borrow::Cow;
 use std::fmt::Display;
 
 use crate::Data;
+use clap::ValueEnum;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use Fields::{Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year};
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 #[repr(u8)]
 pub enum Fields {
     Id,
