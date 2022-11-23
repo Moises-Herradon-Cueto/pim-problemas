@@ -37,6 +37,8 @@ function sortTable(n) {
     const elementsWithInfo = elementsSlice.map((a) => {
         if (n === 1) {
             return [a, a.childNodes[1].firstChild.innerText]
+        } else if (n === 0 || n === 3) {
+            return [a, parseInt(a.childNodes[n].innerText)]
         } else {
             return [a, a.childNodes[n].innerText]
         }
