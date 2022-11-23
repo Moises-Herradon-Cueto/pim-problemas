@@ -17,6 +17,7 @@ pub use files::overwrite_file_data;
 pub use files::parse_all;
 pub use files::ParseOneError;
 pub use files::ParseOneInfo;
+pub use html::make as make_html;
 
 pub mod commands;
 mod data;

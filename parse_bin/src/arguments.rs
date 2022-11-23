@@ -66,4 +66,10 @@ pub enum Action {
         #[arg(short = 's', long)]
         output_with_solutions: PathBuf,
     },
+    MakeHtml {
+        #[arg(short, long)]
+        database_path: PathBuf,
+        #[arg(short, long)]
+        output_path: PathBuf,
+    },
 }

@@ -7,8 +7,8 @@ use std::{
 use arguments::Action;
 use clap::Parser;
 use parse_lib::{
-    clean_packages, commands::sync_db, get_json_string, make_problem_sheet, pdflatex, read_csv,
-    table_friendly::TableFriendly, write_csv, Data, OldData,
+    clean_packages, commands::sync_db, get_json_string, make_html, make_problem_sheet, pdflatex,
+    read_csv, table_friendly::TableFriendly, write_csv, Data, OldData,
 };
 
 use crate::arguments::MyArgs;
@@ -74,7 +74,22 @@ fn main() {
             );
             println!("{output:#?}");
         }
+        Action::MakeHtml {
+            database_path,
+            output_path,
+        } => write_html(&database_path, &output_path),
     }
+}
+
+fn write_html(database_path: &Path, output_path: &Path) {
+    let data = get_database(database_path);
+    let html = make_html(&data);
+    fs::write(output_path, html).expect("Failed to write output");
+}
+
+fn get_database(database_path: &Path) -> HashMap<usize, Data> {
+    let data_json = get_json_string(database_path).expect("Failed to open json");
+    serde_json::from_str(&data_json).expect("Failed to deserialize")
 }
 
 fn clean_packages_db(database_path: &Path, output: Option<&Path>) {
