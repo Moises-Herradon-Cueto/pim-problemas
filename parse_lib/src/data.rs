@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     files::{ParseOneError, ParseOneInfo},
-    html::{_POSTAMBLE, _PREAMBLE},
+    html::{POSTAMBLE, PREAMBLE},
     table_friendly::TableFriendly,
     FieldContents, Fields,
 };
@@ -358,7 +358,7 @@ pub fn write_csv<P: AsRef<Path>>(data: &[TableFriendly], path: P) {
 pub fn _write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
     let mut writer = fs::File::create("Datos.html").expect("Can't create file"); // let mut writer = csv::Writer::from_path("Datos-out.csv").expect("Can't create file");
     writer
-        .write_all(_PREAMBLE.as_bytes())
+        .write_all(PREAMBLE.as_bytes())
         .expect("Couldn't start writing");
     let mut data_vec: Vec<_> = data.iter().map(|(_, value)| value.clone()).collect();
     data_vec.sort_by(|d1, d2| d1.id.cmp(&d2.id));
@@ -366,7 +366,7 @@ pub fn _write_html<T: BuildHasher>(data: &HashMap<usize, Data, T>) {
         .into_iter()
         .for_each(|data| _write_one_entry(&data, &mut writer));
     writer
-        .write_all(_POSTAMBLE.as_bytes())
+        .write_all(POSTAMBLE.as_bytes())
         .expect("Couldn't write the end");
     writer.flush().expect("Couldn't flush. Yuck!");
 }

@@ -7,8 +7,8 @@ use std::{
 use arguments::Action;
 use clap::Parser;
 use parse_lib::{
-    clean_packages, commands::sync_db, get_json_string, make_problem_sheet, pdflatex, read_csv,
-    table_friendly::TableFriendly, write_csv, Data, OldData,
+    apply_regex, clean_packages, commands::sync_db, get_json_string, make_html, make_problem_sheet,
+    pdflatex, read_csv, table_friendly::TableFriendly, write_csv, Data, Fields, OldData,
 };
 
 use crate::arguments::MyArgs;
@@ -80,7 +80,53 @@ fn main() {
             );
             println!("{output:#?}");
         }
+        Action::MakeHtml {
+            database_path,
+            output_path,
+        } => write_html(&database_path, &output_path),
+        Action::Regex {
+            regex,
+            replacement,
+            field,
+            database_path,
+            output_path,
+        } => action_regex(
+            &regex,
+            &replacement,
+            field,
+            &database_path,
+            output_path.as_deref(),
+        ),
     }
+}
+
+fn action_regex(
+    regex: &str,
+    replacement: &str,
+    field: Option<Fields>,
+    database_path: &Path,
+    output_path: Option<&Path>,
+) {
+    let mut data = get_database(database_path);
+    apply_regex(regex, replacement, field, &mut data).expect("Failed to apply regex");
+    let output_path = output_path.unwrap_or(database_path);
+    put_database(output_path, &data);
+}
+
+fn write_html(database_path: &Path, output_path: &Path) {
+    let data = get_database(database_path);
+    let html = make_html(&data);
+    fs::write(output_path, html).expect("Failed to write output");
+}
+
+fn put_database(output_path: &Path, data: &HashMap<usize, Data>) {
+    let data_json = serde_json::to_string(&data).expect("Failed to serialize");
+    fs::write(output_path, data_json).expect("Failed to write");
+}
+
+fn get_database(database_path: &Path) -> HashMap<usize, Data> {
+    let data_json = get_json_string(database_path).expect("Failed to open json");
+    serde_json::from_str(&data_json).expect("Failed to deserialize")
 }
 
 fn clean_packages_db(database_path: &Path, output: Option<&Path>) {

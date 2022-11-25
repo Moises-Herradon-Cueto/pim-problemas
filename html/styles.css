@@ -1,0 +1,245 @@
+.hidden {
+    display: none;
+}
+
+th:hover {
+    cursor: pointer;
+}
+
+/* default styling. Nothing to do with freexing first row and column */
+
+table {
+    border-collapse: collapse;
+    font-family: helvetica
+}
+
+table td,
+th {
+    border: 1px solid;
+    padding: 5px;
+    background: white;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+
+table thead th {
+    top: 0;
+    /* z-index: 2; */
+    background: hsl(86, 60%, 85%);
+}
+
+table thead th:first-child {
+    left: 0;
+    /* z-index: 3; */
+}
+
+table tfoot {
+    bottom: 0;
+    /* z-index: 2; */
+}
+
+
+/* table tfoot td:first-child { */
+/* z-index: 3; */
+/* } */
+
+
+
+
+table tr> :first-child {
+    width: 5px;
+}
+
+
+:root {
+    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+
+    color: #0f0f0f;
+    background-color: #eaf698;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+}
+
+
+
+
+
+
+
+input,
+button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    color: #0f0f0f;
+    background-color: #ffffff;
+    transition: border-color 0.25s;
+    box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+    margin: 2px;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:hover {
+    border-color: #396cd8;
+}
+
+input,
+button {
+    outline: none;
+}
+
+#greet-input {
+    margin-right: 5px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color: #f6f6f6;
+        background-color: #2f2f2f;
+    }
+
+    a:hover {
+        color: #24c8db;
+    }
+
+    input,
+    button {
+        color: #ffffff;
+        background-color: #0f0f0f98;
+    }
+}
+
+li {
+    display: block
+}
+
+.file_info input {
+    width: 30em;
+}
+
+.file_info tr {
+    height: 5em;
+}
+
+#return-button {
+    background-color: rgba(233, 84, 84, 0.5);
+    font-size: 14px;
+    padding: 1px;
+    width: 25px;
+    height: 25px;
+}
+
+.show-container label {
+    font-size: 16px;
+    margin-bottom: 5px;
+    display: inline-block;
+}
+
+
+.show-container {
+    display: table-cell;
+    vertical-align: middle;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.show-container div {
+    display: inline-block;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.file-info {
+    display: inline;
+    width: fit-content;
+    cursor: pointer;
+    margin-right: 40px;
+}
+
+.file-info-container {
+    display: inline;
+}
+
+.file-info span {
+    width: fit-content;
+}
+
+.edit-button {
+    padding: 1px;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+}
+
+
+.edit-problem {
+    position: fixed;
+    width: calc(100vw - 20px);
+    height: calc(100vh - 20px);
+    z-index: 10;
+    top: 10px;
+    left: 10px;
+    background-color: aliceblue;
+    overflow: scroll;
+}
+
+.edit-problem * {
+    z-index: 10;
+}
+
+.edit-problem fieldset {
+    border: none;
+}
+
+.edit-problem fieldset div {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.close-edit-button {
+    width: 35px;
+    height: 35px;
+    background-color: red;
+    padding: 0;
+    font-size: 26px;
+    color: white;
+    position: absolute;
+    right: 20px;
+}
+
+.edit-problem textarea {
+    width: 100%;
+    overflow: scroll;
+}
+
+.edit-problem div {
+    display: block;
+}
+
+.edit-problem form {
+    height: calc(100vh - 20px);
+    overflow: scroll;
+}
+
+#problem-preview {
+    white-space: pre-wrap;
+}
+
+.problem-preview {
+    white-space: pre-wrap;
+}
