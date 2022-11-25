@@ -17,6 +17,8 @@ pub enum Action {
         problems_dir: PathBuf,
         #[arg(short, long)]
         database_dir: Option<PathBuf>,
+        #[arg(long)]
+        database_dir_out: Option<PathBuf>,
     },
     CompareCsvJson {
         #[arg(short, long)]

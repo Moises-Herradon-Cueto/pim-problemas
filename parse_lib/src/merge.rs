@@ -17,9 +17,10 @@ pub enum ParseResult {
 }
 
 pub fn string_and_data(input: &str, data: &mut Data) -> Result<ParseResult, ParseOneError> {
-    let problem = parsing::problem(data.id, input)?;
-
-    data.enunciado = problem.trim().to_owned();
+    if data.enunciado.is_empty() {
+        let problem = parsing::problem(data.id, input)?;
+        data.enunciado = problem.trim().to_owned();
+    }
 
     let mut errors = vec![];
 

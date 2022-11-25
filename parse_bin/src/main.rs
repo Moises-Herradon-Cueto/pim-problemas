@@ -33,9 +33,15 @@ fn main() {
             output_dir,
             problems_dir,
             database_dir,
+            database_dir_out,
         } => {
             let database_dir = database_dir.unwrap_or_else(|| problems_dir.join("database.json"));
-            let result = sync_db(&database_dir, &problems_dir, &output_dir);
+            let result = sync_db(
+                &database_dir,
+                database_dir_out.as_deref(),
+                &problems_dir,
+                &output_dir,
+            );
             println!("{result:#?}");
         }
         Action::CompareCsvJson {

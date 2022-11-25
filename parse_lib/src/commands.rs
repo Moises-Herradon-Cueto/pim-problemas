@@ -8,6 +8,7 @@ use crate::{get_json_string, parse_all, write_json, Data, Entry};
 /// there's an IO or a serialization error
 pub fn sync_db(
     database_dir: &Path,
+    database_dir_out: Option<&Path>,
     problems_dir: &Path,
     output_dir: &Path,
 ) -> Result<Vec<Entry>, String> {
@@ -19,7 +20,8 @@ pub fn sync_db(
     }
     let result = parse_all(problems_dir, output_dir, &mut data)
         .map_err(|err| format!("Error opening tex files: {err}"))?;
-    write_json(database_dir, &data)
+    let database_dir_out = database_dir_out.unwrap_or(database_dir);
+    write_json(database_dir_out, &data)
         .map_err(|err| format!("Failed to serialize and write: {err}"))?;
     Ok(result)
 }

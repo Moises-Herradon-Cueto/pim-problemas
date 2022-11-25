@@ -197,6 +197,9 @@ impl Data {
         let mut missing_in_tex = vec![];
         let mut discrepancies = vec![];
         for field in Fields::ALL {
+            if matches!(field, Fields::Problem) {
+                continue;
+            }
             let data_1 = field.get(self);
             let data_2 = field.get(tex_data);
             if data_1 != data_2 {
