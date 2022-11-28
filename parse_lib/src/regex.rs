@@ -6,7 +6,6 @@ use std::{
 };
 
 use regex::Regex;
-use termion::terminal_size;
 
 use crate::{Db, Fields};
 use colored::Colorize;
@@ -21,11 +20,10 @@ pub fn apply<H>(
     regex: &str,
     replacement: &str,
     field: Option<Fields>,
+    columns: Option<u16>,
     data: &mut Db<H>,
 ) -> Result<(), String> {
     let field = field.unwrap_or(Fields::Problem);
-    println!("Entered regex: {regex}");
-    println!("Entered replacement: {replacement}");
     let regex = Regex::new(regex).map_err(|err| format!("Error in the regex: {err}"))?;
     for d in data.values_mut() {
         let info = field.get_string(d);
@@ -39,20 +37,21 @@ pub fn apply<H>(
             fs::write("/tmp/file_1", info.as_ref()).expect("Couldn't write to tmp");
             fs::write("/tmp/file_2", new_info.as_ref()).expect("Couldn't write to tmp");
             let mut command = Command::new("delta");
-            command.arg("--side-by-side");
-            if let Ok((cols, _)) = terminal_size() {
-                // println!("Columnas: {cols}");
-                command.arg(format!("--width={cols}"));
-            }
+            command
+                .arg("--side-by-side")
+                .arg("--wrap-max-lines=unlimited");
+            columns.map(|col| command.arg(format!("--width={col}")));
             command.arg("/tmp/file_1").arg("/tmp/file_2");
             // println!("{}\n{command:#?}", "Command:".red().bold());
 
             let diff = command.output().expect("Failed to run delta");
-            // println!(
-            //     "{}{}",
-            //     "Exit:".red().bold(),
-            //     String::from_utf8_lossy(&diff.stderr)
-            // );
+            if !diff.stderr.is_empty() {
+                println!(
+                    "{}{}",
+                    "Exited with error:".red().bold(),
+                    String::from_utf8_lossy(&diff.stderr)
+                );
+            }
             let diff = String::from_utf8_lossy(&diff.stdout);
             println!("{diff}");
             print!("Replace? (y/n/stop)");

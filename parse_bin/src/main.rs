@@ -8,8 +8,8 @@ use arguments::Action;
 use clap::Parser;
 use parse_lib::{
     apply_regex, clean_packages, commands::sync_db, get_json_string, make_html, make_problem_sheet,
-    parse_regex_file, pdflatex, read_csv, table_friendly::TableFriendly, write_csv, Data, Fields,
-    OldData,
+    parse_regex_file, pdflatex, read_csv, table_friendly::TableFriendly, topics, write_csv, Data,
+    Fields, OldData,
 };
 
 use crate::arguments::MyArgs;
@@ -103,14 +103,30 @@ fn main() {
             database_path,
             output_path,
         } => regex_from_file(&regex_file, &database_path, output_path.as_deref()),
+        Action::GetTopics { database_path, php } => println!("{}", get_topics(&database_path, php)),
     }
+}
+
+fn get_topics(database_path: &Path, php: bool) -> String {
+    let data = get_database(database_path);
+    let topics = topics::get(&data);
+    if php {
+        topics::into_php(&topics)
+    } else {
+        topics.join("\n")
+    }
+}
+
+fn columns() -> Option<u16> {
+    termion::terminal_size().ok().map(|(col, _)| col)
 }
 
 fn regex_from_file(regex_file: &Path, database_path: &Path, output_path: Option<&Path>) {
     let regex_vec = parse_regex_file(regex_file);
     let mut data = get_database(database_path);
     for (regex, replacement, field) in regex_vec {
-        apply_regex(&regex, &replacement, field, &mut data).expect("Failed to apply regex");
+        apply_regex(&regex, &replacement, field, columns(), &mut data)
+            .expect("Failed to apply regex");
     }
     let output_path = output_path.unwrap_or(database_path);
     put_database(output_path, &data);
@@ -124,7 +140,7 @@ fn action_regex(
     output_path: Option<&Path>,
 ) {
     let mut data = get_database(database_path);
-    apply_regex(regex, replacement, field, &mut data).expect("Failed to apply regex");
+    apply_regex(regex, replacement, field, columns(), &mut data).expect("Failed to apply regex");
     let output_path = output_path.unwrap_or(database_path);
     put_database(output_path, &data);
 }

@@ -95,4 +95,10 @@ pub enum Action {
         #[arg(short, long)]
         output_path: Option<PathBuf>,
     },
+    GetTopics {
+        #[arg(short, long)]
+        database_path: PathBuf,
+        #[arg(long)]
+        php: bool,
+    },
 }

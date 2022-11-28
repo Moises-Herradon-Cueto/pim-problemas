@@ -35,6 +35,7 @@ mod preamble;
 mod process_tex;
 mod regex;
 pub mod table_friendly;
+pub mod topics;
 
 mod search;
 

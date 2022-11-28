@@ -2104,6 +2104,7 @@ dependencies = [
  "parse_lib",
  "pretty_env_logger",
  "serde_json",
+ "termion",
 ]
 
 [[package]]
@@ -2118,7 +2119,6 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "termion",
 ]
 
 [[package]]
