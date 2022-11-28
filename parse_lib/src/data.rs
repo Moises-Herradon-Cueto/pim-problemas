@@ -308,7 +308,7 @@ pub fn write_json<P: AsRef<Path>, T: BuildHasher>(
     path: P,
     data: &HashMap<usize, Data, T>,
 ) -> io::Result<()> {
-    let string = serde_json::to_string(data)?;
+    let string = serde_json::to_string_pretty(data)?;
     fs::write(path, string)
 }
 
@@ -450,7 +450,7 @@ mod tests {
     #[test]
     fn try_serde() {
         let data = Data::new(0);
-        let data_json = serde_json::to_string(&data).unwrap();
+        let data_json = serde_json::to_string_pretty(&data).unwrap();
         println!("{data_json}");
     }
 }

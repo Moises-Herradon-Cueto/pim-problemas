@@ -77,8 +77,8 @@ fn update_db_inner(
     db_path: &Path,
     output_path: &Path,
 ) -> Result<String, String> {
-    let result = sync_db(db_path, problems_path, output_path);
-    serde_json::to_string(&result).map_err(|err| format!("Error converting to Json: {err}"))
+    let result = sync_db(db_path, None, problems_path, output_path);
+    serde_json::to_string_pretty(&result).map_err(|err| format!("Error converting to Json: {err}"))
 }
 
 #[tauri::command]

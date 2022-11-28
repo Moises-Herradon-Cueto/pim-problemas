@@ -120,7 +120,7 @@ fn write_html(database_path: &Path, output_path: &Path) {
 }
 
 fn put_database(output_path: &Path, data: &HashMap<usize, Data>) {
-    let data_json = serde_json::to_string(&data).expect("Failed to serialize");
+    let data_json = serde_json::to_string_pretty(&data).expect("Failed to serialize");
     fs::write(output_path, data_json).expect("Failed to write");
 }
 
@@ -135,7 +135,7 @@ fn clean_packages_db(database_path: &Path, output: Option<&Path>) {
     let mut data_json: HashMap<usize, Data> =
         serde_json::from_str(&data_json).expect("Failed to deserialize");
     data_json.values_mut().for_each(clean_packages);
-    let data_json = serde_json::to_string(&data_json).expect("Failed to serialize");
+    let data_json = serde_json::to_string_pretty(&data_json).expect("Failed to serialize");
     fs::write(output, data_json).expect("Failed to write");
 }
 
@@ -177,7 +177,7 @@ fn compare_csv_json(database_dir: &Path, merged_path: &Path) {
         let no_empty = data.paquetes.iter().filter(|x| !x.is_empty()).cloned();
         data.paquetes = no_empty.collect();
     }
-    let data_json = serde_json::to_string(&data_json).expect("Failed to serialize");
+    let data_json = serde_json::to_string_pretty(&data_json).expect("Failed to serialize");
 
     fs::write(merged_path, data_json).expect("Failed to write");
 
@@ -225,7 +225,7 @@ fn migrate(old: &Path, new: &Path) {
         .into_iter()
         .map(|(i, problem)| (i, Data::from(problem)))
         .collect();
-    let data_json = serde_json::to_string(&new_data).expect("Failed to serialize");
+    let data_json = serde_json::to_string_pretty(&new_data).expect("Failed to serialize");
 
     fs::write(new, data_json).expect("Failed to write");
 }
