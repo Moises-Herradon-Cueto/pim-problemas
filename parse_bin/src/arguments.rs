@@ -87,4 +87,12 @@ pub enum Action {
         #[arg(short, long)]
         output_path: Option<PathBuf>,
     },
+    RegexFromFile {
+        #[arg(short, long)]
+        regex_file: PathBuf,
+        #[arg(short, long)]
+        database_path: PathBuf,
+        #[arg(short, long)]
+        output_path: Option<PathBuf>,
+    },
 }

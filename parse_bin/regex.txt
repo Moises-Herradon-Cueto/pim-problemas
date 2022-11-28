@@ -1,0 +1,10 @@
+\$(\d+)\$---$1
+(?s)\\begin\{tikzpicture\}.*\\end\{tikzpicture\}---
+(?s)\\begin\{center\}.*\\end\{center\}---
+(?s)\$\$([^\$]+)\$\$---\[$1\]
+(?s)\$([^\$]+)\$---\($1\)
+(?s)\\begin\{enumerate\}(.*)\\end\{enumerate}\}---$1
+(?s)\\begin\{itemize\}(.*)?\\end\{itemize\}---$1
+\\item\s*\[(.*)\]---$1 
+\\item---* 
+^%\s*\d*---

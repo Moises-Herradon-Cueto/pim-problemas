@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 
 pub use crate::regex::apply as apply_regex;
+pub use crate::regex::parse_file as parse_regex_file;
 pub use data::enunciado::Enunciado;
 pub use data::get_json_string;
 pub use data::packages::clean as clean_packages;

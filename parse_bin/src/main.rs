@@ -8,7 +8,8 @@ use arguments::Action;
 use clap::Parser;
 use parse_lib::{
     apply_regex, clean_packages, commands::sync_db, get_json_string, make_html, make_problem_sheet,
-    pdflatex, read_csv, table_friendly::TableFriendly, write_csv, Data, Fields, OldData,
+    parse_regex_file, pdflatex, read_csv, table_friendly::TableFriendly, write_csv, Data, Fields,
+    OldData,
 };
 
 use crate::arguments::MyArgs;
@@ -97,7 +98,22 @@ fn main() {
             &database_path,
             output_path.as_deref(),
         ),
+        Action::RegexFromFile {
+            regex_file,
+            database_path,
+            output_path,
+        } => regex_from_file(&regex_file, &database_path, output_path.as_deref()),
     }
+}
+
+fn regex_from_file(regex_file: &Path, database_path: &Path, output_path: Option<&Path>) {
+    let regex_vec = parse_regex_file(regex_file);
+    let mut data = get_database(database_path);
+    for (regex, replacement, field) in regex_vec {
+        apply_regex(&regex, &replacement, field, &mut data).expect("Failed to apply regex");
+    }
+    let output_path = output_path.unwrap_or(database_path);
+    put_database(output_path, &data);
 }
 
 fn action_regex(

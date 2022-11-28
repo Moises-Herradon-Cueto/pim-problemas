@@ -1,6 +1,12 @@
-use std::io::{self, Write};
+use std::{
+    fs,
+    io::{self, Write},
+    path::Path,
+    process::Command,
+};
 
 use regex::Regex;
+use termion::terminal_size;
 
 use crate::{Db, Fields};
 use colored::Colorize;
@@ -30,11 +36,31 @@ pub fn apply<H>(
             continue;
         };
         if field.get(d).to_owned() != parsed_info {
-            print!(
-                "{}\n{info}\n\n{}\n{new_info}\n\nReplace? (y/n/stop)",
-                "Old:".red().bold(),
-                "New:".red().bold()
-            );
+            fs::write("/tmp/file_1", info.as_ref()).expect("Couldn't write to tmp");
+            fs::write("/tmp/file_2", new_info.as_ref()).expect("Couldn't write to tmp");
+            let mut command = Command::new("delta");
+            command.arg("--side-by-side");
+            if let Ok((cols, _)) = terminal_size() {
+                // println!("Columnas: {cols}");
+                command.arg(format!("--width={cols}"));
+            }
+            command.arg("/tmp/file_1").arg("/tmp/file_2");
+            // println!("{}\n{command:#?}", "Command:".red().bold());
+
+            let diff = command.output().expect("Failed to run delta");
+            // println!(
+            //     "{}{}",
+            //     "Exit:".red().bold(),
+            //     String::from_utf8_lossy(&diff.stderr)
+            // );
+            let diff = String::from_utf8_lossy(&diff.stdout);
+            println!("{diff}");
+            print!("Replace? (y/n/stop)");
+            // print!(
+            //     "{}\n{info}\n\n{}\n{new_info}\n\nReplace? (y/n/stop)",
+            //     "Old:".red().bold(),
+            //     "New:".red().bold()
+            // );
             let stdin = io::stdin();
             loop {
                 io::stdout()
@@ -62,4 +88,26 @@ pub fn apply<H>(
     }
 
     Ok(())
+}
+
+#[must_use]
+pub fn parse_file(path: &Path) -> Vec<(String, String, Option<Fields>)> {
+    let contents = fs::read_to_string(path).expect("Failed to read file");
+    let mut output = vec![];
+    for line in contents.lines() {
+        let mut pieces = line.split("---");
+        let Some(regex) = pieces.next() else {
+            println!("Line has no beginning: {line}");
+            continue;
+        };
+        let Some(replacement) = pieces.next() else {
+            println!("Line has no replacement: {line}");
+            continue;
+        };
+        let field: Option<Fields> = pieces
+            .next()
+            .map(|s| s.parse().expect("Failed to parse field"));
+        output.push((regex.to_owned(), replacement.to_owned(), field));
+    }
+    output
 }
