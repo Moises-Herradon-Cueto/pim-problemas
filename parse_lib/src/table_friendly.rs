@@ -10,9 +10,11 @@ pub struct TableFriendly {
     pub fuente: String,
     pub historial: String,
     pub comentarios: String,
-    pub curso: Option<String>,
+    pub curso: String,
     pub enunciado: String,
     pub paquetes: String,
+    pub url: String,
+    pub id_autor: String,
 }
 
 impl From<Data> for TableFriendly {
@@ -27,6 +29,8 @@ impl From<Data> for TableFriendly {
             curso,
             enunciado,
             paquetes,
+            url,
+            id_autor,
         }: Data,
     ) -> Self {
         Self {
@@ -34,11 +38,13 @@ impl From<Data> for TableFriendly {
             temas: temas.join(","),
             dificultad,
             fuente,
-            historial: historial.join(","),
-            comentarios: comentarios.join("\n"),
+            historial,
+            comentarios,
             curso,
             enunciado,
-            paquetes: paquetes.join("\n"),
+            paquetes,
+            url,
+            id_autor,
         }
     }
 }

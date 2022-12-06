@@ -17,8 +17,6 @@ use crate::{
     FieldContents, Fields,
 };
 
-use self::enunciado::Enunciado;
-
 pub mod enunciado;
 pub mod packages;
 
@@ -43,11 +41,13 @@ pub struct Data {
     pub temas: Vec<String>,
     pub dificultad: u8,
     pub fuente: String,
-    pub historial: Vec<String>,
-    pub comentarios: Vec<String>,
-    pub curso: Option<String>,
+    pub historial: String,
+    pub comentarios: String,
+    pub curso: String,
     pub enunciado: String,
-    pub paquetes: Vec<String>,
+    pub paquetes: String,
+    pub url: String,
+    pub id_autor: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -59,7 +59,7 @@ pub struct Old {
     pub historial: Vec<String>,
     pub comentarios: Vec<String>,
     pub curso: Option<String>,
-    pub enunciado: Enunciado,
+    pub enunciado: String,
     pub paquetes: Vec<String>,
 }
 
@@ -82,11 +82,13 @@ impl From<Old> for Data {
             temas,
             dificultad,
             fuente,
-            historial,
-            comentarios,
-            curso,
-            enunciado: enunciado.raw,
-            paquetes,
+            historial: historial.join("\n"),
+            comentarios: comentarios.join("\n"),
+            curso: curso.unwrap_or_default(),
+            enunciado,
+            paquetes: paquetes.join("\n"),
+            url: String::new(),
+            id_autor: String::new(),
         }
     }
 }
@@ -99,11 +101,13 @@ impl Data {
             temas: vec![],
             dificultad: u8::MAX,
             fuente: String::new(),
-            historial: vec![],
-            comentarios: vec![],
-            curso: None,
+            historial: String::new(),
+            comentarios: String::new(),
+            curso: String::new(),
             enunciado: String::new(),
-            paquetes: Vec::new(),
+            paquetes: String::new(),
+            url: String::new(),
+            id_autor: String::new(),
         }
     }
 }
@@ -128,7 +132,7 @@ impl Data {
             .into_iter()
             .filter(|x| !x.is_empty())
             .collect();
-        let mut comentarios: Vec<String> = vec![];
+        let mut comentarios = String::new();
         let dificultades = [dificultad1, dificultad2, dificultad3]
             .into_iter()
             .filter(|x| !x.is_empty())
@@ -136,7 +140,7 @@ impl Data {
                 let numero: Result<u8, _> = d.parse();
                 numero.map_or_else(
                     |_| {
-                        comentarios.push(format!("Dificultad: {d}"));
+                        comentarios.push_str(&format!("Dificultad: {d}\n"));
                         None
                     },
                     Some,
@@ -144,11 +148,6 @@ impl Data {
             })
             .collect::<Vec<_>>();
         let dificultad = dificultades.first().copied().unwrap_or(u8::MAX);
-        let historial = if historial.is_empty() {
-            vec![]
-        } else {
-            vec![historial]
-        };
         Ok(Self {
             id: id.parse().map_err(|err| {
                 ParseOneError::IMessedUp(format!(
@@ -160,9 +159,11 @@ impl Data {
             fuente: descripcion,
             comentarios,
             historial,
-            curso: None,
+            curso: String::new(),
             enunciado: String::new(),
-            paquetes: Vec::new(),
+            paquetes: String::new(),
+            id_autor: String::new(),
+            url: String::new(),
         })
     }
 
@@ -228,7 +229,8 @@ impl Data {
     }
 
     pub fn sort_packages(&mut self) {
-        self.paquetes.sort_by(|x, y| {
+        let mut paquetes: Vec<&str> = self.paquetes.split('\n').collect();
+        paquetes.sort_by(|x, y| {
             let pgfplotset = (x.contains("pgfplotsset"), y.contains("pgfplotsset"));
             match pgfplotset {
                 (true, true) => return x.cmp(y),
@@ -244,27 +246,26 @@ impl Data {
             }
         });
 
-        self.paquetes.dedup();
+        paquetes.dedup();
 
         if let Some(i) =
-            self.paquetes
+            paquetes
                 .iter()
                 .enumerate()
                 .find_map(|(i, x)| if x.is_empty() { Some(i) } else { None })
         {
-            self.paquetes.remove(i);
+            paquetes.remove(i);
         }
+        self.paquetes = paquetes.join("\n");
     }
 
     pub fn trim(&mut self) {
         split_vec(&mut self.temas);
-        split_vec(&mut self.historial);
-        split_vec(&mut self.comentarios);
-        self.paquetes
-            .iter_mut()
-            .for_each(|t| *t = t.trim().to_owned());
+        self.historial = self.historial.trim().to_owned();
+        self.comentarios = self.comentarios.trim().to_owned();
+        self.paquetes = self.paquetes.trim().to_owned();
         self.fuente = self.fuente.trim().to_owned();
-        self.curso = self.curso.as_mut().map(|c| c.trim().to_owned());
+        self.curso = self.curso.trim().to_owned();
     }
 }
 
@@ -405,9 +406,9 @@ fn _write_one_entry<W: io::Write>(data: &Data, writer: &mut W) {
         data.temas.join("<br/>"),
         data.dificultad,
         data.fuente,
-        data.historial.join("<br/>"),
-        data.comentarios.join("<br/>"),
-        data.curso.as_ref().unwrap_or(&String::from("Vacío")),
+        data.historial.replace('\n', "<br/>"),
+        data.comentarios.replace('\n', "<br/>"),
+        data.curso,
         data.enunciado
     );
 

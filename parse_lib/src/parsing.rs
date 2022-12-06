@@ -81,7 +81,7 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
                 return;
             }
             let use_statement = format!("\\usepackage[{option}]{{{package}}}");
-            data.paquetes.push(use_statement);
+            data.paquetes.push_str(&format!("{use_statement}\n"));
         });
 
     let paquetes_2: String = Regex::new(r"\\usepackage\{\s*(.*?)\s*}")
@@ -110,7 +110,8 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
         .captures_iter(input)
         .for_each(|result| {
             let package = result.get(1).unwrap().as_str();
-            data.paquetes.push(format!("\\usetikzlibrary{{{package}}}"));
+            data.paquetes
+                .push_str(&format!("\\usetikzlibrary{{{package}}}"));
         });
 
     Regex::new(r"\\pgfplotsset\{\s*(.*?)\s*}")
@@ -118,7 +119,8 @@ pub fn packages(data: &mut Data, input: &str) -> Result<(), ParseOneError> {
         .captures_iter(input)
         .for_each(|result| {
             let package = result.get(1).unwrap().as_str();
-            data.paquetes.push(format!("\\pgfplotsset{{{package}}}"));
+            data.paquetes
+                .push_str(&format!("\\pgfplotsset{{{package}}}\n"));
         });
 
     data.sort_packages();

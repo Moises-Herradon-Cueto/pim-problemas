@@ -204,10 +204,7 @@ fn compare_csv_json(database_dir: &Path, merged_path: &Path) {
             }
             count += 1;
         }
-        data.paquetes.sort();
-        data.paquetes.dedup();
-        let no_empty = data.paquetes.iter().filter(|x| !x.is_empty()).cloned();
-        data.paquetes = no_empty.collect();
+        data.sort_packages();
     }
     let data_json = serde_json::to_string_pretty(&data_json).expect("Failed to serialize");
 
@@ -231,7 +228,7 @@ fn make_problem_list(database_path: &Path, start: usize, end: usize, output: &Pa
     let mut id_difficulty: Vec<(usize, u8, String)> = (start..=end)
         .filter_map(|i| {
             let problem_info = data.get(&i)?;
-            packages.extend(problem_info.paquetes.iter());
+            packages.extend(problem_info.paquetes.split('\n'));
             Some((i, problem_info.dificultad, problem_info.enunciado.clone()))
         })
         .collect();

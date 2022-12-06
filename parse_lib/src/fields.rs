@@ -63,10 +63,10 @@ impl Fields {
             Topics => Cow::Owned(data.temas.join(", ")),
             Difficulty => Cow::Owned(data.dificultad.to_string()),
             Source => Cow::Borrowed(&data.fuente),
-            History => Cow::Owned(data.historial.join("\n")),
-            Comments => Cow::Owned(data.comentarios.join("\n")),
-            Year => Cow::Owned(data.curso.clone().unwrap_or_default()),
-            Packages => Cow::Owned(data.paquetes.join("\n")),
+            History => Cow::Borrowed(&data.historial),
+            Comments => Cow::Borrowed(&data.comentarios),
+            Packages => Cow::Borrowed(&data.paquetes),
+            Year => Cow::Borrowed(&data.curso),
         }
     }
 
@@ -113,10 +113,10 @@ impl Fields {
             Topics => FieldContents::Topics(Vec::new()),
             Difficulty => FieldContents::Difficulty(u8::MAX),
             Source => FieldContents::Source(String::new()),
-            History => FieldContents::History(Vec::new()),
-            Comments => FieldContents::Comments(Vec::new()),
-            Year => FieldContents::Year(None),
-            Packages => FieldContents::Packages(Vec::new()),
+            History => FieldContents::History(String::new()),
+            Comments => FieldContents::Comments(String::new()),
+            Year => FieldContents::Year(String::new()),
+            Packages => FieldContents::Packages(String::new()),
         }
     }
 
@@ -169,9 +169,9 @@ impl Fields {
             )),
             Year => {
                 if input.is_empty() || input == "%" {
-                    Ok(FieldContents::Year(None))
+                    Ok(FieldContents::Year(String::new()))
                 } else {
-                    Ok(FieldContents::Year(Some(input.to_owned())))
+                    Ok(FieldContents::Year(input.to_owned()))
                 }
             }
             Packages => Ok(FieldContents::Packages(
@@ -212,23 +212,23 @@ pub enum FieldContents {
     Topics(Vec<String>),
     Difficulty(u8),
     Source(String),
-    History(Vec<String>),
-    Comments(Vec<String>),
-    Year(Option<String>),
-    Packages(Vec<String>),
+    History(String),
+    Comments(String),
+    Year(String),
+    Packages(String),
 }
 
 #[derive(PartialEq, Eq)]
 pub enum FieldContentsRef<'a> {
     Id(usize),
-    Problem(&'a String),
+    Problem(&'a str),
     Topics(&'a [String]),
     Difficulty(u8),
     Source(&'a str),
-    History(&'a [String]),
-    Comments(&'a [String]),
-    Year(&'a Option<String>),
-    Packages(&'a [String]),
+    History(&'a str),
+    Comments(&'a str),
+    Year(&'a str),
+    Packages(&'a str),
 }
 
 impl<'a> FieldContentsRef<'a> {
@@ -241,9 +241,10 @@ impl<'a> FieldContentsRef<'a> {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
             Problem(x) => x.is_empty() || *x == "%",
-            Source(x) => x.is_empty() || *x == "%",
-            Topics(x) | History(x) | Comments(x) | Packages(x) => x.is_empty(),
-            Year(x) => x.is_none(),
+            Source(x) | History(x) | Comments(x) | Packages(x) | Year(x) => {
+                x.is_empty() || *x == "%"
+            }
+            Topics(x) => x.is_empty(),
         }
     }
 }
@@ -256,14 +257,14 @@ impl<'a> Ord for FieldContentsRef<'a> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         match (self, other) {
             (FieldContentsRef::Id(id_1), FieldContentsRef::Id(id_2)) => id_1.cmp(id_2),
-            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2)) => x_1.cmp(x_2),
-            (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2)) => x_1.cmp(x_2),
-            (FieldContentsRef::Topics(x_1), FieldContentsRef::Topics(x_2))
+            (FieldContentsRef::Problem(x_1), FieldContentsRef::Problem(x_2))
+            | (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2))
             | (FieldContentsRef::History(x_1), FieldContentsRef::History(x_2))
             | (FieldContentsRef::Comments(x_1), FieldContentsRef::Comments(x_2))
-            | (FieldContentsRef::Packages(x_1), FieldContentsRef::Packages(x_2)) => x_1.cmp(x_2),
+            | (FieldContentsRef::Packages(x_1), FieldContentsRef::Packages(x_2))
+            | (FieldContentsRef::Year(x_1), FieldContentsRef::Year(x_2)) => x_1.cmp(x_2),
+            (FieldContentsRef::Topics(x_1), FieldContentsRef::Topics(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Difficulty(x_1), FieldContentsRef::Difficulty(x_2)) => x_1.cmp(x_2),
-            (FieldContentsRef::Year(x_1), FieldContentsRef::Year(x_2)) => x_1.cmp(x_2),
             (_, _) => std::cmp::Ordering::Equal,
         }
     }
@@ -275,13 +276,13 @@ impl<'a> FieldContentsRef<'a> {
         match self {
             FieldContentsRef::Id(x) => FieldContents::Id(*x),
             FieldContentsRef::Difficulty(x) => FieldContents::Difficulty(*x),
-            FieldContentsRef::Problem(x) => FieldContents::Problem((*x).clone()),
+            FieldContentsRef::Problem(x) => FieldContents::Problem((*x).to_owned()),
             FieldContentsRef::Source(x) => FieldContents::Source((*x).to_owned()),
             FieldContentsRef::Topics(x) => FieldContents::Topics((*x).to_vec()),
-            FieldContentsRef::History(x) => FieldContents::History((*x).to_vec()),
-            FieldContentsRef::Comments(x) => FieldContents::Comments((*x).to_vec()),
-            FieldContentsRef::Packages(x) => FieldContents::Packages((*x).to_vec()),
-            FieldContentsRef::Year(x) => FieldContents::Year(x.as_ref().cloned()),
+            FieldContentsRef::History(x) => FieldContents::History((*x).to_owned()),
+            FieldContentsRef::Comments(x) => FieldContents::Comments((*x).to_owned()),
+            FieldContentsRef::Packages(x) => FieldContents::Packages((*x).to_owned()),
+            FieldContentsRef::Year(x) => FieldContents::Year((*x).to_owned()),
         }
     }
 }
@@ -308,12 +309,14 @@ impl FieldContents {
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
-            Problem(x) | Source(x) => x.is_empty() || x == "%",
-            Topics(x) | History(x) | Comments(x) | Packages(x) => x.is_empty(),
-            Year(x) => x.is_none(),
+            Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x) | Year(x) => {
+                x.is_empty() || x == "%"
+            }
+            Topics(x) => x.is_empty(),
         }
     }
 
+    #[must_use]
     pub fn string_contents(&self) -> Cow<String> {
         use FieldContents::{
             Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
@@ -321,11 +324,10 @@ impl FieldContents {
         match self {
             Id(x) => Cow::Owned(x.to_string()),
             Difficulty(x) => Cow::Owned(x.to_string()),
-            Problem(x) | Source(x) => Cow::Borrowed(x),
-            Topics(x) | History(x) | Comments(x) | Packages(x) => Cow::Owned(x.join(",")),
-            Year(x) => x
-                .as_ref()
-                .map_or_else(|| Cow::Owned(String::new()), Cow::Borrowed),
+            Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x) | Year(x) => {
+                Cow::Borrowed(x)
+            }
+            Topics(x) => Cow::Owned(x.join(",")),
         }
     }
 }

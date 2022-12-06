@@ -55,16 +55,16 @@ impl Filter {
                 contents: FieldContents::Source(contents.to_lowercase()),
             }),
             Fields::History => Some(Self {
-                contents: FieldContents::History(vec![contents.to_lowercase()]),
+                contents: FieldContents::History(contents.to_lowercase()),
             }),
             Fields::Comments => Some(Self {
-                contents: FieldContents::Comments(vec![contents.to_lowercase()]),
+                contents: FieldContents::Comments(contents.to_lowercase()),
             }),
             Fields::Year => Some(Self {
-                contents: FieldContents::Year(Some(contents.to_lowercase())),
+                contents: FieldContents::Year(contents.to_lowercase()),
             }),
             Fields::Packages => Some(Self {
-                contents: FieldContents::Packages(vec![contents.to_lowercase()]),
+                contents: FieldContents::Packages(contents.to_lowercase()),
             }),
         }
     }
@@ -73,28 +73,33 @@ impl Filter {
         match &self.contents {
             FieldContents::Id(contents) => data.id == *contents,
             FieldContents::Problem(contents) => data.enunciado.to_lowercase().contains(contents),
-            FieldContents::Topics(contents) => matches(contents, &data.temas),
+            FieldContents::Topics(contents) => matches(
+                contents.iter().map(String::as_str),
+                data.temas.iter().map(|s| s.as_str()),
+            ),
             FieldContents::Difficulty(contents) => data.dificultad == *contents,
             FieldContents::Source(contents) => data.fuente.to_lowercase().contains(contents),
-            FieldContents::History(contents) => matches(contents, &data.historial),
-            FieldContents::Comments(contents) => matches(contents, &data.comentarios),
-            FieldContents::Year(contents) => contents.as_ref().map_or(false, |contents| {
-                data.curso
-                    .as_ref()
-                    .map_or_else(|| false, |curso| curso.to_lowercase().contains(contents))
-            }),
-            FieldContents::Packages(contents) => matches(contents, &data.paquetes),
+            FieldContents::History(contents) => {
+                matches(contents.split(','), data.historial.lines())
+            }
+            FieldContents::Comments(contents) => {
+                matches(contents.split(','), data.comentarios.lines())
+            }
+            FieldContents::Year(contents) => data.curso.to_lowercase().contains(contents),
+            FieldContents::Packages(contents) => {
+                matches(contents.split(','), data.paquetes.lines())
+            }
         }
     }
 }
 
-fn matches<'a, 'b, 'c, T: IntoIterator<Item = &'a String>, S: 'c>(patterns: T, data: &'b S) -> bool
-where
-    &'b S: IntoIterator<Item = &'c String> + 'b,
+    fn matches<'a,'b, 'c, T: IntoIterator<Item = &'a str>, S: 'c + Clone + IntoIterator<Item = &'c str>>(patterns: T, data: &'b S) -> bool
 {
-    patterns
-        .into_iter()
-        .all(|pattern| data.into_iter().any(|t| t.to_lowercase().contains(pattern)))
+    patterns.into_iter().all(|pattern| {
+        data.clone()
+            .into_iter()
+            .any(|t| t.to_lowercase().contains(pattern))
+    })
 }
 
 pub enum FilterAction {

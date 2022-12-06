@@ -16,9 +16,8 @@ const REDUNDANT: [&str; 14] = [
 /// Panics if any little thing goes wrong
 /// while parsing
 pub fn clean(data: &mut Data) {
-    let packages = &mut data.paquetes;
-    *packages = packages
-        .iter()
+    let packages = data.paquetes.split('\n');
+    let packages: Vec<_> = packages
         .flat_map(|package| {
             let pieces = package.split(',');
             pieces.filter_map(|piece| {
@@ -31,6 +30,7 @@ pub fn clean(data: &mut Data) {
             })
         })
         .collect();
+    data.paquetes = packages.join("\n");
 }
 
 #[derive(PartialEq, Eq)]

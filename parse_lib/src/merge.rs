@@ -96,23 +96,23 @@ pub fn overwrite_document_data(input: &str, data: &Data) -> Result<String, Parse
     if fuente.is_empty() {
         fuente = &percent;
     }
-    let mut comentarios = data.comentarios.join(", ");
-
-    let curso = if data.curso.is_none() {
-        "%"
-    } else {
-        data.curso.as_ref().unwrap()
-    };
+    let mut comentarios = data.comentarios.as_str();
 
     if comentarios.is_empty() {
-        comentarios = "%".into();
+        comentarios = "%";
     }
 
-    let mut historial = data.historial.join(", ");
+    let mut curso = data.curso.as_str();
+    if curso.is_empty() {
+        curso = "%";
+    }
+
+    let mut historial = data.historial.as_str();
 
     if historial.is_empty() {
-        historial = "%".into();
+        historial = "%";
     }
+
     let dificultad = if data.dificultad == u8::MAX {
         "%".into()
     } else {
@@ -120,7 +120,7 @@ pub fn overwrite_document_data(input: &str, data: &Data) -> Result<String, Parse
     };
 
     Ok(into_template(
-        &data.paquetes.join("\n"),
+        &data.paquetes,
         &temas,
         &dificultad,
         &historial,
