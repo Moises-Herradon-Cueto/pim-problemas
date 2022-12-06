@@ -66,6 +66,12 @@ impl Filter {
             Fields::Packages => Some(Self {
                 contents: FieldContents::Packages(contents.to_lowercase()),
             }),
+            Fields::Author => Some(Self {
+                contents: FieldContents::Author(contents.to_lowercase()),
+            }),
+            Fields::Url => Some(Self {
+                contents: FieldContents::Url(contents.to_lowercase()),
+            }),
         }
     }
 
@@ -75,26 +81,36 @@ impl Filter {
             FieldContents::Problem(contents) => data.enunciado.to_lowercase().contains(contents),
             FieldContents::Topics(contents) => matches(
                 contents.iter().map(String::as_str),
-                data.temas.iter().map(|s| s.as_str()),
+                &data.temas.iter().map(String::as_str),
             ),
             FieldContents::Difficulty(contents) => data.dificultad == *contents,
             FieldContents::Source(contents) => data.fuente.to_lowercase().contains(contents),
             FieldContents::History(contents) => {
-                matches(contents.split(','), data.historial.lines())
+                matches(contents.split(','), &data.historial.lines())
             }
             FieldContents::Comments(contents) => {
-                matches(contents.split(','), data.comentarios.lines())
+                matches(contents.split(','), &data.comentarios.lines())
             }
             FieldContents::Year(contents) => data.curso.to_lowercase().contains(contents),
             FieldContents::Packages(contents) => {
-                matches(contents.split(','), data.paquetes.lines())
+                matches(contents.split(','), &data.paquetes.lines())
             }
+            FieldContents::Url(contents) => data.url.to_lowercase().contains(contents),
+            FieldContents::Author(contents) => data.id_autor.to_lowercase().contains(contents),
         }
     }
 }
 
-    fn matches<'a,'b, 'c, T: IntoIterator<Item = &'a str>, S: 'c + Clone + IntoIterator<Item = &'c str>>(patterns: T, data: &'b S) -> bool
-{
+fn matches<
+    'a,
+    'b,
+    'c,
+    T: IntoIterator<Item = &'a str>,
+    S: 'c + Clone + IntoIterator<Item = &'c str>,
+>(
+    patterns: T,
+    data: &'b S,
+) -> bool {
     patterns.into_iter().all(|pattern| {
         data.clone()
             .into_iter()

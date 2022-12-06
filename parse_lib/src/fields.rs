@@ -6,7 +6,9 @@ use clap::ValueEnum;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use Fields::{Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year};
+use Fields::{
+    Author, Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Url, Year,
+};
 #[derive(
     Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, ValueEnum, enum_utils::FromStr,
 )]
@@ -21,6 +23,8 @@ pub enum Fields {
     Comments,
     Year,
     Packages,
+    Author,
+    Url,
 }
 
 pub struct OutOfRange;
@@ -45,14 +49,16 @@ impl Display for Fields {
             Comments => f.write_str("Comentarios"),
             Year => f.write_str("Curso"),
             Packages => f.write_str("Paquetes usados"),
+            Author => f.write_str("Proponente"),
+            Url => f.write_str("Archivo"),
         }
     }
 }
 
 impl Fields {
-    pub const N: usize = 9;
+    pub const N: usize = 11;
     pub const ALL: [Self; Self::N] = [
-        Id, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages,
+        Id, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages, Author, Url,
     ];
 
     #[must_use]
@@ -67,6 +73,8 @@ impl Fields {
             Comments => Cow::Borrowed(&data.comentarios),
             Packages => Cow::Borrowed(&data.paquetes),
             Year => Cow::Borrowed(&data.curso),
+            Author => Cow::Borrowed(&data.id_autor),
+            Url => Cow::Borrowed(&data.url),
         }
     }
 
@@ -82,6 +90,8 @@ impl Fields {
             Comments => FieldContentsRef::Comments(&data.comentarios),
             Year => FieldContentsRef::Year(&data.curso),
             Packages => FieldContentsRef::Packages(&data.paquetes),
+            Author => FieldContentsRef::Author(&data.id_autor),
+            Url => FieldContentsRef::Url(&data.url),
         }
     }
 
@@ -100,6 +110,8 @@ impl Fields {
             History => Regex::new(r"\\historial\{\s*(.*?)\s*\}"),
             Comments => Regex::new(r"\\comentarios\{\s*(.*?)\s*\}"),
             Year => Regex::new(r"\\curso\{\s*(.*?)\s*\}"),
+            Author => Regex::new(r"\\proponente\{\s*(.*?)\s*\}"),
+            Url => Regex::new(r"\\archivo\{\s*(.*?)\s*\}"),
             Packages => Regex::new(r"(?s)%%% Paquetes extra\s*(.*?)\s*%%% Fin de paquetes extra"),
             Id => Regex::new(r"\\id\{\s*(.*?)\s*\}"),
         };
@@ -117,6 +129,8 @@ impl Fields {
             Comments => FieldContents::Comments(String::new()),
             Year => FieldContents::Year(String::new()),
             Packages => FieldContents::Packages(String::new()),
+            Author => FieldContents::Author(String::new()),
+            Url => FieldContents::Url(String::new()),
         }
     }
 
@@ -187,6 +201,8 @@ impl Fields {
                     })
                     .collect(),
             )),
+            Author => Ok(FieldContents::Author(input.trim().to_owned())),
+            Url => Ok(FieldContents::Url(input.trim().to_owned())),
         }
     }
 
@@ -216,6 +232,8 @@ pub enum FieldContents {
     Comments(String),
     Year(String),
     Packages(String),
+    Author(String),
+    Url(String),
 }
 
 #[derive(PartialEq, Eq)]
@@ -229,19 +247,21 @@ pub enum FieldContentsRef<'a> {
     Comments(&'a str),
     Year(&'a str),
     Packages(&'a str),
+    Author(&'a str),
+    Url(&'a str),
 }
 
 impl<'a> FieldContentsRef<'a> {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         use FieldContentsRef::{
-            Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
+            Author, Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Url, Year,
         };
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
             Problem(x) => x.is_empty() || *x == "%",
-            Source(x) | History(x) | Comments(x) | Packages(x) | Year(x) => {
+            Source(x) | History(x) | Comments(x) | Packages(x) | Year(x) | Author(x) | Url(x) => {
                 x.is_empty() || *x == "%"
             }
             Topics(x) => x.is_empty(),
@@ -283,6 +303,8 @@ impl<'a> FieldContentsRef<'a> {
             FieldContentsRef::Comments(x) => FieldContents::Comments((*x).to_owned()),
             FieldContentsRef::Packages(x) => FieldContents::Packages((*x).to_owned()),
             FieldContentsRef::Year(x) => FieldContents::Year((*x).to_owned()),
+            FieldContentsRef::Url(x) => FieldContents::Url((*x).to_owned()),
+            FieldContentsRef::Author(x) => FieldContents::Author((*x).to_owned()),
         }
     }
 }
@@ -298,20 +320,21 @@ impl FieldContents {
             Self::Comments(content) => data.comentarios = content,
             Self::Year(content) => data.curso = content,
             Self::Packages(content) => data.paquetes = content,
+            Self::Author(content) => data.id_autor = content,
+            Self::Url(content) => data.url = content,
         }
     }
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
         use FieldContents::{
-            Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
+            Author, Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Url, Year,
         };
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
-            Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x) | Year(x) => {
-                x.is_empty() || x == "%"
-            }
+            Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x) | Year(x)
+            | Author(x) | Url(x) => x.is_empty() || x == "%",
             Topics(x) => x.is_empty(),
         }
     }
@@ -319,14 +342,13 @@ impl FieldContents {
     #[must_use]
     pub fn string_contents(&self) -> Cow<String> {
         use FieldContents::{
-            Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year,
+            Author, Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Url, Year,
         };
         match self {
             Id(x) => Cow::Owned(x.to_string()),
             Difficulty(x) => Cow::Owned(x.to_string()),
-            Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x) | Year(x) => {
-                Cow::Borrowed(x)
-            }
+            Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x) | Year(x)
+            | Author(x) | Url(x) => Cow::Borrowed(x),
             Topics(x) => Cow::Owned(x.join(",")),
         }
     }
@@ -344,6 +366,8 @@ impl From<&FieldContents> for Fields {
             FieldContents::Comments(_) => Self::Comments,
             FieldContents::Year(_) => Self::Year,
             FieldContents::Packages(_) => Self::Packages,
+            FieldContents::Author(_) => Self::Author,
+            FieldContents::Url(_) => Self::Url,
         }
     }
 }

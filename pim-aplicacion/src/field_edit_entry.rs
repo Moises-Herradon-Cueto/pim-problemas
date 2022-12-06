@@ -5,7 +5,9 @@ use material_yew::text_inputs::TextFieldType;
 use parse_lib::{FieldContents, Fields};
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
-use FieldContents::{Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Year};
+use FieldContents::{
+    Author, Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Url, Year,
+};
 
 pub struct Comp {
     contents: FieldContents,
@@ -79,7 +81,7 @@ impl Component for Comp {
         let problem = matches!(self.contents, Problem(_));
 
         let input_type = match &self.contents {
-            Id(_) | Difficulty(_) | Source(_) | Year(_) => InputType::One,
+            Id(_) | Difficulty(_) | Source(_) | Year(_) | Author(_) | Url(_) => InputType::One,
             Problem(_) | History(_) | Comments(_) | Topics(_) | Packages(_) => InputType::Multi,
         };
 
