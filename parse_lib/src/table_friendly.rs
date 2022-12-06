@@ -5,6 +5,7 @@ use crate::Data;
 #[derive(Serialize, Deserialize)]
 pub struct TableFriendly {
     pub id: usize,
+    pub titulo: String,
     pub temas: String,
     pub dificultad: u8,
     pub fuente: String,
@@ -31,6 +32,7 @@ impl From<Data> for TableFriendly {
             paquetes,
             url,
             id_autor,
+            titulo,
         }: Data,
     ) -> Self {
         Self {
@@ -45,6 +47,7 @@ impl From<Data> for TableFriendly {
             paquetes,
             url,
             id_autor,
+            titulo,
         }
     }
 }

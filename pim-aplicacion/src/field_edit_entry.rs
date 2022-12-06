@@ -6,7 +6,7 @@ use parse_lib::{FieldContents, Fields};
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
 use FieldContents::{
-    Author, Comments, Difficulty, History, Id, Packages, Problem, Source, Topics, Url, Year,
+    Author, Comments, Difficulty, History, Id, Packages, Problem, Source, Title, Topics, Url, Year,
 };
 
 pub struct Comp {
@@ -81,7 +81,9 @@ impl Component for Comp {
         let problem = matches!(self.contents, Problem(_));
 
         let input_type = match &self.contents {
-            Id(_) | Difficulty(_) | Source(_) | Year(_) | Author(_) | Url(_) => InputType::One,
+            Id(_) | Title(_) | Difficulty(_) | Source(_) | Year(_) | Author(_) | Url(_) => {
+                InputType::One
+            }
             Problem(_) | History(_) | Comments(_) | Topics(_) | Packages(_) => InputType::Multi,
         };
 

@@ -7,9 +7,9 @@ use std::{
 use arguments::Action;
 use clap::Parser;
 use parse_lib::{
-    apply_regex, clean_packages, commands::sync_db, get_json_string, make_html, make_problem_sheet,
-    parse_regex_file, pdflatex, read_csv, table_friendly::TableFriendly, topics, write_csv, Data,
-    Fields, OldData,
+    apply_regex, clean_packages, commands::sync_db, get_json_string, into_sql, make_html,
+    make_problem_sheet, parse_regex_file, pdflatex, read_csv, table_friendly::TableFriendly,
+    topics, write_csv, Data, Fields, OldData,
 };
 
 use crate::arguments::MyArgs;
@@ -104,7 +104,14 @@ fn main() {
             output_path,
         } => regex_from_file(&regex_file, &database_path, output_path.as_deref()),
         Action::GetTopics { database_path, php } => println!("{}", get_topics(&database_path, php)),
+        Action::Sql { database_path } => make_sql(&database_path),
     }
+}
+
+fn make_sql(database_path: &Path) {
+    let data = get_database(database_path);
+    let out = into_sql(&data);
+    println!("{out}");
 }
 
 fn get_topics(database_path: &Path, php: bool) -> String {

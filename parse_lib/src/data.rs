@@ -38,6 +38,7 @@ pub struct Read {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct Data {
     pub id: usize,
+    pub titulo: String,
     pub temas: Vec<String>,
     pub dificultad: u8,
     pub fuente: String,
@@ -82,6 +83,7 @@ impl From<Old> for Data {
             temas,
             dificultad,
             fuente,
+            titulo: id.to_string(),
             historial: historial.join("\n"),
             comentarios: comentarios.join("\n"),
             curso: curso.unwrap_or_default(),
@@ -95,9 +97,10 @@ impl From<Old> for Data {
 
 impl Data {
     #[must_use]
-    pub const fn new(id: usize) -> Self {
+    pub fn new(id: usize) -> Self {
         Self {
             id,
+            titulo: id.to_string(),
             temas: vec![],
             dificultad: u8::MAX,
             fuente: String::new(),
@@ -154,6 +157,7 @@ impl Data {
                     "No se pudo interpretar {id} como un número\n{err}"
                 ))
             })?,
+            titulo: id,
             temas,
             dificultad,
             fuente: descripcion,

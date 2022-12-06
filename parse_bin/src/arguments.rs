@@ -101,4 +101,8 @@ pub enum Action {
         #[arg(long)]
         php: bool,
     },
+    Sql {
+        #[arg(short, long)]
+        database_path: PathBuf,
+    },
 }

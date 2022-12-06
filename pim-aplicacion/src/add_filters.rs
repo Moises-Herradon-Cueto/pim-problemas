@@ -42,6 +42,9 @@ impl Filter {
             Fields::Id => Some(Self {
                 contents: FieldContents::Id(contents.parse().ok()?),
             }),
+            Fields::Title => Some(Self {
+                contents: FieldContents::Title(contents.to_lowercase()),
+            }),
             Fields::Problem => Some(Self {
                 contents: FieldContents::Problem(contents.to_lowercase()),
             }),
@@ -78,6 +81,7 @@ impl Filter {
     pub fn passes(&self, data: &Data) -> bool {
         match &self.contents {
             FieldContents::Id(contents) => data.id == *contents,
+            FieldContents::Title(contents) => data.titulo.to_lowercase().contains(contents),
             FieldContents::Problem(contents) => data.enunciado.to_lowercase().contains(contents),
             FieldContents::Topics(contents) => matches(
                 contents.iter().map(String::as_str),

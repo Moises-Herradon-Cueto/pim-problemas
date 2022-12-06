@@ -22,6 +22,7 @@ pub use files::parse_all;
 pub use files::ParseOneError;
 pub use files::ParseOneInfo;
 pub use html::make as make_html;
+pub use sql::into as into_sql;
 
 pub mod commands;
 mod data;
@@ -34,6 +35,7 @@ pub mod pdflatex;
 mod preamble;
 mod process_tex;
 mod regex;
+mod sql;
 pub mod table_friendly;
 pub mod topics;
 
