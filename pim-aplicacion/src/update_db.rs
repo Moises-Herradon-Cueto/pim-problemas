@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf, rc::Rc};
+use std::{path::PathBuf, rc::Rc};
 
 use pim_lib::{Data, Entry, ParseOneError};
 use serde::{Deserialize, Serialize};

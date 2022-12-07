@@ -83,7 +83,7 @@ impl<T: DeserializeOwned> MyResponse<T> {
                 Err(err) => Self::Error(format!("Error parsing json\n{err}")),
             }
         } else if response.status() == 500 {
-            let body = response.text().await.unwrap_or(String::new());
+            let body = response.text().await.unwrap_or_default();
             Self::Code500(body)
         } else if response.status() == 401 {
             Self::Code401
