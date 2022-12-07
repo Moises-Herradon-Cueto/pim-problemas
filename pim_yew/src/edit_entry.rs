@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::field_edit_entry::Comp as FieldEntryEdit;
+use crate::FieldEditEntry;
 use pim_lib::{Data, FieldContents, Fields};
 use yew::prelude::*;
 
@@ -51,7 +51,7 @@ impl Component for Comp {
         let edit_cb = ctx.link().callback(Msg::Edit);
         let rows: Html = Fields::ALL.into_iter().map(|field| {
                     html!{
-                        <FieldEntryEdit edit_cb = {edit_cb.clone()} contents = {field.get(&self.data).to_owned()}/>
+                        <FieldEditEntry edit_cb = {edit_cb.clone()} contents = {field.get(&self.data).to_owned()}/>
                     }
                 }).collect();
         let submit_cb = ctx.link().callback(|e: MouseEvent| {

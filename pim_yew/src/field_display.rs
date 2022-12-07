@@ -1,3 +1,4 @@
+use crate::raw_html::Comp as RawHtml;
 use pim_lib::FieldContents;
 use yew::prelude::*;
 
@@ -21,9 +22,10 @@ impl Component for Comp {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         if matches!(ctx.props().item, FieldContents::Problem(_)) {
+            let problem = ctx.props().item.string_contents().to_string();
             html! {
                 <td>
-                <p class={"problem-preview"}>{ctx.props().item.string_contents()}</p>
+                <RawHtml tag={"p"}  inner_html={problem}/>
                 </td>
             }
         } else {

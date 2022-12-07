@@ -4,6 +4,8 @@ use yew::{
     virtual_dom::{VNode, VTag},
 };
 
+use crate::typeset;
+
 #[derive(Debug, Clone, Eq, PartialEq, Properties)]
 pub struct Props {
     pub inner_html: String,
@@ -33,6 +35,7 @@ impl Component for Comp {
     fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
         let el = self.node_ref.cast::<Element>().unwrap();
         el.set_inner_html(&ctx.props().inner_html);
+        typeset();
     }
 
     // fn view(&self) -> Html {

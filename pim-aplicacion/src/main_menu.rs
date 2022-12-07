@@ -4,10 +4,11 @@ use std::rc::Rc;
 
 use crate::app::invoke;
 use crate::files_info::{Comp as FilesInfo, PathTo, Paths};
+use crate::home_button;
 use crate::update_db::{self, UpdateDb as Update};
-use crate::view_db::ViewDb as View;
-use crate::{home_button, view_db};
 use pim_lib::Data;
+use pim_yew::ViewDb as View;
+use pim_yew::ViewDbProps;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use AppType::Start;
@@ -15,7 +16,7 @@ use AppType::Start;
 pub struct MainMenu {
     main_app: AppType,
     paths: Paths,
-    db: Option<Rc<HashMap<usize, Data>>>,
+    db: Option<Rc<Vec<Data>>>,
     error: String,
 }
 
@@ -27,8 +28,9 @@ pub enum AppType {
 pub enum Msg {
     ChangeApps(AppType),
     UpdatePaths(Paths),
-    UpdateDb(Rc<HashMap<usize, Data>>),
+    UpdateDb(Rc<Vec<Data>>),
     UpdateErr(String),
+    EditEntry(Data),
     GetDb,
 }
 
@@ -79,6 +81,7 @@ impl Component for MainMenu {
                 self.db = None;
                 false
             }
+            Msg::EditEntry(_) => todo!(),
         }
     }
 
@@ -166,9 +169,10 @@ impl MainMenu {
         self.db.as_ref().map_or_else(|| self.view_update(ctx), |db| {
             let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
             let reload_db_cb = ctx.link().callback(|_| Msg::GetDb);
+        let edit_cb = ctx.link().callback(Msg::EditEntry);
             html! {
                 <>
-                <home_button::With<View> props={view_db::Props {db:db.clone(), paths:self.paths.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {edit_cb, db:db.clone(),  reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })

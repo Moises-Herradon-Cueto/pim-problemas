@@ -51,6 +51,9 @@ impl Filter {
             Fields::Topics => Some(Self {
                 contents: FieldContents::Topics(vec![contents.to_lowercase()]),
             }),
+            Fields::Figures => Some(Self {
+                contents: FieldContents::Figures(vec![contents.to_lowercase()]),
+            }),
             Fields::Difficulty => Some(Self {
                 contents: FieldContents::Difficulty(contents.parse().ok()?),
             }),
@@ -86,6 +89,10 @@ impl Filter {
             FieldContents::Topics(contents) => matches(
                 contents.iter().map(String::as_str),
                 &data.temas.iter().map(String::as_str),
+            ),
+            FieldContents::Figures(contents) => matches(
+                contents.iter().map(String::as_str),
+                &data.figuras.iter().map(String::as_str),
             ),
             FieldContents::Difficulty(contents) => data.dificultad == *contents,
             FieldContents::Source(contents) => data.fuente.to_lowercase().contains(contents),

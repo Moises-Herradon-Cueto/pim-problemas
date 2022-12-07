@@ -2,23 +2,14 @@
 #![warn(clippy::nursery)]
 #![allow(clippy::let_unit_value)]
 
-mod add_filters;
 mod app;
-mod column_select;
 mod commands;
-mod edit_entry;
-mod field_display;
-mod field_edit_entry;
-mod field_selector;
 mod files_info;
 mod helper;
 mod home_button;
 mod main_menu;
-mod raw_html;
-mod result_range;
 mod start;
 mod update_db;
-mod view_db;
 
 use std::collections::HashMap;
 

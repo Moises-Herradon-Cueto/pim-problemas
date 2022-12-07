@@ -1,16 +1,12 @@
-use std::time::Duration;
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
 use crate::add_filters::{Comp as FilterAdd, Filter, FilterAction};
-use crate::app::typeset;
 use crate::column_select::Comp as ColumnSelect;
-use crate::commands::insert_db_info;
 use crate::edit_entry::Comp as EditEntry;
 use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
-use crate::files_info::{PathTo, Paths};
-use crate::helper::sleep;
 use crate::result_range::{self, Comp as RangeSelector};
+use crate::typeset;
 use material_yew::MatIconButtonToggle;
 use pim_lib::{Data, Fields, ParseOneError};
 use yew::prelude::*;
@@ -43,6 +39,7 @@ impl Default for Sort {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 pub enum Msg {
     View(bool, Fields),
     EditFilter(FilterAction),
@@ -58,16 +55,14 @@ pub enum Msg {
 
 #[derive(Properties, Clone)]
 pub struct Props {
-    pub db: Rc<HashMap<usize, Data>>,
+    pub db: Rc<Vec<Data>>,
     pub reload_db_cb: Callback<()>,
-    pub paths: Paths,
+    pub edit_cb: Callback<Data>,
 }
 
 impl PartialEq for Props {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.db, &other.db)
-            && self.reload_db_cb == other.reload_db_cb
-            && self.paths == other.paths
+        Rc::ptr_eq(&self.db, &other.db) && self.reload_db_cb == other.reload_db_cb
     }
 }
 
@@ -80,6 +75,9 @@ impl Component for ViewDb {
         for (i, f) in Fields::ALL.into_iter().enumerate() {
             shown_fields[i] = f.is_in_template();
         }
+        // Hide id and title
+        shown_fields[0] = false;
+        shown_fields[1] = false;
         let mut output = Self {
             view: vec![],
             window: vec![],
@@ -118,12 +116,7 @@ impl Component for ViewDb {
                 return false;
             }
             Msg::EditInfo(data) => {
-                let problems_path = ctx.props().paths.get(PathTo::Problems).into_owned();
-                let db_path = ctx.props().paths.get(PathTo::Db).into_owned();
-                ctx.link().send_future(async move {
-                    let result = insert_db_info(&problems_path, &db_path, data).await;
-                    result.map_or_else(Msg::SetError, |_| Msg::ReloadDb)
-                });
+                ctx.props().edit_cb.emit(data);
                 self.stop_editing(ctx);
             }
             Msg::View(show, field) => {
@@ -168,7 +161,8 @@ impl Component for ViewDb {
             let input_data = Rc::new(
                 ctx.props()
                     .db
-                    .get(&id)
+                    .iter()
+                    .find(|x| x.id == id)
                     .cloned()
                     .unwrap_or_else(|| Data::new(id)),
             );
@@ -282,7 +276,9 @@ fn into_row(
 
     html! {
         <tr>
-        <td><button class="edit-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button></td>
+        <td><button class="edit-button" {onclick}><i class="fa-solid fa-pen-to-square"></i>{" Editar"}</button>
+        <a href={data.url.clone()}>{&data.titulo}</a>
+        </td>
         {entries}
         </tr>
     }
@@ -294,7 +290,7 @@ impl ViewDb {
             .props()
             .db
             .iter()
-            .map(|(_, problem_info)| problem_info.clone())
+            .cloned()
             .filter(|data| self.filters.iter().all(|filter| filter.passes(data)))
             .collect();
         self.view.sort_by(|a, b| {
@@ -323,14 +319,11 @@ impl ViewDb {
         let start = self.cached_range.0;
         let end = self.cached_range.1;
         ctx.link().send_future(async move {
-            log::info!("Going to sleep");
-            sleep(Duration::from_millis(1000)).await;
+            log::info!("Would like to sleep");
             log::info!("Wake up");
             Msg::Range(start, result_range::Which::Start)
         });
-        ctx.link().send_future(async move {
-            sleep(Duration::from_millis(1000)).await;
-            Msg::Range(end, result_range::Which::End)
-        });
+        ctx.link()
+            .send_future(async move { Msg::Range(end, result_range::Which::End) });
     }
 }

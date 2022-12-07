@@ -1,12 +1,14 @@
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::commands::insert_db_info;
 use crate::handle_db::FetchedData;
-use crate::raw_html::Comp as RawHtml;
+use crate::home_button;
 use crate::requests::MyRequest;
-use crate::view_db::ViewDb as View;
-use crate::{home_button, view_db};
 use pim_lib::Data;
+use pim_yew::RawHtml;
+use pim_yew::ViewDb as View;
+use pim_yew::ViewDbProps;
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use AppType::Start;
@@ -25,6 +27,7 @@ pub enum Msg {
     ChangeApps(AppType),
     UpdateDb(Rc<Vec<Data>>),
     UpdateErr(String),
+    EditEntry(Data),
     GetDb,
 }
 
@@ -64,6 +67,13 @@ impl Component for MainMenu {
             Msg::GetDb => {
                 Self::get_db(ctx);
                 self.db = None;
+                false
+            }
+            Msg::EditEntry(data) => {
+                ctx.link().send_future(async move {
+                    let result = insert_db_info(data).await;
+                    result.map_or_else(|err| Msg::UpdateErr(err.to_string()), |_| Msg::GetDb)
+                });
                 false
             }
         }
@@ -147,9 +157,10 @@ impl MainMenu {
         self.db.as_ref().map_or_else(|| html!{<p>{"Cargando..."}</p>}, |db| {
             let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
             let reload_db_cb = ctx.link().callback(|_| Msg::GetDb);
+            let edit_cb = ctx.link().callback( Msg::EditEntry);
             html! {
                 <>
-                <home_button::With<View> props={view_db::Props {db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {edit_cb ,db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })

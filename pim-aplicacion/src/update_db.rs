@@ -25,8 +25,8 @@ pub enum Msg {
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
     pub paths: Paths,
-    pub cb: Callback<Rc<HashMap<usize, Data>>>,
-    pub db: Option<Rc<HashMap<usize, Data>>>,
+    pub cb: Callback<Rc<Vec<Data>>>,
+    pub db: Option<Rc<Vec<Data>>>,
 }
 
 impl Component for UpdateDb {
