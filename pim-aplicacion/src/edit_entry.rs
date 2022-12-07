@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::field_edit_entry::Comp as FieldEntryEdit;
-use parse_lib::{Data, FieldContents, Fields};
+use pim_lib::{Data, FieldContents, Fields};
 use yew::prelude::*;
 
 pub struct Comp {

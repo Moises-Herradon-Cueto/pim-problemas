@@ -12,7 +12,7 @@ use crate::files_info::{PathTo, Paths};
 use crate::helper::sleep;
 use crate::result_range::{self, Comp as RangeSelector};
 use material_yew::MatIconButtonToggle;
-use parse_lib::{Data, Fields, ParseOneError};
+use pim_lib::{Data, Fields, ParseOneError};
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
 

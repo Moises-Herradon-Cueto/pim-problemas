@@ -1,7 +1,7 @@
 use material_yew::select::{ListIndex, MatSelect, SelectedDetail};
 
 use material_yew::MatListItem;
-use parse_lib::Fields;
+use pim_lib::Fields;
 use yew::prelude::*;
 
 pub struct Comp;

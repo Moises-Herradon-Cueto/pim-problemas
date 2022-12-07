@@ -136,8 +136,6 @@ fn escape(input: &str) -> String {
     input
         .replace('\\', "\\\\")
         .replace('\'', "\\'")
-        .replace('%', "\\%")
-        .replace('_', "\\_")
 }
 
 fn curso(input: &str) -> String {

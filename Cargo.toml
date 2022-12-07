@@ -1,3 +1,0 @@
-[workspace]
-
-members = ["parse_bin", "parse_lib", "pim-aplicacion", "pim-aplicacion/src-tauri"]

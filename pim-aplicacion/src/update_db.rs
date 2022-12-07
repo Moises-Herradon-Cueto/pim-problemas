@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
-use parse_lib::{Data, Entry, ParseOneError};
+use pim_lib::{Data, Entry, ParseOneError};
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 
@@ -94,7 +94,7 @@ fn show_error(error: &Entry) -> Html {
         .map_or_else(show_parse_error, show_parse_info)
 }
 
-fn show_parse_info((id, info): &(usize, parse_lib::ParseOneInfo)) -> Html {
+fn show_parse_info((id, info): &(usize, pim_lib::ParseOneInfo)) -> Html {
     html! {
         <li class="info">{format!("En el problema {id}: {info}")}</li>
     }

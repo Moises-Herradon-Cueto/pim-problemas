@@ -1,4 +1,4 @@
-use parse_lib::FieldContents;
+use pim_lib::FieldContents;
 use yew::prelude::*;
 
 pub struct Comp;

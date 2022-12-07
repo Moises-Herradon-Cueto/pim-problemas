@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use parse_lib::Fields;
+use pim_lib::Fields;
 
 #[derive(Parser, Debug)]
 pub struct MyArgs {

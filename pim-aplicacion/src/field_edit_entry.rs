@@ -2,7 +2,7 @@ use crate::app::typeset;
 use material_yew::text_inputs::MatTextArea;
 use material_yew::text_inputs::MatTextField;
 use material_yew::text_inputs::TextFieldType;
-use parse_lib::{FieldContents, Fields};
+use pim_lib::{FieldContents, Fields};
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
 use FieldContents::{

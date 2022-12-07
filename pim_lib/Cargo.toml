@@ -1,5 +1,5 @@
 [package]
-name = "parse_lib"
+name = "pim_lib"
 version = "0.1.0"
 edition = "2021"
 

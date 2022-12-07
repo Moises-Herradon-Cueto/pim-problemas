@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use parse_lib::{Data, ParseOneError};
+use pim_lib::{Data, ParseOneError};
 use serde::{Deserialize, Serialize};
 
 use crate::app::invoke;

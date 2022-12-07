@@ -23,7 +23,7 @@ mod view_db;
 use std::collections::HashMap;
 
 use app::App;
-use parse_lib::Data;
+use pim_lib::Data;
 
 pub type DB = HashMap<usize, Data>;
 

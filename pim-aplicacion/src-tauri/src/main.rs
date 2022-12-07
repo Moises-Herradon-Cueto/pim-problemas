@@ -13,7 +13,7 @@ use std::{
     time::Duration,
 };
 
-use parse_lib::{
+use pim_lib::{
     commands::sync_db, get_json_string, overwrite_file_data, write_json, Data, ParseOneError,
 };
 use tauri::{api::dialog::FileDialogBuilder, State};

@@ -1,5 +1,5 @@
 use material_yew::checkbox::MatCheckbox;
-use parse_lib::Fields;
+use pim_lib::Fields;
 use yew::prelude::*;
 
 pub struct Comp;

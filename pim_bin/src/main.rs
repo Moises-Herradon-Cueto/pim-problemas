@@ -6,7 +6,7 @@ use std::{
 
 use arguments::Action;
 use clap::Parser;
-use parse_lib::{
+use pim_lib::{
     apply_regex, clean_packages, commands::sync_db, get_json_string, into_sql, make_html,
     make_problem_sheet, parse_regex_file, pdflatex, read_csv, table_friendly::TableFriendly,
     topics, write_csv, Data, Fields, OldData,

@@ -1,6 +1,6 @@
-parse_bin/ejercicios-in/
-parse_bin/ejercicios-out/
-parse_bin/pdf-out/
-parse_bin/figuras
+pim_bin/ejercicios-in/
+pim_bin/ejercicios-out/
+pim_bin/pdf-out/
+pim_bin/figuras
 pim-aplicacion/src-tauri/input/problems_in
 target

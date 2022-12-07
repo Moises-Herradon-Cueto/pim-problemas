@@ -4,7 +4,7 @@ use crate::field_selector::Comp as FieldSelect;
 
 use material_yew::text_inputs::{MatTextField, TextFieldType};
 
-use parse_lib::{Data, FieldContents, Fields};
+use pim_lib::{Data, FieldContents, Fields};
 use yew::{prelude::*, virtual_dom::AttrValue};
 
 #[derive(Debug)]
