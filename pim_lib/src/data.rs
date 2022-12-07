@@ -49,6 +49,7 @@ pub struct Data {
     pub paquetes: String,
     pub url: String,
     pub id_autor: String,
+    pub figuras: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
@@ -91,6 +92,7 @@ impl From<Old> for Data {
             paquetes: paquetes.join("\n"),
             url: String::new(),
             id_autor: String::new(),
+            figuras: Vec::new(),
         }
     }
 }
@@ -111,6 +113,7 @@ impl Data {
             paquetes: String::new(),
             url: String::new(),
             id_autor: String::new(),
+            figuras: Vec::new(),
         }
     }
 }
@@ -168,6 +171,7 @@ impl Data {
             paquetes: String::new(),
             id_autor: String::new(),
             url: String::new(),
+            figuras: Vec::new(),
         })
     }
 

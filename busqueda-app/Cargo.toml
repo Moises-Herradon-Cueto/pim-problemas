@@ -20,3 +20,4 @@ material-yew = { version = "0.2.0", features =["checkbox", "textarea", "textfiel
 yew = "0.19"
 pim_lib = {path = "../pim_lib"}
 gloo-net = "0.2.5"
+pim_yew = {path = "../pim_yew"}

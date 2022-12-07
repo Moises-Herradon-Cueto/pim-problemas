@@ -888,17 +888,17 @@ mod home_button {
     }
 }
 mod main_menu {
-    use std::collections::HashMap;
-    use std::path::PathBuf;
-    use std::rc::Rc;
     use crate::app::invoke;
     use crate::files_info::{Comp as FilesInfo, Paths, DEFAULT_DB};
     use crate::update_db::UpdateDb as Update;
     use crate::view_db::ViewDb as View;
     use crate::{home_button, DB};
-    use parse_lib::data::Data;
+    use pim_lib::data::Data;
     use serde::{Deserialize, Serialize};
     use serde_wasm_bindgen::to_value;
+    use std::collections::HashMap;
+    use std::path::PathBuf;
+    use std::rc::Rc;
     use yew::prelude::*;
     use AppType::Start;
     pub struct MainMenu {
@@ -1402,8 +1402,8 @@ mod main_menu {
     }
 }
 mod update_db {
-    use yew::prelude::*;
     use crate::files_info::Paths;
+    use yew::prelude::*;
     pub struct UpdateDb;
     pub enum Msg {
         ParseFiles,
@@ -1541,9 +1541,9 @@ mod view_db {
         }
     }
 }
-use std::collections::HashMap;
 use app::App;
-use parse_lib::data::Data;
+use pim_lib::data::Data;
+use std::collections::HashMap;
 pub type DB = HashMap<usize, Data>;
 fn main() {
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));

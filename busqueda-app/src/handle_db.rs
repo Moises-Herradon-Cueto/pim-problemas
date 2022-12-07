@@ -31,6 +31,8 @@ pub struct FetchedData {
     temas: Option<String>,
     #[serde(rename = "Hojas")]
     hojas: Option<String>,
+    #[serde(rename = "Figuras")]
+    figuras: Option<String>,
 }
 
 impl From<FetchedData> for Data {
@@ -48,12 +50,16 @@ impl From<FetchedData> for Data {
             comentarios,
             temas,
             hojas,
+            figuras,
         }: FetchedData,
     ) -> Self {
         Self {
             id,
             temas: temas.map_or(Vec::new(), |temas| {
                 temas.split(',').map(ToOwned::to_owned).collect()
+            }),
+            figuras: figuras.map_or(Vec::new(), |figuras| {
+                figuras.split(',').map(ToOwned::to_owned).collect()
             }),
             titulo,
             dificultad: dificultad.unwrap_or(u8::MAX),

@@ -19,3 +19,4 @@ pim_lib = {path = "../pim_lib"}
 serde_json = "1.0.87"
 material-yew = { version = "0.2.0", features = ["full"] }
 
+pim_yew = {path = "../pim_yew"}

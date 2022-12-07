@@ -16,6 +16,7 @@ pub struct TableFriendly {
     pub paquetes: String,
     pub url: String,
     pub id_autor: String,
+    pub figuras: String,
 }
 
 impl From<Data> for TableFriendly {
@@ -33,11 +34,13 @@ impl From<Data> for TableFriendly {
             url,
             id_autor,
             titulo,
+            figuras,
         }: Data,
     ) -> Self {
         Self {
             id,
             temas: temas.join(","),
+            figuras: figuras.join(","),
             dificultad,
             fuente,
             historial,

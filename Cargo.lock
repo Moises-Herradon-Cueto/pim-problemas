@@ -207,6 +207,7 @@ dependencies = [
  "log",
  "material-yew",
  "pim_lib",
+ "pim_yew",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -2287,6 +2288,7 @@ dependencies = [
  "log",
  "material-yew",
  "pim_lib",
+ "pim_yew",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
@@ -2321,6 +2323,26 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "pim_yew"
+version = "0.1.0"
+dependencies = [
+ "console_error_panic_hook",
+ "gloo-net",
+ "js-sys",
+ "log",
+ "material-yew",
+ "pim_lib",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-logger",
+ "web-sys",
+ "yew",
 ]
 
 [[package]]
