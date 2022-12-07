@@ -138,6 +138,20 @@ pub fn find_info_from_template(
         if !field.is_in_template() {
             continue;
         }
+        if matches!(field, Fields::Figures) {
+            let regex = Fields::Figures.regex();
+            let captures = regex.captures_iter(input);
+            new_data.figuras = captures
+                .map(|capture| {
+                    capture
+                        .get(1)
+                        .expect("Messed up the regex, there should be one capture group")
+                        .as_str()
+                        .to_owned()
+                })
+                .collect();
+            continue;
+        }
         let info = field.find(input).map_err(ParseOneError::IMessedUp)?;
 
         info.map_or_else(

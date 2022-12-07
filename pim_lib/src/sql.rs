@@ -59,6 +59,26 @@ FROM pim_problemas
         })
         .collect();
 
+    let figures: String = vec
+        .iter()
+        .flat_map(|data| {
+            data.figuras.iter().map(|figure| {
+                (
+                    data.id,
+                    format!("/PIM/externos/intranet/files/{}/{figure}", data.id),
+                )
+            })
+        })
+        .map(|(id, figure_url)| {
+            format!(
+                "
+INSERT INTO pim_figuras (ID_Problema, URL_Figura)
+SELECT ID, '{figure_url}'
+FROM pim_problemas WHERE
+Titulo = '{id}';\n"
+            )
+        })
+        .collect();
     format!(
         "INSERT INTO pim_problemas (
 ID_Autor,
@@ -81,7 +101,9 @@ INSERT INTO pim_temas (
 INSERT INTO pim_hojas (Titulo, Curso) VALUES
 {sheets_columns};
 
-{sheets_problems_columns}"
+{sheets_problems_columns}
+
+{figures}"
     )
 }
 
@@ -133,9 +155,7 @@ fn join_with_comma_newline<S: Display, T: Iterator<Item = S>>(mut iter: T) -> St
 }
 
 fn escape(input: &str) -> String {
-    input
-        .replace('\\', "\\\\")
-        .replace('\'', "\\'")
+    input.replace('\\', "\\\\").replace('\'', "\\'")
 }
 
 fn curso(input: &str) -> String {

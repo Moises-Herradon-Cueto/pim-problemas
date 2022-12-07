@@ -55,7 +55,7 @@ impl Display for Fields {
             Packages => f.write_str("Paquetes usados"),
             Author => f.write_str("Proponente"),
             Url => f.write_str("Archivo"),
-            Figures => f.write_str("figures"),
+            Figures => f.write_str("Figuras"),
         }
     }
 }
