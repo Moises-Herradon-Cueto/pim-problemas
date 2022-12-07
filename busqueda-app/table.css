@@ -1,0 +1,73 @@
+/* default styling. Nothing to do with freexing first row and column */
+
+#db-table {
+    border-collapse: collapse;
+    font-family: helvetica
+}
+
+#db-table td,
+th {
+    border: 1px solid;
+    padding: 10px;
+    background: white;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+#db-table-container {
+    position: relative;
+    width: 100%;
+    overflow: scroll;
+}
+
+#db-table thead th {
+    top: 0;
+    /* z-index: 2; */
+    background: hsl(86, 60%, 85%);
+}
+
+#db-table thead th:first-child {
+    left: 0;
+    /* z-index: 3; */
+}
+
+#db-table tfoot {
+    bottom: 0;
+    /* z-index: 2; */
+}
+
+#db-table tfoot td {
+    bottom: 0;
+    /* z-index: 2; */
+    background: hsl(86, 60%, 85%);
+}
+
+/* #db-table tfoot td:first-child { */
+/* z-index: 3; */
+/* } */
+
+#db-table tbody {
+    /* overflow: scroll; */
+    height: 200px;
+}
+
+/* MAKE LEFT COLUMN FIXEZ */
+#db-table tr> :nth-child(2) {
+    background: hsl(45, 90%, 90%);
+    left: 0;
+
+}
+
+/* don't do this */
+#db-table tr> :nth-child(2) {
+    box-shadow: inset 0px 1px black;
+
+}
+
+#db-table tr> :first-child {
+    width: 5px;
+}
+
+#db-table-container {
+    -webkit-overflow-scrolling: None;
+}

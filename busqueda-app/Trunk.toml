@@ -1,0 +1,11 @@
+[build]
+target = "./problemas-buscar.html"
+dist="../../php-practice/PIM/externos/intranet/busqueda-app"
+# The public URL from which assets are to be served.
+public_url = "/PIM/externos/intranet/busqueda-app/"
+# Whether to include hash values in the output file names.
+filehash = false
+
+[serve]
+address = "127.0.0.1"
+port = 1420

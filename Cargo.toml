@@ -1,0 +1,3 @@
+[workspace]
+
+members = ["pim_bin", "pim_lib", "pim-aplicacion", "pim-aplicacion/src-tauri", "busqueda-app"]
