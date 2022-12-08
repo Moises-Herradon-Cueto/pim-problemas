@@ -69,6 +69,11 @@ impl Fields {
     ];
 
     #[must_use]
+    pub const fn editable(self) -> bool {
+        !matches!(self, Id | Author | Url | Figures)
+    }
+
+    #[must_use]
     pub const fn db_label(self) -> &'static str {
         match self {
             Title => "titulo",

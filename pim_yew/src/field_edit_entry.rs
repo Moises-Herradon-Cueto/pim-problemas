@@ -70,6 +70,12 @@ impl Component for Comp {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if !Fields::from(&ctx.props().contents).editable() {
+            return html! {
+                <div class="entry-uneditable">{&ctx.props().contents}</div>
+            };
+        }
+
         let oninput = ctx.link().callback(Msg::Edit);
         if let Id(id) = self.contents {
             return html! {<h3>{format!("Editando el problema {id}")}</h3>};
