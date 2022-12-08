@@ -43,13 +43,15 @@ impl MyRequest {
         }
     }
 
-    pub async fn send_no_parse(self) {
+    #[allow(clippy::future_not_send)]
+    pub async fn send_no_parse(self) -> MyResponse<()> {
         #![allow(unused_must_use)]
         match self {
-            Self::Ok { request } => {
-                request.send().await;
-            }
-            Self::Error(_) => {}
+            Self::Ok { request } => match request.send().await {
+                Ok(response) => MyResponse::from_gloo_response(response, Some(())).await,
+                Err(err) => MyResponse::Error(format!("Error receiving response: {err}")),
+            },
+            Self::Error(err) => MyResponse::Error(err),
         }
     }
 
@@ -58,7 +60,7 @@ impl MyRequest {
         match self {
             Self::Ok { request } => match request.send().await {
                 Err(err) => MyResponse::Error(format!("Error receiving response: {err}")),
-                Ok(response) => MyResponse::<R>::from_gloo_response(response).await,
+                Ok(response) => MyResponse::<R>::from_gloo_response(response, None).await,
             },
             Self::Error(err) => MyResponse::Error(err),
         }
@@ -74,8 +76,11 @@ pub enum MyResponse<T> {
 
 #[allow(clippy::future_not_send)]
 impl<T: DeserializeOwned> MyResponse<T> {
-    pub async fn from_gloo_response(response: Response) -> Self {
+    pub async fn from_gloo_response(response: Response, default: Option<T>) -> Self {
         if response.ok() {
+            if let Some(answer) = default {
+                return Self::Ok { response: answer };
+            }
             let response: Result<T, _> = response.json().await;
             // .map_err(|err| )?;
             match response {

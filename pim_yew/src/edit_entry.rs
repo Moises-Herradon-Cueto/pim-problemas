@@ -50,6 +50,7 @@ impl Component for Comp {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let edit_cb = ctx.link().callback(Msg::Edit);
         let rows: Html = Fields::ALL.into_iter().map(|field| {
+                    if matches!(field, Fields::Problem) {return html!{};}
                     html!{
                         <FieldEditEntry edit_cb = {edit_cb.clone()} contents = {field.get(&self.data).to_owned()}/>
                     }
@@ -70,7 +71,14 @@ impl Component for Comp {
                 <button class="close-edit-button icon-button" onclick={close_cb}>
                 <i class="fa-solid fa-xmark"></i>
                 </button>
-                    {rows}
+                    <div class="two-columns">
+                        <div>
+                        {rows}
+                        </div>
+                        <div>
+                        <FieldEditEntry edit_cb = {edit_cb.clone()} contents = {Fields::Problem.get(&self.data).to_owned()}/>
+                        </div>
+                    </div>
                 <button class="submit-edit-button" onclick={submit_cb}>{"Aceptar"}</button>
             </fieldset>
             </form>

@@ -4,9 +4,9 @@ use crate::requests::{MyRequest, MyResponse};
 
 #[allow(clippy::future_not_send)]
 pub async fn insert_db_info(data: Data) -> Result<(), String> {
-    let response: MyResponse<()> = MyRequest::post("/PIM/externos/intranet/editar-problema.php")
+    let response = MyRequest::post("/PIM/externos/intranet/problemas-edit.php")
         .json(&data)
-        .send()
+        .send_no_parse()
         .await;
     match response {
         MyResponse::Ok { response: _ } => Ok(()),

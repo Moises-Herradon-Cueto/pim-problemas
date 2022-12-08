@@ -160,7 +160,6 @@ impl MainMenu {
             let edit_cb = ctx.link().callback( Msg::EditEntry);
             html! {
                 <>
-                <RawHtml inner_html={self.error.clone()} tag="div" />
                 <home_button::With<View> props={ViewDbProps {edit_cb ,db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }

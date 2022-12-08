@@ -211,9 +211,6 @@ li {
   overflow: scroll;
 }
 
-.edit-problem div {
-  display: block;
-}
 
 .edit-problem form {
   height: calc(100vh - 20px);
@@ -226,4 +223,21 @@ li {
 
 .problem-preview {
   white-space: pre-wrap;
+}
+
+.edit-problem fieldset {
+  overflow-x: scroll;
+}
+
+.submit-edit-button {
+  width: 45%;
+}
+
+.two-columns {
+  display: flex;
+  width: 100%;
+}
+
+.two-columns {
+  gap: 2em;
 }
