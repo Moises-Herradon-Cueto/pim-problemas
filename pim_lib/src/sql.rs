@@ -36,7 +36,14 @@ Titulo = '{id}';\n"
     let sheets_columns: HashSet<_> = vec
         .iter()
         .flat_map(|data| data.historial.split(','))
-        .map(|sheet| format!("('{}', 2022)", sheet.trim()))
+        .filter_map(|sheet| {
+            let trim = sheet.trim();
+            if trim.is_empty() {
+                None
+            } else {
+                Some(format!("('{}', 2022)", sheet.trim()))
+            }
+        })
         .collect();
     let sheets_columns = join_with_comma_newline(sheets_columns.into_iter());
 

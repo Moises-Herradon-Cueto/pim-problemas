@@ -163,14 +163,6 @@ li {
   width: fit-content;
 }
 
-.edit-button {
-  padding: 1px;
-  width: 20px;
-  height: 20px;
-  font-size: 12px;
-}
-
-
 .edit-problem {
   position: fixed;
   width: calc(100vw - 20px);
@@ -240,4 +232,38 @@ li {
 
 .two-columns {
   gap: 2em;
+}
+
+
+.icon-button {
+  display: flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-button {
+  background-color: red;
+  color: #ddf;
+}
+
+#db-table a {
+  padding: 0;
+  margin-top: 8px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.two-columns {
+  margin-top: 40px;
+}
+
+.two-columns div div {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.entry-uneditable {
+  padding: 10px 0 3px 1em;
 }

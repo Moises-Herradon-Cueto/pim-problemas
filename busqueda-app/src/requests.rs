@@ -1,6 +1,7 @@
 use gloo_net::http::{Request, Response};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
+use wasm_bindgen::JsValue;
 
 pub enum MyRequest {
     Ok { request: Request },
@@ -17,6 +18,15 @@ impl MyRequest {
     pub fn get(url: &str) -> Self {
         Self::Ok {
             request: Request::get(url),
+        }
+    }
+
+    pub fn body<T: Into<JsValue>>(self, body: T) -> Self {
+        match self {
+            Self::Ok { request } => Self::Ok {
+                request: request.body(body),
+            },
+            Self::Error(_) => self,
         }
     }
 

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::commands::delete;
 use crate::commands::insert_db_info;
 use crate::handle_db::FetchedData;
 use crate::home_button;
@@ -23,11 +24,13 @@ pub enum AppType {
     Start,
     View,
 }
+#[allow(clippy::large_enum_variant)]
 pub enum Msg {
     ChangeApps(AppType),
     UpdateDb(Rc<Vec<Data>>),
     UpdateErr(String),
     EditEntry(Data),
+    DeleteProblem(usize),
     GetDb,
 }
 
@@ -52,6 +55,13 @@ impl Component for MainMenu {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::DeleteProblem(id) => {
+                ctx.link().send_future(async move {
+                    let delete = delete(id).await;
+                    delete.map_or_else(Msg::UpdateErr, |_| Msg::GetDb)
+                });
+                false
+            }
             Msg::ChangeApps(app) => {
                 self.main_app = app;
                 true
@@ -72,7 +82,7 @@ impl Component for MainMenu {
             Msg::EditEntry(data) => {
                 ctx.link().send_future(async move {
                     let result = insert_db_info(data).await;
-                    result.map_or_else(|err| Msg::UpdateErr(err.to_string()), |_| Msg::GetDb)
+                    result.map_or_else(Msg::UpdateErr, |_| Msg::GetDb)
                 });
                 false
             }
@@ -158,9 +168,10 @@ impl MainMenu {
             let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
             let reload_db_cb = ctx.link().callback(|_| Msg::GetDb);
             let edit_cb = ctx.link().callback( Msg::EditEntry);
+            let delete_cb = ctx.link().callback(Msg::DeleteProblem);
             html! {
                 <>
-                <home_button::With<View> props={ViewDbProps {edit_cb ,db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {delete_cb, edit_cb ,db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })

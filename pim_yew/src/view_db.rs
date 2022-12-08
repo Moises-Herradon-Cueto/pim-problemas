@@ -9,6 +9,7 @@ use crate::result_range::{self, Comp as RangeSelector};
 use crate::typeset;
 use material_yew::MatIconButtonToggle;
 use pim_lib::{Data, Fields, ParseOneError};
+use web_sys::window;
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
 
@@ -49,6 +50,7 @@ pub enum Msg {
     SetError(ParseOneError),
     Range(usize, result_range::Which),
     Edit(usize),
+    TryDelete { id: usize, title: String },
     StopEditing,
     ReloadDb,
 }
@@ -58,6 +60,7 @@ pub struct Props {
     pub db: Rc<Vec<Data>>,
     pub reload_db_cb: Callback<()>,
     pub edit_cb: Callback<Data>,
+    pub delete_cb: Callback<usize>,
 }
 
 impl PartialEq for Props {
@@ -107,6 +110,20 @@ impl Component for ViewDb {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::TryDelete { id, title } => {
+                let response = window().unwrap().confirm_with_message(&format!(
+                    "¿Seguro que quieres borrar el problema {title}?"
+                ));
+                match response {
+                    Ok(true) => {
+                        ctx.props().delete_cb.emit(id);
+                    }
+                    Ok(false) => {}
+                    Err(err) => {
+                        log::error!("{err:?}");
+                    }
+                }
+            }
             Msg::StopEditing => {
                 self.stop_editing(ctx);
             }
@@ -276,10 +293,20 @@ fn into_row(
         Msg::Edit(id)
     });
 
+    let title = data.titulo.clone();
+    let delete = ctx.link().callback(move |e: MouseEvent| {
+        e.prevent_default();
+        Msg::TryDelete {
+            id,
+            title: title.clone(),
+        }
+    });
+
     html! {
         <tr>
-        <td><button class="edit-button" {onclick}><i class="fa-solid fa-pen-to-square"></i>{" Editar"}</button>
-        <a href={data.url.clone()}>{&data.titulo}</a>
+        <td><button class="edit-button icon-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button>
+        <a href={data.url.clone()} class="problem-link">{&data.titulo}</a>
+        <button class="delete-button icon-button" onclick={delete}> <i class="fa-solid fa-trash-can"></i></button>
         </td>
         {entries}
         </tr>
