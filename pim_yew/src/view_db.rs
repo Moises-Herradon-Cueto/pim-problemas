@@ -75,9 +75,11 @@ impl Component for ViewDb {
         for (i, f) in Fields::ALL.into_iter().enumerate() {
             shown_fields[i] = f.is_in_template();
         }
-        // Hide id and title
+        // Hide id and title, file name and figures
         shown_fields[0] = false;
         shown_fields[1] = false;
+        shown_fields[11] = false;
+        shown_fields[12] = false;
         let mut output = Self {
             view: vec![],
             window: vec![],

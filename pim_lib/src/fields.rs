@@ -1,5 +1,6 @@
-use std::borrow::Cow;
 use std::fmt::Display;
+use std::mem;
+use std::{borrow::Cow, slice};
 
 use crate::Data;
 use clap::ValueEnum;
@@ -66,6 +67,30 @@ impl Fields {
         Id, Title, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages, Author,
         Url, Figures,
     ];
+
+    #[must_use]
+    pub const fn db_label(self) -> &'static str {
+        match self {
+            Title => "titulo",
+            Id => "id",
+            Problem => "enunciado",
+            Topics => "temas",
+            Difficulty => "dificultad",
+            Source => "procedencia",
+            History => "hojas",
+            Comments => "comentarios",
+            Year => "curso",
+            Packages => "preambulo usados",
+            Author => "id_autor",
+            Url => "url_tex",
+            Figures => "figuras",
+        }
+    }
+
+    #[must_use]
+    pub const fn has_own_table(self) -> bool {
+        matches!(self, Topics | History | Figures)
+    }
 
     #[must_use]
     pub fn get_string(self, data: &Data) -> Cow<str> {
@@ -274,6 +299,63 @@ pub enum FieldContentsRef<'a> {
     Author(&'a str),
     Url(&'a str),
     Figures(&'a [String]),
+}
+
+pub enum ContentsIter<'a> {
+    Single(&'a str),
+    Owned(String),
+    Multi(slice::Iter<'a, String>),
+}
+
+impl<'a> Iterator for ContentsIter<'a> {
+    type Item = Cow<'a, str>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            ContentsIter::Single(x) => {
+                if x.is_empty() {
+                    None
+                } else {
+                    let out = mem::take(x);
+                    Some(Cow::Borrowed(out))
+                }
+            }
+            ContentsIter::Owned(x) => {
+                if x.is_empty() {
+                    None
+                } else {
+                    let out = mem::take(x);
+                    Some(Cow::Owned(out))
+                }
+            }
+            ContentsIter::Multi(i) => Some(Cow::Borrowed(i.next()?)),
+        }
+    }
+}
+
+impl<'a> IntoIterator for FieldContentsRef<'a> {
+    type Item = Cow<'a, str>;
+
+    type IntoIter = ContentsIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            FieldContentsRef::Id(x) => Self::IntoIter::Owned(x.to_string()),
+            FieldContentsRef::Difficulty(x) => Self::IntoIter::Owned(x.to_string()),
+            FieldContentsRef::Title(x)
+            | FieldContentsRef::Problem(x)
+            | FieldContentsRef::Source(x)
+            | FieldContentsRef::History(x)
+            | FieldContentsRef::Comments(x)
+            | FieldContentsRef::Year(x)
+            | FieldContentsRef::Packages(x)
+            | FieldContentsRef::Author(x)
+            | FieldContentsRef::Url(x) => Self::IntoIter::Single(x),
+            FieldContentsRef::Figures(x) | FieldContentsRef::Topics(x) => {
+                Self::IntoIter::Multi(x.iter())
+            }
+        }
+    }
 }
 
 impl<'a> FieldContentsRef<'a> {
