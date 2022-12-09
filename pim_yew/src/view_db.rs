@@ -104,7 +104,6 @@ impl Component for ViewDb {
     }
 
     fn changed(&mut self, ctx: &Context<Self>) -> bool {
-        log::info!("Changed, recalculating");
         self.calculate_view(ctx);
 
         true

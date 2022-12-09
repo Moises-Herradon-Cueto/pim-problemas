@@ -16,6 +16,16 @@
 
   <script>
     function typeset() { if (MathJax) { MathJax.typeset(); } }
+
+    function get_sheet(a) {
+      let link = document.createElement("a");
+      link.id = "created-link";
+      link.setAttribute("href", `/PIM/externos/intranet/hoja-descargar.php?problemas=${a}`);
+      link.setAttribute("download", "hoja.zip");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   </script>
 
 

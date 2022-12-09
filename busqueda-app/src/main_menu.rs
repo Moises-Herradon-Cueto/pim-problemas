@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::rc::Rc;
 
+use crate::bindgen::get_sheet;
 use crate::commands::delete;
 use crate::commands::insert_db_info;
 use crate::handle_db::FetchedData;
@@ -67,7 +68,12 @@ impl Component for MainMenu {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::GetCart => {
-                log::info!("Get cart!");
+                let list: Vec<_> = self
+                    .cart
+                    .iter()
+                    .map(std::string::ToString::to_string)
+                    .collect();
+                get_sheet(list.join(","));
                 false
             }
             Msg::ReorderCartWithIndex(index, dir) => {
@@ -85,6 +91,7 @@ impl Component for MainMenu {
                         self.cart.swap(index, index + 1);
                     }
                 }
+                set_cart(&self.cart);
                 true
             }
             Msg::RemoveIndexFromCart(index) => {
@@ -92,6 +99,7 @@ impl Component for MainMenu {
                     return false;
                 }
                 self.cart.remove(index);
+                set_cart(&self.cart);
                 true
             }
             Msg::AddToCart(id) => {
@@ -284,11 +292,15 @@ fn get_cart_from_storage() -> Option<Vec<usize>> {
 fn append_to_cart_storage(id: usize) {
     let mut cart = get_cart_from_storage().unwrap_or_default();
     cart.push(id);
+    set_cart(&cart);
+}
+
+fn set_cart(cart: &[usize]) {
     let Some(storage) =storage() else {
         log::error!("Failed to access local storage");
         return;
     };
-    let cart: Vec<String> = cart.into_iter().map(|x| x.to_string()).collect();
+    let cart: Vec<String> = cart.iter().map(std::string::ToString::to_string).collect();
     storage
         .set_item("carrito", &cart.join(","))
         .unwrap_or_else(|err| {
