@@ -7,16 +7,21 @@ use crate::handle_db::FetchedData;
 use crate::home_button;
 use crate::requests::MyRequest;
 use pim_lib::Data;
+use pim_yew::Cart;
+use pim_yew::Direction;
 use pim_yew::RawHtml;
 use pim_yew::ViewDb as View;
 use pim_yew::ViewDbProps;
 use serde::{Deserialize, Serialize};
+use web_sys::window;
+use web_sys::Storage;
 use yew::prelude::*;
 use AppType::Start;
 
 pub struct MainMenu {
     main_app: AppType,
     db: Option<Rc<Vec<Data>>>,
+    cart: Vec<usize>,
     error: String,
 }
 
@@ -31,7 +36,11 @@ pub enum Msg {
     UpdateErr(String),
     EditEntry(Data),
     DeleteProblem(usize),
+    AddToCart(usize),
     GetDb,
+    GetCart,
+    ReorderCartWithIndex(usize, Direction),
+    RemoveIndexFromCart(usize),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -46,15 +55,53 @@ impl Component for MainMenu {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self::get_db(ctx);
+        let cart = get_cart_from_storage().unwrap_or_default();
         Self {
             main_app: AppType::Start,
             db: None,
+            cart,
             error: String::new(),
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::GetCart => {
+                log::info!("Get cart!");
+                false
+            }
+            Msg::ReorderCartWithIndex(index, dir) => {
+                match dir {
+                    Direction::Up => {
+                        if index == 0 {
+                            return false;
+                        }
+                        self.cart.swap(index, index - 1);
+                    }
+                    Direction::Down => {
+                        if index >= self.cart.len() - 1 {
+                            return false;
+                        }
+                        self.cart.swap(index, index + 1);
+                    }
+                }
+                true
+            }
+            Msg::RemoveIndexFromCart(index) => {
+                if index >= self.cart.len() {
+                    return false;
+                }
+                self.cart.remove(index);
+                true
+            }
+            Msg::AddToCart(id) => {
+                if self.cart.last() == Some(&id) {
+                    return false;
+                }
+                self.cart.push(id);
+                append_to_cart_storage(id);
+                true
+            }
             Msg::DeleteProblem(id) => {
                 ctx.link().send_future(async move {
                     let delete = delete(id).await;
@@ -98,6 +145,9 @@ impl Component for MainMenu {
         html! {
             <div id="container">
             <RawHtml inner_html={self.error.clone()} tag="div" />
+            if !self.cart.is_empty() {
+                {self.carro_html(ctx)}
+            }
             {main_app}
             </div>
         }
@@ -105,6 +155,19 @@ impl Component for MainMenu {
 }
 
 impl MainMenu {
+    fn carro_html(&self, ctx: &Context<Self>) -> Html {
+        let Some(db) = self.db.as_ref() else {return html!{}};
+        let db = Rc::clone(db);
+        let download = ctx.link().callback(|_| Msg::GetCart);
+        let list = self.cart.clone();
+        let move_up = ctx
+            .link()
+            .callback(|(index, dir)| Msg::ReorderCartWithIndex(index, dir));
+        let remove_index = ctx.link().callback(Msg::RemoveIndexFromCart);
+        html! {
+            <Cart {list} {db} {remove_index} {download} {move_up}/>
+        }
+    }
     fn get_db(ctx: &Context<Self>) {
         ctx.link().send_future(async move {
             let request = MyRequest::post("/PIM/externos/intranet/problemas-todos.php");
@@ -169,9 +232,10 @@ impl MainMenu {
             let reload_db_cb = ctx.link().callback(|_| Msg::GetDb);
             let edit_cb = ctx.link().callback( Msg::EditEntry);
             let delete_cb = ctx.link().callback(Msg::DeleteProblem);
+            let add_to_cart = ctx.link().callback(Msg::AddToCart);
             html! {
                 <>
-                <home_button::With<View> props={ViewDbProps {delete_cb, edit_cb ,db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {add_to_cart, delete_cb, edit_cb ,db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })
@@ -200,4 +264,34 @@ mod tests {
 
         assert_eq!(database, deserialized);
     }
+}
+
+fn storage() -> Option<Storage> {
+    window()?.local_storage().unwrap_or_default()
+}
+
+fn get_cart_from_storage() -> Option<Vec<usize>> {
+    let storage = storage()?;
+    let fields = storage.get("carrito").unwrap_or_default()?;
+    Some(
+        fields
+            .split(',')
+            .map(|x| x.parse::<usize>().unwrap())
+            .collect(),
+    )
+}
+
+fn append_to_cart_storage(id: usize) {
+    let mut cart = get_cart_from_storage().unwrap_or_default();
+    cart.push(id);
+    let Some(storage) =storage() else {
+        log::error!("Failed to access local storage");
+        return;
+    };
+    let cart: Vec<String> = cart.into_iter().map(|x| x.to_string()).collect();
+    storage
+        .set_item("carrito", &cart.join(","))
+        .unwrap_or_else(|err| {
+            log::error!("Error escribiendo en el almacenamiento local:\n{err:?}");
+        });
 }

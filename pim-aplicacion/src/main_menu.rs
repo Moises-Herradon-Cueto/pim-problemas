@@ -173,9 +173,13 @@ impl MainMenu {
             log::error!("Delete problem not implemented");
             Msg::GetDb
         });
+        let add_to_cart = ctx.link().callback(|_ | {
+            log::error!("Add to cart is not implemented");
+            Msg::GetDb
+        });
             html! {
                 <>
-                <home_button::With<View> props={ViewDbProps {delete_cb, edit_cb, db:db.clone(),  reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {add_to_cart, delete_cb, edit_cb, db:db.clone(),  reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })
