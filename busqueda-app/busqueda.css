@@ -237,10 +237,11 @@ li {
 
 .icon-button {
   display: flex;
-  height: 36px;
-  width: 36px;
+  font-size: 12px;
+  padding: 6px;
   align-items: center;
   justify-content: center;
+  float: left;
 }
 
 .delete-button {

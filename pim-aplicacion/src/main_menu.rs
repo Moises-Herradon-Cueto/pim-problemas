@@ -1,4 +1,3 @@
-
 use std::path::PathBuf;
 use std::rc::Rc;
 
@@ -170,9 +169,13 @@ impl MainMenu {
             let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
             let reload_db_cb = ctx.link().callback(|_| Msg::GetDb);
         let edit_cb = ctx.link().callback(Msg::EditEntry);
+        let delete_cb = ctx.link().callback(|_ | {
+            log::error!("Delete problem not implemented");
+            Msg::GetDb
+        });
             html! {
                 <>
-                <home_button::With<View> props={ViewDbProps {edit_cb, db:db.clone(),  reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {delete_cb, edit_cb, db:db.clone(),  reload_db_cb}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })

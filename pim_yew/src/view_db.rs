@@ -302,11 +302,22 @@ fn into_row(
         }
     });
 
+    let bundle = if data.figuras.is_empty() {
+        html! {}
+    } else if let Some(nombre) = data.url.split('/').last() {
+        html! {<a href={AttrValue::from(format!("/PIM/externos/intranet/paquete-descargar.php?id={nombre}"))} download={AttrValue::from(format!("{}.zip", data.titulo))}><button class="icon-button" title="Descargar con figuras"><i class="fa-solid fa-file-zipper"></i></button></a>}
+    } else {
+        log::error!("La url {} está vacía?", data.url);
+        html! {}
+    };
+
     html! {
         <tr>
-        <td><button class="edit-button icon-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button>
-        <a href={data.url.clone()} class="problem-link">{&data.titulo}</a>
-        <button class="delete-button icon-button" onclick={delete}> <i class="fa-solid fa-trash-can"></i></button>
+        <td>
+        <a href={data.url.clone()} class="problem-link" title="Descargar .tex">{&data.titulo}</a>
+        <button title="Editar información" class="edit-button icon-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button>
+        <button class="delete-button icon-button" title="Borrar" onclick={delete}> <i class="fa-solid fa-trash-can"></i></button>
+        {bundle}
         </td>
         {entries}
         </tr>
