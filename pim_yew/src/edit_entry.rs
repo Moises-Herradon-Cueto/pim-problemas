@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::FieldEditEntry;
 use pim_lib::{Data, FieldContents, Fields};
-use yew::prelude::*;
+use yew::{prelude::*, virtual_dom::AttrValue};
 
 pub struct Comp {
     data: Data,
@@ -73,6 +73,9 @@ impl Component for Comp {
                 </button>
                     <div class="two-columns">
                         <div>
+                        <button><a href={AttrValue::from(format!("/PIM/externos/intranet/problemas-anadir.php?edit={}", self.data.id))} target="_blank">
+                        {"Volver a subir el problema"}
+                        </a></button>
                         {rows}
                         </div>
                         <div>
