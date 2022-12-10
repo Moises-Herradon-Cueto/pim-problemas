@@ -17,6 +17,7 @@ mod view_db;
 pub use cart::Comp as Cart;
 pub use cart::Direction;
 pub use cart::Props as CartProps;
+pub use extern_functions::get_sheet;
 pub use extern_functions::typeset;
 pub use field_edit_entry::Comp as FieldEditEntry;
 pub use field_edit_entry::Props as FieldEditEntryProps;

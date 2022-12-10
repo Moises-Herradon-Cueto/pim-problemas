@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::bindgen::get_sheet;
 use crate::commands::delete;
 use crate::commands::insert_db_info;
 use crate::handle_db::FetchedData;
 use crate::home_button;
 use crate::requests::MyRequest;
 use pim_lib::Data;
+use pim_yew::get_sheet;
 use pim_yew::Cart;
 use pim_yew::Direction;
 use pim_yew::RawHtml;

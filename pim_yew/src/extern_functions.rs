@@ -4,4 +4,7 @@ use wasm_bindgen::prelude::*;
 extern "C" {
     #[wasm_bindgen(js_namespace = MathJax)]
     pub fn typeset();
+
+    pub fn get_sheet(list: String);
+
 }

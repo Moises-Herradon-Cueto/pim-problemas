@@ -2,7 +2,6 @@
 #![warn(clippy::nursery)]
 #![allow(clippy::let_unit_value)]
 
-mod bindgen;
 mod commands;
 mod handle_db;
 mod helper;
