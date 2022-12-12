@@ -112,8 +112,7 @@ impl<T: DeserializeOwned> MyResponse<T> {
         match self {
             Ok { response } => response,
             Code401 => f("No estás autorizado/a a acceder a esto".to_string()),
-            Code500(err) => f(err),
-            Error(err) => f(err),
+            Code500(err) | Error(err) => f(err),
         }
     }
 }

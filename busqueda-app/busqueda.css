@@ -337,3 +337,7 @@ li {
   display: flex;
   align-items: center;
 }
+
+.file-upload {
+  box-shadow: none;
+}

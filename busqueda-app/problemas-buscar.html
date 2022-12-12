@@ -26,13 +26,27 @@
       link.click();
       document.body.removeChild(link);
     }
+
+    async function uploadSheet(elt_id, sheet_id, with_solutions) {
+      console.log(with_solutions);
+      let file = document.getElementById(elt_id).files[0];
+      let data = new FormData();
+      data.set("file", file);
+      data.set("id", sheet_id);
+      data.set("solutions", with_solutions);
+      let options = {
+        method: "POST",
+        body: data,
+      }
+      return await fetch("/PIM/externos/intranet/hoja-subir.php", options);
+    }
   </script>
 
 
 </head>
 
 <body>
-
+  Cargando...
 </body>
 
 </html>

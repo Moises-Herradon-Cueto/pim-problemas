@@ -7,12 +7,9 @@ use crate::handle_db::FetchedData;
 use crate::home_button;
 use crate::requests::MyRequest;
 use pim_lib::Data;
-use pim_yew::get_sheet;
-use pim_yew::Cart;
-use pim_yew::Direction;
-use pim_yew::RawHtml;
-use pim_yew::ViewDb as View;
-use pim_yew::ViewDbProps;
+use pim_yew::{
+    get_sheet, Cart, Direction, RawHtml, Sheet, Sheets, SheetsProps, ViewDb as View, ViewDbProps,
+};
 use serde::{Deserialize, Serialize};
 use web_sys::window;
 use web_sys::Storage;
@@ -22,6 +19,7 @@ use AppType::Start;
 pub struct MainMenu {
     main_app: AppType,
     db: Option<Rc<Vec<Data>>>,
+    sheets: Option<Vec<Sheet>>,
     cart: Vec<usize>,
     error: String,
 }
@@ -29,11 +27,13 @@ pub struct MainMenu {
 pub enum AppType {
     Start,
     View,
+    Sheets,
 }
 #[allow(clippy::large_enum_variant)]
 pub enum Msg {
     ChangeApps(AppType),
     UpdateDb(Rc<Vec<Data>>),
+    UpdateSheets(Vec<Sheet>),
     UpdateErr(String),
     EditEntry(Data),
     DeleteProblem(usize),
@@ -56,10 +56,12 @@ impl Component for MainMenu {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self::get_db(ctx);
+        Self::get_sheets(ctx);
         let cart = get_cart_from_storage().unwrap_or_default();
         Self {
             main_app: AppType::Start,
             db: None,
+            sheets: None,
             cart,
             error: String::new(),
         }
@@ -125,6 +127,10 @@ impl Component for MainMenu {
                 self.db = Some(db);
                 true
             }
+            Msg::UpdateSheets(sheets) => {
+                self.sheets = Some(sheets);
+                true
+            }
             Msg::UpdateErr(err) => {
                 self.error = err;
                 true
@@ -148,6 +154,7 @@ impl Component for MainMenu {
         let main_app = match self.main_app {
             AppType::Start => Self::view_start(ctx),
             AppType::View => self.view_db(ctx),
+            AppType::Sheets => self.view_sheets(ctx),
         };
 
         html! {
@@ -196,31 +203,32 @@ impl MainMenu {
                     Msg::UpdateErr(format!("Ha habido un error: {err}"))
                 }
             }
+        });
+    }
 
-            //     let args = serde_wasm_bindgen::to_value(&GetJsonArgs {
-            //         json_path: PathTo::Db.default_path(),
-            //     })
-            //     .expect("Couldn't make into js value🫣");
-            //     let db = invoke("get_db_from_json", args).await;
-            //     let db: Result<Result<String, String>, _> = serde_wasm_bindgen::from_value(db);
-            //     match db {
-            //         Ok(Ok(db)) => {
-            //             let db = serde_json::from_str(&db);
-            //             match db {
-            //                 Ok(db) => Msg::UpdateDb(Rc::new(db)),
-            //                 Err(err) => {
-            //                     Msg::UpdateErr(format!("Error parsing response with serde-json: {err}"))
-            //                 }
-            //             }
-            //         }
-            //         Ok(Err(err)) => Msg::UpdateErr(err),
-            //         Err(parse_err) => {
-            //             Msg::UpdateErr(format!("Error parsing response js value: {parse_err}"))
-            //         }
-            //     }
+    fn get_sheets(ctx: &Context<Self>) {
+        ctx.link().send_future(async move {
+            let request = MyRequest::post("/PIM/externos/intranet/hojas-todas.php");
+            let response = request.send::<Vec<Sheet>>().await;
+
+            match response {
+                crate::requests::MyResponse::Ok { response } => Msg::UpdateSheets(response),
+                crate::requests::MyResponse::Code401 => {
+                    Msg::UpdateErr("No estás autorizado/a a acceder a la base de datos".into())
+                }
+                crate::requests::MyResponse::Code500(err) => {
+                    Msg::UpdateErr(format!("El servidor ha encontrado un error: {err}"))
+                }
+                crate::requests::MyResponse::Error(err) => {
+                    Msg::UpdateErr(format!("Ha habido un error: {err}"))
+                }
+            }
         });
     }
     fn view_start(ctx: &Context<Self>) -> Html {
+        let view_sheets = ctx
+            .link()
+            .callback(|_: MouseEvent| Msg::ChangeApps(AppType::Sheets));
         let view_db = ctx
             .link()
             .callback(|_: MouseEvent| Msg::ChangeApps(AppType::View));
@@ -229,6 +237,7 @@ impl MainMenu {
             <p>{"¿Qué quieres hacer?"}</p>
             <ul>
                 <li><button onclick={view_db}>{"Ver la base de datos"}</button></li>
+                <li><button onclick={view_sheets}>{"Ver las hojas"}</button></li>
             </ul>
             </div>
         }
@@ -247,6 +256,18 @@ impl MainMenu {
                 </>
             }
         })
+    }
+
+    fn view_sheets(&self, ctx: &Context<Self>) -> Html {
+        let loading = html! {
+            <p>{"Cargando..."}</p>
+        };
+        let Some(db) = self.db.as_ref() else {return loading;};
+        let Some(sheets) = self.sheets.as_ref() else {return loading;};
+        let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
+        html! {
+            <home_button::With<Sheets> props={SheetsProps {db: db.clone(), sheets: sheets.clone()}} {return_cb}/>
+        }
     }
 }
 
