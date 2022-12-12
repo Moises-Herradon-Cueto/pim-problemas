@@ -162,7 +162,7 @@ impl From<Solutions> for bool {
 
 impl Comp {
     fn make_row(&self, ctx: &Context<Self>, sheet: &Sheet, index: usize) -> Html {
-        let edit_button = html! {<button>{"Este botón aún no hace nada"}</button>};
+        let edit_button = html! {}; // html! {<button>{"Este botón aún no hace nada"}</button>};
         html! {
             <tr>
                 <td>
@@ -176,7 +176,7 @@ impl Comp {
                     {sheet.year}
                 </td>
                 <td>
-                    {sheet.planet.map_or("Todos/ninguno", Planet::to_static_str)}
+                    {sheet.planet.map_or("Todos", Planet::to_static_str)}
                 </td>
                 <td>
                     {self.file_upload(ctx, sheet, Solutions::No, index)}
@@ -199,14 +199,18 @@ impl Comp {
             Solutions::No => &sheet.url_no_sols,
         };
         let file = url.as_ref().map_or_else(
-        || {
-            html! {<p>{"No hay nada subido"}</p>}
-        },
-        |url| {
-            let file_name = AttrValue::from(format!("{}-{with_solutions}.zip", sheet.name));
-            html! {<a href={AttrValue::from(url.clone())} download={file_name.clone()}>{file_name}</a>}
-        },
-    );
+            || {
+                html! {<p>{"No hay nada subido"}</p>}
+            },
+            |url| {
+                let extension = url.split('.').fold("", |_, s| s);
+                let file_name =
+                    AttrValue::from(format!("{}-{with_solutions}.{extension}", sheet.name));
+                html! {
+                <a href={AttrValue::from(url.clone())} download={file_name.clone()}>{file_name}</a>
+                }
+            },
+        );
         let elt_id = format!("hoja-{}-{with_solutions}-archivo", sheet.id);
 
         let sheet_id = sheet.id;
