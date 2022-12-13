@@ -24,6 +24,7 @@ pub enum AppType {
     Update,
     View,
 }
+#[allow(clippy::large_enum_variant)]
 pub enum Msg {
     ChangeApps(AppType),
     UpdatePaths(Paths),

@@ -16,12 +16,6 @@ pub fn _get_value_from_ref(elt: &NodeRef) -> String {
 #[derive(Serialize, Deserialize)]
 pub struct GetFolderArgs;
 
-#[allow(clippy::future_not_send)]
-pub async fn sleep(duration: Duration) {
-    let args = serde_wasm_bindgen::to_value(&SleepArgs { duration })
-        .expect("Couldn't make into js value🫣");
-    invoke("sleep", args).await;
-}
 
 #[derive(Serialize, Deserialize)]
 struct SleepArgs {
