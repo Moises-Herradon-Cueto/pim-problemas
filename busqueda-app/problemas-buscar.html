@@ -15,7 +15,25 @@
   <script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <script>
-    function typeset() { if (MathJax) { MathJax.typeset(); } }
+    let typesetPending = false;
+    // let typesetCount = 0;
+    // let actualCount = 0;
+
+    function typeset() {
+      // typesetCount++;
+      if (!typesetPending) {
+        typesetPending = true;
+        resolveTypeset();
+      }
+    }
+
+    async function resolveTypeset() {
+      // actualCount++;
+      setTimeout(() => {
+        if (MathJax) { MathJax.typeset(); }
+        typesetPending = false;
+      }, 100);
+    }
 
     function get_sheet(a) {
       let link = document.createElement("a");

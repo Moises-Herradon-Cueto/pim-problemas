@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 
 type Db = Vec<Data>;
 
-pub enum Error {}
-
 #[derive(Serialize, Deserialize)]
 pub struct FetchedData {
     #[serde(rename = "ID")]
@@ -26,7 +24,7 @@ pub struct FetchedData {
     #[serde(rename = "TEX_URL")]
     url: String,
     #[serde(rename = "Comentarios")]
-    comentarios: String,
+    comentarios: Option<String>,
     #[serde(rename = "Temas")]
     temas: Option<String>,
     #[serde(rename = "Hojas")]
@@ -65,7 +63,7 @@ impl From<FetchedData> for Data {
             dificultad: dificultad.unwrap_or(u8::MAX),
             fuente: procedencia,
             historial: hojas.unwrap_or_default(),
-            comentarios,
+            comentarios: comentarios.unwrap_or_default(),
             curso: curso.unwrap_or_default(),
             enunciado: descripcion,
             paquetes: preambulo,
