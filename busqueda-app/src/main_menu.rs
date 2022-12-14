@@ -39,6 +39,7 @@ pub enum Msg {
     DeleteProblem(usize),
     AddToCart(usize),
     GetDb,
+    GetSheets,
     GetCart,
     ReorderCartWithIndex(usize, Direction),
     RemoveIndexFromCart(usize),
@@ -138,6 +139,10 @@ impl Component for MainMenu {
             Msg::GetDb => {
                 Self::get_db(ctx);
                 self.db = None;
+                false
+            }
+            Msg::GetSheets => {
+                Self::get_sheets(ctx);
                 false
             }
             Msg::EditEntry(data) => {
@@ -265,8 +270,9 @@ impl MainMenu {
         let Some(db) = self.db.as_ref() else {return loading;};
         let Some(sheets) = self.sheets.as_ref() else {return loading;};
         let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
+        let reload_sheets_cb = ctx.link().callback(|_| Msg::GetSheets);
         html! {
-            <home_button::With<Sheets> props={SheetsProps {db: db.clone(), sheets: sheets.clone()}} {return_cb}/>
+            <home_button::With<Sheets> props={SheetsProps {reload_sheets_cb, db: db.clone(), sheets: sheets.clone()}} {return_cb}/>
         }
     }
 }

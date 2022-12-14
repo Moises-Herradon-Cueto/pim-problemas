@@ -1,8 +1,6 @@
 use pim_lib::Data;
 use serde::{Deserialize, Serialize};
 
-type Db = Vec<Data>;
-
 #[derive(Serialize, Deserialize)]
 pub struct FetchedData {
     #[serde(rename = "ID")]

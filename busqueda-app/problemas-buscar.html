@@ -23,17 +23,14 @@
       // typesetCount++;
       if (!typesetPending) {
         typesetPending = true;
-        resolveTypeset();
+        setTimeout(() => {
+          // actualCount++;
+          if (MathJax) { MathJax.typeset(); }
+          typesetPending = false;
+        }, 100);
       }
     }
 
-    async function resolveTypeset() {
-      // actualCount++;
-      setTimeout(() => {
-        if (MathJax) { MathJax.typeset(); }
-        typesetPending = false;
-      }, 100);
-    }
 
     function get_sheet(a) {
       let link = document.createElement("a");
@@ -45,13 +42,13 @@
       document.body.removeChild(link);
     }
 
-    async function uploadSheet(elt_id, sheet_id, with_solutions) {
-      console.log(with_solutions);
+    async function uploadSheet(elt_id, sheet_id, with_solutions, file_type) {
       let file = document.getElementById(elt_id).files[0];
       let data = new FormData();
       data.set("file", file);
       data.set("id", sheet_id);
       data.set("solutions", with_solutions);
+      data.set("type", file_type)
       let options = {
         method: "POST",
         body: data,

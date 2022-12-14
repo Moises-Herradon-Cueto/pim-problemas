@@ -9,6 +9,8 @@ use yew::{prelude::*, virtual_dom::AttrValue};
 
 use crate::extern_functions;
 
+use FileType::{Pdf, Tex};
+
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Planet {
     Mercury,
@@ -34,8 +36,10 @@ pub struct Sheet {
     id: usize,
     year: u16,
     planet: Option<Planet>,
-    url_with_sols: Option<String>,
-    url_no_sols: Option<String>,
+    tex_with_sols: Option<String>,
+    tex_no_sols: Option<String>,
+    pdf_with_sols: Option<String>,
+    pdf_no_sols: Option<String>,
 }
 
 pub struct Comp {
@@ -49,14 +53,17 @@ pub enum Msg {
         sheet_id: usize,
         index: usize,
         with_solutions: Solutions,
+        file_type: FileType,
     },
     UpdateError(Solutions, usize, Option<String>),
+    ReloadSheets,
 }
 
-#[derive(Properties, Clone, PartialEq, Eq)]
+#[derive(Properties, Clone, PartialEq)]
 pub struct Props {
     pub db: Rc<Vec<Data>>,
     pub sheets: Vec<Sheet>,
+    pub reload_sheets_cb: Callback<()>,
 }
 
 impl Component for Comp {
@@ -73,20 +80,26 @@ impl Component for Comp {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            Msg::ReloadSheets => {
+                ctx.props().reload_sheets_cb.emit(());
+                false
+            }
             Msg::UploadSheet {
                 elt_id,
                 sheet_id,
                 index,
                 with_solutions,
+                file_type,
             } => {
-                let with_solutions_bool = bool::from(with_solutions);
+                let with_solutions_2 = with_solutions;
                 ctx.link()
                     .send_message(Msg::UpdateError(with_solutions, index, None));
-                ctx.link().send_future(async move {
+                ctx.link().send_future_batch(async move {
                     let reply = extern_functions::upload_sheet(
                         elt_id.clone(),
                         sheet_id,
-                        with_solutions_bool,
+                        with_solutions_2 as u8,
+                        file_type.to_string(),
                     )
                     .await;
                     let reply = reply.dyn_into::<Response>().unwrap();
@@ -96,8 +109,10 @@ impl Component for Comp {
                         .unwrap()
                         .as_string()
                         .unwrap();
-                    log::info!("text");
-                    Msg::UpdateError(with_solutions, index, Some(text))
+                    vec![
+                        Msg::UpdateError(with_solutions, index, Some(text)),
+                        Msg::ReloadSheets,
+                    ]
                 });
                 false
             }
@@ -140,16 +155,23 @@ impl Component for Comp {
 }
 
 #[derive(Clone, Copy)]
+#[repr(u8)]
 pub enum Solutions {
-    Yes,
-    No,
+    No = 0,
+    Yes = 1,
+}
+
+#[derive(Clone, Copy)]
+pub enum FileType {
+    Tex,
+    Pdf,
 }
 
 impl Display for Solutions {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Yes => write!(f, "sin-soluciones"),
-            Self::No => write!(f, "con-soluciones"),
+            Self::Yes => write!(f, "con-soluciones"),
+            Self::No => write!(f, "sin-soluciones"),
         }
     }
 }
@@ -179,28 +201,59 @@ impl Comp {
                     {sheet.planet.map_or("Todos", Planet::to_static_str)}
                 </td>
                 <td>
-                    {self.file_upload(ctx, sheet, Solutions::No, index)}
+                    {self.doc_cell(ctx, sheet, Solutions::No, index)}
                 </td>
                 <td>
-                    {self.file_upload(ctx, sheet, Solutions::Yes, index)}
+                    {self.doc_cell(ctx, sheet, Solutions::Yes, index)}
                 </td>
             </tr>
         }
     }
-    fn file_upload(
+    // Contiene el tex y el pdf, con/sin soluciones según
+    // el valor de with_solutions
+    fn doc_cell(
         &self,
         ctx: &Context<Self>,
         sheet: &Sheet,
         with_solutions: Solutions,
         index: usize,
     ) -> Html {
-        let url = match with_solutions {
-            Solutions::Yes => &sheet.url_with_sols,
-            Solutions::No => &sheet.url_no_sols,
+        let tex = match with_solutions {
+            Solutions::Yes => &sheet.tex_with_sols,
+            Solutions::No => &sheet.tex_no_sols,
         };
-        let file = url.as_ref().map_or_else(
+        let pdf = match with_solutions {
+            Solutions::Yes => &sheet.pdf_with_sols,
+            Solutions::No => &sheet.pdf_no_sols,
+        };
+
+        let error_list = match with_solutions {
+            Solutions::Yes => &self.errors_sols,
+            Solutions::No => &self.errors_no_sols,
+        };
+        let error_msg = error_list[index].as_ref().map_or_else(
+            || html! {},
+            |msg| html! {<raw_html::Comp tag="p" inner_html={msg.clone()}/>},
+        );
+        html! {
+            <div>
+            {Self::file_upload(ctx, sheet, with_solutions, index, tex.as_ref(), Tex)}
+            {Self::file_upload(ctx, sheet, with_solutions, index, pdf.as_ref(), Pdf)}
+            {error_msg}
+            </div>
+        }
+    }
+    fn file_upload(
+        ctx: &Context<Self>,
+        sheet: &Sheet,
+        with_solutions: Solutions,
+        index: usize,
+        url: Option<&String>,
+        file_type: FileType,
+    ) -> Html {
+        let file = url.map_or_else(
             || {
-                html! {<p>{"No hay nada subido"}</p>}
+                html! {<p>{AttrValue::from(format!("No hay {file_type} subido"))}</p>}
             },
             |url| {
                 let extension = url.split('.').fold("", |_, s| s);
@@ -211,7 +264,7 @@ impl Comp {
                 }
             },
         );
-        let elt_id = format!("hoja-{}-{with_solutions}-archivo", sheet.id);
+        let elt_id = format!("hoja-{}-{with_solutions}-{file_type}", sheet.id);
 
         let sheet_id = sheet.id;
         let with_solutions_2 = with_solutions;
@@ -223,26 +276,36 @@ impl Comp {
                     elt_id: elt_id_2.clone(),
                     sheet_id,
                     with_solutions: with_solutions_2,
+                    file_type,
                     index,
                 }
             })
         };
-        let error_list = match with_solutions {
-            Solutions::Yes => &self.errors_sols,
-            Solutions::No => &self.errors_no_sols,
-        };
-        let error_msg = error_list[index].as_ref().map_or_else(
-            || html! {},
-            |msg| html! {<raw_html::Comp tag="p" inner_html={msg.clone()}/>},
-        );
 
         html! {
-            <div>
-            {file}
-            <input type="file" id={AttrValue::from(elt_id)} class="file-upload" />
-            {error_msg}
-            <button {onclick}>{"Subir"}</button>
-            </div>
+                    <div>
+                    {file}
+        <input type="file" id={AttrValue::from(elt_id)} class="file-upload" accept={file_type.accept_types()} />
+                    <button {onclick}>{"Subir"}</button>
+                    </div>
+                }
+    }
+}
+
+impl Display for FileType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Tex => write!(f, "tex"),
+            Pdf => write!(f, "pdf"),
+        }
+    }
+}
+
+impl FileType {
+    const fn accept_types(self) -> &'static str {
+        match self {
+            Tex => ".tex,.zip,application/zip,application/x-tex,text/x-tex",
+            Pdf => ".pdf,application/pdf",
         }
     }
 }
