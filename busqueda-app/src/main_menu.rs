@@ -241,8 +241,8 @@ impl MainMenu {
             <div id="container">
             <p>{"¿Qué quieres hacer?"}</p>
             <ul>
-                <li><button onclick={view_db}>{"Ver la base de datos"}</button></li>
-                <li><button onclick={view_sheets}>{"Ver las hojas"}</button></li>
+                <li><button onclick={view_db}>{"Ver la base de datos y editar la información"}</button></li>
+                <li><button onclick={view_sheets}>{"Ver las hojas (aún no se puede hacer mucho con ellas)"}</button></li>
             </ul>
             </div>
         }

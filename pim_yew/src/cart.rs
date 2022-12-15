@@ -109,7 +109,7 @@ impl Component for Comp {
         html! {<div id="cart">
         <button onclick={close} id="close-cart"><i class="fa-solid fa-x"></i></button>
         {rows}
-        <button onclick={download} id="download-cart" title="Descargar hoja"><i class="fa-solid fa-file-zipper"></i> </button>
+        <button onclick={download} id="download-cart" title="Descargar hoja">{"Descargar hoja "}<i class="fa-solid fa-file-zipper"></i></button>
         </div>}
     }
 }
