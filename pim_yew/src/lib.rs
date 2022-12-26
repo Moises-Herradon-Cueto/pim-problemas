@@ -12,6 +12,7 @@ mod field_edit_entry;
 mod field_selector;
 mod raw_html;
 mod result_range;
+mod sheet_editor;
 mod sheets;
 mod view_db;
 
@@ -24,6 +25,8 @@ pub use field_edit_entry::Comp as FieldEditEntry;
 pub use field_edit_entry::Props as FieldEditEntryProps;
 pub use raw_html::Comp as RawHtml;
 pub use raw_html::Props as RawHtmlProps;
+pub use sheet_editor::Comp as SheetEditor;
+pub use sheet_editor::Props as SheetEditorProps;
 pub use sheets::Comp as Sheets;
 pub use sheets::Props as SheetsProps;
 pub use sheets::Sheet;

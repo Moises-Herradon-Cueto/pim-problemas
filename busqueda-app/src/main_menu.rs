@@ -8,7 +8,8 @@ use crate::home_button;
 use crate::requests::MyRequest;
 use pim_lib::Data;
 use pim_yew::{
-    get_sheet, Cart, Direction, RawHtml, Sheet, Sheets, SheetsProps, ViewDb as View, ViewDbProps,
+    get_sheet, Cart, Direction, RawHtml, Sheet, SheetEditor, SheetEditorProps, Sheets, SheetsProps,
+    ViewDb as View, ViewDbProps,
 };
 use serde::{Deserialize, Serialize};
 use web_sys::window;
@@ -28,6 +29,7 @@ pub enum AppType {
     Start,
     View,
     Sheets,
+    SheetEditor,
 }
 #[allow(clippy::large_enum_variant)]
 pub enum Msg {
@@ -160,6 +162,7 @@ impl Component for MainMenu {
             AppType::Start => Self::view_start(ctx),
             AppType::View => self.view_db(ctx),
             AppType::Sheets => self.view_sheets(ctx),
+            AppType::SheetEditor => self.sheet_editor(ctx),
         };
 
         html! {
@@ -237,12 +240,16 @@ impl MainMenu {
         let view_db = ctx
             .link()
             .callback(|_: MouseEvent| Msg::ChangeApps(AppType::View));
+        let view_editor = ctx
+            .link()
+            .callback(|_: MouseEvent| Msg::ChangeApps(AppType::SheetEditor));
         html! {
             <div id="container">
             <p>{"¿Qué quieres hacer?"}</p>
             <ul>
                 <li><button onclick={view_db}>{"Ver la base de datos y editar la información"}</button></li>
                 <li><button onclick={view_sheets}>{"Ver las hojas (aún no se puede hacer mucho con ellas)"}</button></li>
+                <li><button onclick={view_editor}>{"Crear hojas a partir del carro"}</button></li>
             </ul>
             </div>
         }
@@ -273,6 +280,16 @@ impl MainMenu {
         let reload_sheets_cb = ctx.link().callback(|_| Msg::GetSheets);
         html! {
             <home_button::With<Sheets> props={SheetsProps {reload_sheets_cb, db: db.clone(), sheets: sheets.clone()}} {return_cb}/>
+        }
+    }
+
+    fn sheet_editor(&self, ctx: &Context<Self>) -> Html {
+        let Some(db) = self.db.as_ref() else {return html! {
+            <p>{"Cargando..."}</p>
+        };};
+        let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
+        html! {
+            <home_button::With<SheetEditor> {return_cb} props={SheetEditorProps {cart: self.cart.clone(), db: Rc::clone(db)}}/>
         }
     }
 }
@@ -308,6 +325,9 @@ fn storage() -> Option<Storage> {
 fn get_cart_from_storage() -> Option<Vec<usize>> {
     let storage = storage()?;
     let fields = storage.get("carrito").unwrap_or_default()?;
+    if fields.trim().is_empty() {
+        return None;
+    }
     Some(
         fields
             .split(',')
