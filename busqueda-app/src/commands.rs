@@ -5,7 +5,7 @@ use crate::requests::{MyRequest, MyResponse};
 
 #[allow(clippy::future_not_send)]
 pub async fn insert_db_info(data: Data) -> Result<(), String> {
-    let response = MyRequest::post("/PIM/externos/intranet/problemas-edit.php")
+    let response = MyRequest::post("/PIM/wp-admin/adim-ajax.php?action=problemas_edit")
         .json(&data)
         .send_no_parse()
         .await;
@@ -22,7 +22,7 @@ pub async fn delete(id: usize) -> Result<(), String> {
     form.set_with_str("id", &id.to_string())
         .map_err(|err| format!("Failed to set id in request:\n{err:?}"))?;
 
-    let response = MyRequest::post("/PIM/externos/intranet/problemas-delete.php")
+    let response = MyRequest::post("/PIM/wp-admin/adim-ajax.php?action=problemas_delete")
         .body(&form)
         .send_no_parse()
         .await;

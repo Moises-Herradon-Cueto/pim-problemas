@@ -193,7 +193,7 @@ impl MainMenu {
     }
     fn get_db(ctx: &Context<Self>) {
         ctx.link().send_future(async move {
-            let request = MyRequest::post("/PIM/externos/intranet/problemas-todos.php");
+            let request = MyRequest::post("/PIM/wp-admin/adim-ajax.php?action=problemas_todos");
             let response = request.send::<Vec<FetchedData>>().await;
 
             match response {
@@ -216,7 +216,7 @@ impl MainMenu {
 
     fn get_sheets(ctx: &Context<Self>) {
         ctx.link().send_future(async move {
-            let request = MyRequest::post("/PIM/externos/intranet/hojas-todas.php");
+            let request = MyRequest::post("/PIM/wp-admin/adim-ajax.php?action=hojas_todas");
             let response = request.send::<Vec<Sheet>>().await;
 
             match response {
