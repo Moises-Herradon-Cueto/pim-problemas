@@ -1,5 +1,6 @@
 use material_yew::checkbox::MatCheckbox;
 use std::{collections::HashSet, fmt::Display, rc::Rc};
+use web_sys::File;
 
 use pim_lib::Data;
 use yew::prelude::*;
@@ -43,6 +44,7 @@ pub struct Comp {
     // problem is included by default
     excluded_problems: HashSet<(SheetTypes, usize)>,
     previews: HashSet<usize>,
+    template: Option<File>,
 }
 
 pub enum Msg {
@@ -66,6 +68,7 @@ impl Component for Comp {
             // TODO save this in local storage
             excluded_problems: HashSet::new(),
             previews: HashSet::new(),
+            template: None,
         }
     }
 

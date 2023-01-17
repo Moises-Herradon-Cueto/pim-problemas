@@ -193,7 +193,7 @@ impl MainMenu {
     }
     fn get_db(ctx: &Context<Self>) {
         ctx.link().send_future(async move {
-            let request = MyRequest::post("/PIM/wp-admin/adim-ajax.php?action=problemas_todos");
+            let request = MyRequest::post("/PIM/wp-admin/admin-ajax.php?action=problemas_todos");
             let response = request.send::<Vec<FetchedData>>().await;
 
             match response {
@@ -204,19 +204,19 @@ impl MainMenu {
                 crate::requests::MyResponse::Code401 => {
                     Msg::UpdateErr("No estás autorizado/a a acceder a la base de datos".into())
                 }
-                crate::requests::MyResponse::Code500(err) => {
-                    Msg::UpdateErr(format!("El servidor ha encontrado un error: {err}"))
-                }
-                crate::requests::MyResponse::Error(err) => {
-                    Msg::UpdateErr(format!("Ha habido un error: {err}"))
-                }
+                crate::requests::MyResponse::Code500(err) => Msg::UpdateErr(format!(
+                    "El servidor ha encontrado un error procesando los problemas: {err}"
+                )),
+                crate::requests::MyResponse::Error(err) => Msg::UpdateErr(format!(
+                    "Ha habido un error procesando los problemas: {err}"
+                )),
             }
         });
     }
 
     fn get_sheets(ctx: &Context<Self>) {
         ctx.link().send_future(async move {
-            let request = MyRequest::post("/PIM/wp-admin/adim-ajax.php?action=hojas_todas");
+            let request = MyRequest::post("/PIM/wp-admin/admin-ajax.php?action=hojas_todas");
             let response = request.send::<Vec<Sheet>>().await;
 
             match response {
@@ -224,11 +224,11 @@ impl MainMenu {
                 crate::requests::MyResponse::Code401 => {
                     Msg::UpdateErr("No estás autorizado/a a acceder a la base de datos".into())
                 }
-                crate::requests::MyResponse::Code500(err) => {
-                    Msg::UpdateErr(format!("El servidor ha encontrado un error: {err}"))
-                }
+                crate::requests::MyResponse::Code500(err) => Msg::UpdateErr(format!(
+                    "El servidor ha encontrado un error procesando las hojas: {err}"
+                )),
                 crate::requests::MyResponse::Error(err) => {
-                    Msg::UpdateErr(format!("Ha habido un error: {err}"))
+                    Msg::UpdateErr(format!("Ha habido un error procesando las hojas: {err}"))
                 }
             }
         });

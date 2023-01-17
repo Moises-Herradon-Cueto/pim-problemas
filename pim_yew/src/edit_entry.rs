@@ -73,8 +73,8 @@ impl Component for Comp {
                 </button>
                     <div class="two-columns">
                         <div>
-                        <button><a href={AttrValue::from(format!("/PIM/externos/intranet/problemas-anadir.php?edit={}", self.data.id))} target="_blank">
-                        {"Volver a subir el problema"}
+                        <button><a href={AttrValue::from(format!("https://www.icmat.es/PIM/problemas?edit={}", self.data.id))} target="_blank">
+                        {"Volver a subir el problema (abre la página de subir)"}
                         </a></button>
                         {rows}
                         </div>

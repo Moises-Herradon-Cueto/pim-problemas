@@ -310,7 +310,7 @@ fn into_row(
     let bundle = if data.figuras.is_empty() {
         html! {}
     } else if let Some(nombre) = data.url.split('/').last() {
-        html! {<a href={AttrValue::from(format!("/PIM/externos/intranet/paquete-descargar.php?id={nombre}"))} download={AttrValue::from(format!("{}.zip", data.titulo))}><button class="icon-button" title="Descargar con figuras"><i class="fa-solid fa-file-zipper"></i></button></a>}
+        html! {<a href={AttrValue::from(format!("/PIM/wp-admin/admin-ajax.php?action=paquete_descargar&id={nombre}"))} download={AttrValue::from(format!("{}.zip", data.titulo))}><button class="icon-button" title="Descargar con figuras"><i class="fa-solid fa-file-zipper"></i></button></a>}
     } else {
         log::error!("La url {} está vacía?", data.url);
         html! {}
