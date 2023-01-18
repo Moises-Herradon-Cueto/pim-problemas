@@ -105,4 +105,10 @@ pub enum Action {
         #[arg(short, long)]
         database_path: PathBuf,
     },
+    Sheets {
+        #[arg(short, long)]
+        sheets_path: PathBuf,
+        #[arg(short, long)]
+        output_path: PathBuf,
+    },
 }

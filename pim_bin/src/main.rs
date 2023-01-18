@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    error::Error,
     fs,
     path::Path,
 };
@@ -8,15 +9,39 @@ use arguments::Action;
 use clap::Parser;
 use pim_lib::{
     apply_regex, clean_packages, commands::sync_db, get_json_string, into_sql, make_html,
-    make_problem_sheet, parse_regex_file, pdflatex, read_csv, table_friendly::TableFriendly,
-    topics, write_csv, Data, Fields, OldData,
+    make_problem_sheet, parse_regex_file, pdflatex, read_csv, sheets_in_directory,
+    table_friendly::TableFriendly, topics, write_csv, Data, Fields, OldData,
 };
+use tracing_subscriber::{fmt::format::PrettyFields, prelude::*, EnvFilter};
 
 use crate::arguments::MyArgs;
 
 mod arguments;
 
 fn main() {
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .event_format(tracing_subscriber::fmt::format())
+        .fmt_fields(PrettyFields::new())
+        .with_line_number(true)
+        .without_time();
+    let filter_layer = EnvFilter::try_from_env("PIM_LOG").unwrap_or_else(|err| {
+        if let Some(source) = err.source() {
+            if let Some(parse_error) =
+                source.downcast_ref::<tracing_subscriber::filter::ParseError>()
+            {
+                eprintln!("Error parsing environment variable: {parse_error}.\nusing debug");
+            }
+            if let Some(var_error) = source.downcast_ref::<std::env::VarError>() {
+                eprintln!("Environment variable error: {var_error}\nUsing debug");
+            }
+        }
+        EnvFilter::try_new("debug").unwrap()
+    });
+    tracing_subscriber::registry()
+        .with(filter_layer)
+        .with(fmt_layer)
+        .init();
+
     let cli = MyArgs::parse();
     // let cli = MyArgs {
     //     command: Action::SyncDb {
@@ -105,6 +130,10 @@ fn main() {
         } => regex_from_file(&regex_file, &database_path, output_path.as_deref()),
         Action::GetTopics { database_path, php } => println!("{}", get_topics(&database_path, php)),
         Action::Sql { database_path } => make_sql(&database_path),
+        Action::Sheets {
+            sheets_path,
+            output_path,
+        } => sheets_in_directory(&sheets_path, &output_path),
     }
 }
 

@@ -8,8 +8,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 
 use Fields::{
-    Author, Comments, Difficulty, Figures, History, Id, Packages, Problem, Source, Title, Topics,
-    Url, Year,
+    Author, Comments, Difficulty, Figures, History, Id, Packages, PdfUrl, Problem, Source, TexUrl,
+    Title, Topics, Year,
 };
 #[derive(
     Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, ValueEnum, enum_utils::FromStr,
@@ -27,7 +27,8 @@ pub enum Fields {
     Year,
     Packages,
     Author,
-    Url,
+    TexUrl,
+    PdfUrl,
     Figures,
 }
 
@@ -40,7 +41,6 @@ impl TryFrom<usize> for Fields {
         Self::ALL.get(value).copied().ok_or(OutOfRange)
     }
 }
-
 impl Display for Fields {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -55,7 +55,8 @@ impl Display for Fields {
             Year => f.write_str("Curso"),
             Packages => f.write_str("Paquetes usados"),
             Author => f.write_str("Proponente"),
-            Url => f.write_str("Archivo"),
+            TexUrl => f.write_str("Archivo tex"),
+            PdfUrl => f.write_str("Archivo pdf"),
             Figures => f.write_str("Figuras"),
         }
     }
@@ -65,12 +66,12 @@ impl Fields {
     pub const N: usize = 13;
     pub const ALL: [Self; Self::N] = [
         Id, Title, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages, Author,
-        Url, Figures,
+        TexUrl, Figures,
     ];
 
     #[must_use]
     pub const fn editable(self) -> bool {
-        !matches!(self, Id | Author | Url | Figures)
+        !matches!(self, Id | Author | TexUrl | Figures)
     }
 
     #[must_use]
@@ -87,7 +88,8 @@ impl Fields {
             Year => "curso",
             Packages => "preambulo usados",
             Author => "id_autor",
-            Url => "url_tex",
+            TexUrl => "url_tex",
+            PdfUrl => "url_pdf",
             Figures => "figuras",
         }
     }
@@ -112,7 +114,8 @@ impl Fields {
             Packages => Cow::Borrowed(&data.paquetes),
             Year => Cow::Borrowed(&data.curso),
             Author => Cow::Borrowed(&data.id_autor),
-            Url => Cow::Borrowed(&data.url),
+            TexUrl => Cow::Borrowed(&data.tex_url),
+            PdfUrl => Cow::Borrowed(&data.pdf_url),
         }
     }
 
@@ -130,7 +133,8 @@ impl Fields {
             Year => FieldContentsRef::Year(&data.curso),
             Packages => FieldContentsRef::Packages(&data.paquetes),
             Author => FieldContentsRef::Author(&data.id_autor),
-            Url => FieldContentsRef::Url(&data.url),
+            TexUrl => FieldContentsRef::TexUrl(&data.tex_url),
+            PdfUrl => FieldContentsRef::TexUrl(&data.pdf_url),
             Figures => FieldContentsRef::Figures(&data.figuras),
         }
     }
@@ -151,7 +155,8 @@ impl Fields {
             Comments => Regex::new(r"\\comentarios\{\s*(.*?)\s*\}"),
             Year => Regex::new(r"\\curso\{\s*(.*?)\s*\}"),
             Author => Regex::new(r"\\proponente\{\s*(.*?)\s*\}"),
-            Url => Regex::new(r"\\archivo\{\s*(.*?)\s*\}"),
+            TexUrl => Regex::new(r"\\archivo\{\s*(.*?)\s*\}"),
+            PdfUrl => unreachable!("Not implemented"),
             Title => Regex::new(r"\\titulo\{\s*(.*?)\s*\}"),
             Packages => Regex::new(r"(?s)%%% Paquetes extra\s*(.*?)\s*%%% Fin de paquetes extra"),
             Id => Regex::new(r"\\id\{\s*(.*?)\s*\}"),
@@ -173,7 +178,8 @@ impl Fields {
             Year => FieldContents::Year(String::new()),
             Packages => FieldContents::Packages(String::new()),
             Author => FieldContents::Author(String::new()),
-            Url => FieldContents::Url(String::new()),
+            TexUrl => FieldContents::TexUrl(String::new()),
+            PdfUrl => FieldContents::PdfUrl(String::new()),
             Title => FieldContents::Title(String::new()),
         }
     }
@@ -253,7 +259,8 @@ impl Fields {
                     .collect(),
             )),
             Author => Ok(FieldContents::Author(input.trim().to_owned())),
-            Url => Ok(FieldContents::Url(input.trim().to_owned())),
+            TexUrl => Ok(FieldContents::TexUrl(input.trim().to_owned())),
+            PdfUrl => Ok(FieldContents::PdfUrl(input.trim().to_owned())),
         }
     }
 
@@ -285,7 +292,8 @@ pub enum FieldContents {
     Year(String),
     Packages(String),
     Author(String),
-    Url(String),
+    TexUrl(String),
+    PdfUrl(String),
     Figures(Vec<String>),
 }
 
@@ -302,7 +310,8 @@ pub enum FieldContentsRef<'a> {
     Year(&'a str),
     Packages(&'a str),
     Author(&'a str),
-    Url(&'a str),
+    TexUrl(&'a str),
+    PdfUrl(&'a str),
     Figures(&'a [String]),
 }
 
@@ -355,7 +364,8 @@ impl<'a> IntoIterator for FieldContentsRef<'a> {
             | FieldContentsRef::Year(x)
             | FieldContentsRef::Packages(x)
             | FieldContentsRef::Author(x)
-            | FieldContentsRef::Url(x) => Self::IntoIter::Single(x),
+            | FieldContentsRef::TexUrl(x)
+            | FieldContentsRef::PdfUrl(x) => Self::IntoIter::Single(x),
             FieldContentsRef::Figures(x) | FieldContentsRef::Topics(x) => {
                 Self::IntoIter::Multi(x.iter())
             }
@@ -367,14 +377,14 @@ impl<'a> FieldContentsRef<'a> {
     #[must_use]
     pub fn is_empty(&self) -> bool {
         use FieldContentsRef::{
-            Author, Comments, Difficulty, Figures, History, Id, Packages, Problem, Source, Title,
-            Topics, Url, Year,
+            Author, Comments, Difficulty, Figures, History, Id, Packages, PdfUrl, Problem, Source,
+            TexUrl, Title, Topics, Year,
         };
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
             Problem(x) | Title(x) | Source(x) | History(x) | Comments(x) | Packages(x)
-            | Year(x) | Author(x) | Url(x) => x.is_empty() || *x == "%",
+            | Year(x) | Author(x) | TexUrl(x) | PdfUrl(x) => x.is_empty() || *x == "%",
             Topics(x) | Figures(x) => x.is_empty(),
         }
     }
@@ -416,7 +426,8 @@ impl<'a> FieldContentsRef<'a> {
             FieldContentsRef::Comments(x) => FieldContents::Comments((*x).to_owned()),
             FieldContentsRef::Packages(x) => FieldContents::Packages((*x).to_owned()),
             FieldContentsRef::Year(x) => FieldContents::Year((*x).to_owned()),
-            FieldContentsRef::Url(x) => FieldContents::Url((*x).to_owned()),
+            FieldContentsRef::TexUrl(x) => FieldContents::TexUrl((*x).to_owned()),
+            FieldContentsRef::PdfUrl(x) => FieldContents::PdfUrl((*x).to_owned()),
             FieldContentsRef::Author(x) => FieldContents::Author((*x).to_owned()),
         }
     }
@@ -436,21 +447,22 @@ impl FieldContents {
             Self::Year(content) => data.curso = content,
             Self::Packages(content) => data.paquetes = content,
             Self::Author(content) => data.id_autor = content,
-            Self::Url(content) => data.url = content,
+            Self::TexUrl(content) => data.tex_url = content,
+            Self::PdfUrl(content) => data.pdf_url = content,
         }
     }
 
     #[must_use]
     pub fn is_empty(&self) -> bool {
         use FieldContents::{
-            Author, Comments, Difficulty, Figures, History, Id, Packages, Problem, Source, Title,
-            Topics, Url, Year,
+            Author, Comments, Difficulty, Figures, History, Id, Packages, PdfUrl, Problem, Source,
+            TexUrl, Title, Topics, Year,
         };
         match self {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
             Title(x) | Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x)
-            | Year(x) | Author(x) | Url(x) => x.is_empty() || x == "%",
+            | Year(x) | Author(x) | TexUrl(x) | PdfUrl(x) => x.is_empty() || x == "%",
             Topics(x) | Figures(x) => x.is_empty(),
         }
     }
@@ -458,14 +470,14 @@ impl FieldContents {
     #[must_use]
     pub fn string_contents(&self) -> Cow<String> {
         use FieldContents::{
-            Author, Comments, Difficulty, Figures, History, Id, Packages, Problem, Source, Title,
-            Topics, Url, Year,
+            Author, Comments, Difficulty, Figures, History, Id, Packages, PdfUrl, Problem, Source,
+            TexUrl, Title, Topics, Year,
         };
         match self {
             Id(x) => Cow::Owned(x.to_string()),
             Difficulty(x) => Cow::Owned(x.to_string()),
             Title(x) | Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x)
-            | Year(x) | Author(x) | Url(x) => Cow::Borrowed(x),
+            | Year(x) | Author(x) | TexUrl(x) | PdfUrl(x) => Cow::Borrowed(x),
             Topics(x) | Figures(x) => Cow::Owned(x.join(",")),
         }
     }
@@ -485,7 +497,8 @@ impl From<&FieldContents> for Fields {
             FieldContents::Year(_) => Self::Year,
             FieldContents::Packages(_) => Self::Packages,
             FieldContents::Author(_) => Self::Author,
-            FieldContents::Url(_) => Self::Url,
+            FieldContents::TexUrl(_) => Self::TexUrl,
+            FieldContents::PdfUrl(_) => Self::PdfUrl,
             FieldContents::Figures(_) => Self::Figures,
         }
     }

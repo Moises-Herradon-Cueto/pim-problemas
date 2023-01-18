@@ -4,25 +4,25 @@ use web_sys::File;
 
 use pim_lib::Data;
 use yew::prelude::*;
-use SheetTypes::{Jupiter, Mercury, Thematic, Uranus, Venus};
+use SheetTypes::{Jupiter, Mercurio, Thematic, Urano, Venus};
 
 #[repr(usize)]
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub enum SheetTypes {
-    Mercury,
+    Mercurio,
     Venus,
     Jupiter,
-    Uranus,
+    Urano,
     Thematic,
 }
 
 impl From<SheetTypes> for &'static str {
     fn from(value: SheetTypes) -> Self {
         match value {
-            Mercury => "Mercurio",
+            Mercurio => "Mercurio",
             Venus => "Venus",
             Jupiter => "Júpiter",
-            Uranus => "Urano",
+            Urano => "Urano",
             Thematic => "Hoja temática",
         }
     }
@@ -36,7 +36,7 @@ impl Display for SheetTypes {
 }
 
 const N_TYPES: usize = 5;
-const SHEETS: [SheetTypes; N_TYPES] = [Mercury, Venus, Jupiter, Uranus, Thematic];
+const SHEETS: [SheetTypes; N_TYPES] = [Mercurio, Venus, Jupiter, Urano, Thematic];
 
 pub struct Comp {
     present_sheets: [bool; N_TYPES],

@@ -1,15 +1,17 @@
 use web_sys::Element;
 use yew::{
     prelude::*,
-    virtual_dom::{VNode, VTag},
+    virtual_dom::{AttrValue, VNode, VTag},
 };
 
 use crate::typeset;
 
 #[derive(Debug, Clone, Eq, PartialEq, Properties)]
 pub struct Props {
-    pub inner_html: String,
+    pub inner_html: AttrValue,
     pub tag: &'static str,
+    #[prop_or_default]
+    pub id: Option<AttrValue>,
 }
 
 pub struct Comp {

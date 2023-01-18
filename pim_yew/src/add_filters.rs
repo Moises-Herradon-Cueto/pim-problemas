@@ -75,8 +75,11 @@ impl Filter {
             Fields::Author => Some(Self {
                 contents: FieldContents::Author(contents.to_lowercase()),
             }),
-            Fields::Url => Some(Self {
-                contents: FieldContents::Url(contents.to_lowercase()),
+            Fields::TexUrl => Some(Self {
+                contents: FieldContents::TexUrl(contents.to_lowercase()),
+            }),
+            Fields::PdfUrl => Some(Self {
+                contents: FieldContents::PdfUrl(contents.to_lowercase()),
             }),
         }
     }
@@ -97,7 +100,11 @@ impl Filter {
             FieldContents::Difficulty(contents) => data.dificultad == *contents,
             FieldContents::Source(contents) => data.fuente.to_lowercase().contains(contents),
             FieldContents::History(contents) => {
-                matches(contents.split(','), &data.historial.lines())
+                if self.contents.is_empty() {
+                    contents.is_empty()
+                } else {
+                    matches(contents.split(','), &data.historial.lines())
+                }
             }
             FieldContents::Comments(contents) => {
                 matches(contents.split(','), &data.comentarios.lines())
@@ -106,7 +113,8 @@ impl Filter {
             FieldContents::Packages(contents) => {
                 matches(contents.split(','), &data.paquetes.lines())
             }
-            FieldContents::Url(contents) => data.url.to_lowercase().contains(contents),
+            FieldContents::TexUrl(contents) => data.tex_url.to_lowercase().contains(contents),
+            FieldContents::PdfUrl(contents) => data.pdf_url.to_lowercase().contains(contents),
             FieldContents::Author(contents) => data.id_autor.to_lowercase().contains(contents),
         }
     }

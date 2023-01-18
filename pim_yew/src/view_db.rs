@@ -8,11 +8,13 @@ use crate::field_selector::Comp as FieldSelect;
 use crate::result_range::{self, Comp as RangeSelector};
 use crate::typeset;
 use crate::ReloadButton;
+use log::{warn, error};
 use material_yew::MatIconButtonToggle;
 use pim_lib::{Data, Fields, ParseOneError};
 use web_sys::window;
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
+use SpecialWindow::*;
 
 pub struct ViewDb {
     view: Vec<Data>,
@@ -24,7 +26,13 @@ pub struct ViewDb {
     error: Option<ParseOneError>,
     range: (usize, usize),
     cached_range: (usize, usize),
-    editing: Option<usize>,
+    special_window: SpecialWindow,
+}
+
+enum SpecialWindow {
+    Normal,
+    ViewingPdf(usize),
+    Editing(usize),
 }
 
 struct Sort {
@@ -52,9 +60,10 @@ pub enum Msg {
     Range(usize, result_range::Which),
     Edit(usize),
     TryDelete { id: usize, title: String },
-    StopEditing,
+    BackToNormal,
     ReloadDb,
     ToggleCart(usize),
+    ViewPdf(usize),
 }
 
 #[derive(Properties, Clone)]
@@ -97,7 +106,7 @@ impl Component for ViewDb {
             error: None,
             range: (0, 20),
             cached_range: (0, 0),
-            editing: None,
+            special_window: SpecialWindow::Normal,
         };
 
         output.calculate_view(ctx);
@@ -131,7 +140,7 @@ impl Component for ViewDb {
                     }
                 }
             }
-            Msg::StopEditing => {
+            Msg::BackToNormal => {
                 self.stop_editing(ctx);
             }
             Msg::SetError(err) => {
@@ -173,27 +182,45 @@ impl Component for ViewDb {
                 self.calculate_window();
             }
             Msg::Edit(id) => {
-                self.editing = Some(id);
+                self.special_window = Editing(id);
                 self.cached_range = self.range;
+            }
+            Msg::ViewPdf(id) => {
+                self.special_window = ViewingPdf(id);
             }
         }
         true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        if let Some(id) = self.editing {
-            let close_cb = ctx.link().callback(|()| Msg::StopEditing);
-            let edit_cb = ctx.link().callback(Msg::EditInfo);
-            let input_data = Rc::new(
-                ctx.props()
-                    .db
-                    .iter()
-                    .find(|x| x.id == id)
-                    .cloned()
-                    .unwrap_or_else(|| Data::new(id)),
-            );
-            return html! {<EditEntry {close_cb} {edit_cb} {id} {input_data}/>};
+        match self.special_window {
+            Normal => self.view_all(ctx),
+            ViewingPdf(id) => self.view_pdf(ctx, id),
+            Editing(id) => self.view_edit(ctx, id),
         }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        typeset();
+    }
+}
+
+impl ViewDb {
+    fn view_edit(&self, ctx: &Context<Self>, id: usize) -> Html {
+        let close_cb = ctx.link().callback(|()| Msg::BackToNormal);
+        let edit_cb = ctx.link().callback(Msg::EditInfo);
+        let input_data = Rc::new(
+            ctx.props()
+                .db
+                .iter()
+                .find(|x| x.id == id)
+                .cloned()
+                .unwrap_or_else(|| Data::new(id)),
+        );
+        html! {<EditEntry {close_cb} {edit_cb} {id} {input_data}/>}
+    }
+
+    fn view_all(&self, ctx: &Context<Self>) -> Html {
         let filas: Html = self
             .window
             .iter()
@@ -256,8 +283,25 @@ impl Component for ViewDb {
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        typeset();
+    fn view_pdf(&self, ctx: &Context<Self>, id: usize) -> Html {
+        let return_cb = ctx.link().callback(|e: MouseEvent| {
+            e.prevent_default();
+            Msg::BackToNormal
+        });
+        let Some(data) = ctx.props().db.get(id) else {
+            error!("Pdf {id} is not in db");
+        }
+        html! {
+                <>
+                <button onclick={return_cb}>{"Volver"}</button>
+        <embed
+            src={pdf_url}
+            type="application/pdf"
+            // width="100%"
+            // height="100%"
+        />
+                </>
+            }
     }
 }
 
@@ -313,10 +357,10 @@ fn into_row(
 
     let bundle = if data.figuras.is_empty() {
         html! {}
-    } else if let Some(nombre) = data.url.split('/').last() {
+    } else if let Some(nombre) = data.tex_url.split('/').last() {
         html! {<a href={AttrValue::from(format!("/PIM/wp-admin/admin-ajax.php?action=paquete_descargar&id={nombre}"))} download={AttrValue::from(format!("{}.zip", data.titulo))}><button class="icon-button" title="Descargar con figuras"><i class="fa-solid fa-file-zipper"></i></button></a>}
     } else {
-        log::error!("La url {} está vacía?", data.url);
+        log::error!("La url {} está vacía?", data.tex_url);
         html! {}
     };
 
@@ -334,7 +378,9 @@ fn into_row(
     html! {
         <tr>
         <td>
-        <a href={data.url.clone()} class="problem-link" title="Descargar .tex">{&data.titulo}</a>
+        {&data.titulo}
+        <a href={data.tex_url.clone()} class="problem-link" title="Descargar .tex">{"tex"}</a>
+        <a href={data.pdf_url.clone()} class="problem-link" title="Descargar .pdf">{"pdf"}</a>
         <button title="Editar información" class="edit-button icon-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button>
         <button class="delete-button icon-button" title="Borrar" onclick={delete}> <i class="fa-solid fa-trash-can"></i></button>
         {bundle}
@@ -376,7 +422,7 @@ impl ViewDb {
     }
 
     fn stop_editing(&mut self, ctx: &Context<Self>) {
-        self.editing = None;
+        self.special_window = Normal;
         let start = self.cached_range.0;
         let end = self.cached_range.1;
         ctx.link().send_future(async move {
