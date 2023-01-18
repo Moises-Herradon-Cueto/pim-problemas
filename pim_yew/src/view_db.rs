@@ -368,9 +368,9 @@ fn into_row(
         Msg::ToggleCart(id)
     });
     let cart_button = if ctx.props().cart.contains(&id) {
-        html! {<button class="icon-button" title="Añadir al carro" onclick={cart}><i class="fa-solid fa-cart-plus"></i></button>}
-    } else {
         html! {<button class="icon-button in-cart" title="Quitar del carro" onclick={cart}><i class="fa-solid fa-cart-shopping"></i></button>}
+    } else {
+        html! {<button class="icon-button" title="Añadir al carro" onclick={cart}><i class="fa-solid fa-cart-plus"></i></button>}
     };
 
     html! {
