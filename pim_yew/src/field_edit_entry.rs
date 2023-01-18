@@ -1,4 +1,4 @@
-use crate::typeset;
+use crate::RawHtml;
 use material_yew::text_inputs::MatTextArea;
 use material_yew::text_inputs::MatTextField;
 use material_yew::text_inputs::TextFieldType;
@@ -63,12 +63,6 @@ impl Component for Comp {
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if matches!(self.contents, Problem(_)) {
-            typeset();
-        }
-    }
-
     fn view(&self, ctx: &Context<Self>) -> Html {
         if !Fields::from(&ctx.props().contents).editable() {
             return html! {
@@ -128,7 +122,7 @@ fn string_input(
 ) -> Html {
     let field = Fields::from(contents);
     let output = if show_output {
-        html! {<p id="problem-preview">{contents.string_contents()}</p>}
+        html! {<RawHtml id={AttrValue::from("problem-preview")} inner_html={AttrValue::from(contents.string_contents().to_string())} tag={"p"}/>}
     } else {
         html! {}
     };
