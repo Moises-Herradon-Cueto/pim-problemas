@@ -6,6 +6,7 @@ use crate::commands::insert_db_info;
 use crate::handle_db::FetchedData;
 use crate::helper::undo_waiting_cursor;
 use crate::helper::waiting_cursor;
+use crate::helper::IndexOf;
 use crate::home_button;
 use crate::requests::MyRequest;
 use pim_lib::Data;
@@ -23,7 +24,8 @@ pub struct MainMenu {
     main_app: AppType,
     db: Option<Rc<Vec<Data>>>,
     sheets: Option<Vec<Sheet>>,
-    cart: Vec<usize>,
+    real_cart: Vec<usize>,
+    cart_clone: Rc<Vec<usize>>,
     error: String,
 }
 
@@ -41,7 +43,7 @@ pub enum Msg {
     UpdateErr(String),
     EditEntry(Data),
     DeleteProblem(usize),
-    AddToCart(usize),
+    ToggleCart(usize),
     GetDb,
     GetSheets,
     GetCart,
@@ -63,12 +65,14 @@ impl Component for MainMenu {
         waiting_cursor();
         Self::get_db(ctx);
         Self::get_sheets(ctx);
-        let cart = get_cart_from_storage().unwrap_or_default();
+        let real_cart = get_cart_from_storage().unwrap_or_default();
+        let cart_clone = Rc::new(real_cart.clone());
         Self {
             main_app: AppType::Start,
             db: None,
             sheets: None,
-            cart,
+            real_cart,
+            cart_clone,
             error: String::new(),
         }
     }
@@ -77,7 +81,7 @@ impl Component for MainMenu {
         match msg {
             Msg::GetCart => {
                 let list: Vec<_> = self
-                    .cart
+                    .cart_clone
                     .iter()
                     .map(std::string::ToString::to_string)
                     .collect();
@@ -90,32 +94,37 @@ impl Component for MainMenu {
                         if index == 0 {
                             return false;
                         }
-                        self.cart.swap(index, index - 1);
+                        self.real_cart.swap(index, index - 1);
                     }
                     Direction::Down => {
-                        if index >= self.cart.len() - 1 {
+                        if index >= self.cart_clone.len() - 1 {
                             return false;
                         }
-                        self.cart.swap(index, index + 1);
+                        self.real_cart.swap(index, index + 1);
                     }
                 }
-                set_cart(&self.cart);
+                set_cart(&self.real_cart);
+                self.cart_clone = Rc::new(self.real_cart.clone());
                 true
             }
             Msg::RemoveIndexFromCart(index) => {
-                if index >= self.cart.len() {
+                if index >= self.cart_clone.len() {
                     return false;
                 }
-                self.cart.remove(index);
-                set_cart(&self.cart);
+                self.real_cart.remove(index);
+                set_cart(&self.real_cart);
+                self.cart_clone = Rc::new(self.real_cart.clone());
                 true
             }
-            Msg::AddToCart(id) => {
-                if self.cart.last() == Some(&id) {
-                    return false;
+            Msg::ToggleCart(id) => {
+                if let Some(index) = self.cart_clone.index_of(&id) {
+                    self.real_cart.remove(index);
+                    remove_index_from_cart_storage(index);
+                } else {
+                    self.real_cart.push(id);
+                    append_to_cart_storage(id);
                 }
-                self.cart.push(id);
-                append_to_cart_storage(id);
+                self.cart_clone = Rc::new(self.real_cart.clone());
                 true
             }
             Msg::DeleteProblem(id) => {
@@ -148,7 +157,6 @@ impl Component for MainMenu {
             Msg::GetDb => {
                 waiting_cursor();
                 Self::get_db(ctx);
-                self.db = None;
                 false
             }
             Msg::GetSheets => {
@@ -178,7 +186,7 @@ impl Component for MainMenu {
         html! {
             <div id="container">
             <RawHtml inner_html={self.error.clone()} tag="div" />
-            if !self.cart.is_empty() {
+            if !self.cart_clone.is_empty() {
                 {self.carro_html(ctx)}
             }
             {main_app}
@@ -192,7 +200,7 @@ impl MainMenu {
         let Some(db) = self.db.as_ref() else {return html!{}};
         let db = Rc::clone(db);
         let download = ctx.link().callback(|_| Msg::GetCart);
-        let list = self.cart.clone();
+        let list = Rc::clone(&self.cart_clone);
         let move_up = ctx
             .link()
             .callback(|(index, dir)| Msg::ReorderCartWithIndex(index, dir));
@@ -271,10 +279,10 @@ impl MainMenu {
             let reload_db_cb = ctx.link().batch_callback(|_| vec![Msg::GetDb,Msg::GetSheets ]);
             let edit_cb = ctx.link().callback( Msg::EditEntry);
             let delete_cb = ctx.link().callback(Msg::DeleteProblem);
-            let add_to_cart = ctx.link().callback(Msg::AddToCart);
+            let toggle_cart = ctx.link().callback(Msg::ToggleCart);
             html! {
                 <>
-                <home_button::With<View> props={ViewDbProps {add_to_cart, delete_cb, edit_cb ,db:db.clone(), reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {toggle_cart, delete_cb, edit_cb ,db:db.clone(), reload_db_cb, cart: Rc::clone(&self.cart_clone)}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })
@@ -299,7 +307,7 @@ impl MainMenu {
         };};
         let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
         html! {
-            <home_button::With<SheetEditor> {return_cb} props={SheetEditorProps {cart: self.cart.clone(), db: Rc::clone(db)}}/>
+            <home_button::With<SheetEditor> {return_cb} props={SheetEditorProps {cart: Rc::clone(&self.cart_clone), db: Rc::clone(db)}}/>
         }
     }
 }
@@ -349,6 +357,11 @@ fn get_cart_from_storage() -> Option<Vec<usize>> {
 fn append_to_cart_storage(id: usize) {
     let mut cart = get_cart_from_storage().unwrap_or_default();
     cart.push(id);
+    set_cart(&cart);
+}
+fn remove_index_from_cart_storage(index: usize) {
+    let mut cart = get_cart_from_storage().unwrap_or_default();
+    cart.remove(index);
     set_cart(&cart);
 }
 

@@ -55,7 +55,7 @@ pub enum Msg {
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
     pub db: Rc<Vec<Data>>,
-    pub cart: Vec<usize>,
+    pub cart: Rc<Vec<usize>>,
 }
 
 impl Component for Comp {

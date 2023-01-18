@@ -22,7 +22,7 @@ pub enum Msg {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
-    pub list: Vec<usize>,
+    pub list: Rc<Vec<usize>>,
     pub db: Rc<Vec<Data>>,
     pub remove_index: Callback<usize>,
     pub download: Callback<()>,

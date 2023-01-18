@@ -345,3 +345,7 @@ li {
 body.waiting {
   cursor: wait
 }
+
+.in-cart {
+  background-color: #dfdf7b;
+}

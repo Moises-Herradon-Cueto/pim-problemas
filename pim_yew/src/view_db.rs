@@ -54,7 +54,7 @@ pub enum Msg {
     TryDelete { id: usize, title: String },
     StopEditing,
     ReloadDb,
-    AddToCart(usize),
+    ToggleCart(usize),
 }
 
 #[derive(Properties, Clone)]
@@ -63,7 +63,8 @@ pub struct Props {
     pub reload_db_cb: Callback<()>,
     pub edit_cb: Callback<Data>,
     pub delete_cb: Callback<usize>,
-    pub add_to_cart: Callback<usize>,
+    pub toggle_cart: Callback<usize>,
+    pub cart: Rc<Vec<usize>>,
 }
 
 impl PartialEq for Props {
@@ -112,8 +113,8 @@ impl Component for ViewDb {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            Msg::AddToCart(id) => {
-                ctx.props().add_to_cart.emit(id);
+            Msg::ToggleCart(id) => {
+                ctx.props().toggle_cart.emit(id);
                 return false;
             }
             Msg::TryDelete { id, title } => {
@@ -322,8 +323,13 @@ fn into_row(
     let id = data.id;
     let cart = ctx.link().callback(move |e: MouseEvent| {
         e.prevent_default();
-        Msg::AddToCart(id)
+        Msg::ToggleCart(id)
     });
+    let cart_button = if ctx.props().cart.contains(&id) {
+        html! {<button class="icon-button" title="Añadir al carro" onclick={cart}><i class="fa-solid fa-cart-plus"></i></button>}
+    } else {
+        html! {<button class="icon-button in-cart" title="Quitar del carro" onclick={cart}><i class="fa-solid fa-cart-shopping"></i></button>}
+    };
 
     html! {
         <tr>
@@ -332,7 +338,7 @@ fn into_row(
         <button title="Editar información" class="edit-button icon-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button>
         <button class="delete-button icon-button" title="Borrar" onclick={delete}> <i class="fa-solid fa-trash-can"></i></button>
         {bundle}
-        <button class="icon-button" title="Añadir al carro" onclick={cart}><i class="fa-solid fa-cart-plus"></i></button>
+        {cart_button}
         </td>
         {entries}
         </tr>

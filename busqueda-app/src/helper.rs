@@ -22,9 +22,21 @@ fn class_list() -> DomTokenList {
 }
 
 pub fn waiting_cursor() {
-    class_list().add_1("waiting");
+    class_list().add_1("waiting").unwrap();
 }
 
 pub fn undo_waiting_cursor() {
-    class_list().remove_1("waiting");
+    class_list().remove_1("waiting").unwrap();
+}
+
+pub trait IndexOf<T> {
+    fn index_of(&self, search: &T) -> Option<usize>;
+}
+
+impl<T: PartialEq> IndexOf<T> for Vec<T> {
+    fn index_of(&self, search: &T) -> Option<usize> {
+        self.iter()
+            .enumerate()
+            .find_map(|(i, x)| if x == search { Some(i) } else { None })
+    }
 }

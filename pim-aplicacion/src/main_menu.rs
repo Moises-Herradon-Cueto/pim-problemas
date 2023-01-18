@@ -180,7 +180,7 @@ impl MainMenu {
         });
             html! {
                 <>
-                <home_button::With<View> props={ViewDbProps {add_to_cart, delete_cb, edit_cb, db:db.clone(),  reload_db_cb}}  {return_cb}></home_button::With<View>>
+                <home_button::With<View> props={ViewDbProps {toggle_cart, delete_cb, edit_cb, db:db.clone(),  reload_db_cb, cart: Rc::clone(&self.cart)}}  {return_cb}></home_button::With<View>>
                 </>
             }
         })
