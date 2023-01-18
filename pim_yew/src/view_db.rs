@@ -325,7 +325,9 @@ fn into_row(
     html! {
         <tr>
         <td>
-        <a href={data.tex_url.clone()} class="problem-link" title="Descargar .tex">{&data.titulo}</a>
+        {&data.titulo}
+        <a href={data.tex_url.clone()} class="problem-link" title="Descargar .tex">{"tex"}</a>
+        <a href={data.pdf_url.clone()} class="problem-link" title="Descargar .pdf">{"pdf"}</a>
         <button title="Editar información" class="edit-button icon-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button>
         <button class="delete-button icon-button" title="Borrar" onclick={delete}> <i class="fa-solid fa-trash-can"></i></button>
         {bundle}
