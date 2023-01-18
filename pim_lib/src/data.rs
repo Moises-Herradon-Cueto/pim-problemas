@@ -47,7 +47,8 @@ pub struct Data {
     pub curso: String,
     pub enunciado: String,
     pub paquetes: String,
-    pub url: String,
+    pub tex_url: String,
+    pub pdf_url: String,
     pub id_autor: String,
     pub figuras: Vec<String>,
 }
@@ -90,7 +91,8 @@ impl From<Old> for Data {
             curso: curso.unwrap_or_default(),
             enunciado,
             paquetes: paquetes.join("\n"),
-            url: String::new(),
+            tex_url: String::new(),
+            pdf_url: String::new(),
             id_autor: String::new(),
             figuras: Vec::new(),
         }
@@ -111,7 +113,8 @@ impl Data {
             curso: String::new(),
             enunciado: String::new(),
             paquetes: String::new(),
-            url: String::new(),
+            tex_url: String::new(),
+            pdf_url: String::new(),
             id_autor: String::new(),
             figuras: Vec::new(),
         }
@@ -170,7 +173,8 @@ impl Data {
             enunciado: String::new(),
             paquetes: String::new(),
             id_autor: String::new(),
-            url: String::new(),
+            tex_url: String::new(),
+            pdf_url: String::new(),
             figuras: Vec::new(),
         })
     }

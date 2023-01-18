@@ -20,7 +20,9 @@ pub struct FetchedData {
     #[serde(rename = "Descripcion")]
     descripcion: String,
     #[serde(rename = "TEX_URL")]
-    url: String,
+    tex_url: String,
+    #[serde(rename = "PDF_URL")]
+    pdf_url: String,
     #[serde(rename = "Comentarios")]
     comentarios: Option<String>,
     #[serde(rename = "Temas")]
@@ -42,7 +44,8 @@ impl From<FetchedData> for Data {
             procedencia,
             preambulo,
             descripcion,
-            url,
+            tex_url,
+            pdf_url,
             comentarios,
             temas,
             hojas,
@@ -65,7 +68,8 @@ impl From<FetchedData> for Data {
             curso: curso.unwrap_or_default(),
             enunciado: descripcion,
             paquetes: preambulo,
-            url,
+            tex_url,
+            pdf_url,
             id_autor,
         }
     }
