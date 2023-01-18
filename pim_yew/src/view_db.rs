@@ -7,6 +7,7 @@ use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
 use crate::result_range::{self, Comp as RangeSelector};
 use crate::typeset;
+use log::{warn, error};
 use material_yew::MatIconButtonToggle;
 use pim_lib::{Data, Fields, ParseOneError};
 use web_sys::window;
@@ -29,7 +30,7 @@ pub struct ViewDb {
 
 enum SpecialWindow {
     Normal,
-    ViewingPdf,
+    ViewingPdf(usize),
     Editing(usize),
 }
 
@@ -58,8 +59,9 @@ pub enum Msg {
     Range(usize, result_range::Which),
     Edit(usize),
     TryDelete { id: usize, title: String },
-    StopEditing,
+    BackToNormal,
     ReloadDb,
+    ViewPdf(usize),
     AddToCart(usize),
 }
 
@@ -136,7 +138,7 @@ impl Component for ViewDb {
                     }
                 }
             }
-            Msg::StopEditing => {
+            Msg::BackToNormal => {
                 self.stop_editing(ctx);
             }
             Msg::SetError(err) => {
@@ -181,6 +183,9 @@ impl Component for ViewDb {
                 self.special_window = Editing(id);
                 self.cached_range = self.range;
             }
+            Msg::ViewPdf(id) => {
+                self.special_window = ViewingPdf(id);
+            }
         }
         true
     }
@@ -188,7 +193,7 @@ impl Component for ViewDb {
     fn view(&self, ctx: &Context<Self>) -> Html {
         match self.special_window {
             Normal => self.view_all(ctx),
-            ViewingPdf => self.view_pdf(ctx),
+            ViewingPdf(id) => self.view_pdf(ctx, id),
             Editing(id) => self.view_edit(ctx, id),
         }
     }
@@ -200,7 +205,7 @@ impl Component for ViewDb {
 
 impl ViewDb {
     fn view_edit(&self, ctx: &Context<Self>, id: usize) -> Html {
-        let close_cb = ctx.link().callback(|()| Msg::StopEditing);
+        let close_cb = ctx.link().callback(|()| Msg::BackToNormal);
         let edit_cb = ctx.link().callback(Msg::EditInfo);
         let input_data = Rc::new(
             ctx.props()
@@ -274,8 +279,25 @@ impl ViewDb {
         }
     }
 
-    fn view_pdf(&self, ctx: &Context<Self>) -> Html {
-        todo!()
+    fn view_pdf(&self, ctx: &Context<Self>, id: usize) -> Html {
+        let return_cb = ctx.link().callback(|e: MouseEvent| {
+            e.prevent_default();
+            Msg::BackToNormal
+        });
+        let Some(data) = ctx.props().db.get(id) else {
+            error!("Pdf {id} is not in db");
+        }
+        html! {
+                <>
+                <button onclick={return_cb}>{"Volver"}</button>
+        <embed
+            src={pdf_url}
+            type="application/pdf"
+            // width="100%"
+            // height="100%"
+        />
+                </>
+            }
     }
 }
 
