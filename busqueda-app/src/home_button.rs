@@ -36,7 +36,7 @@ where
         let t: VChild<T> = VChild::new(ctx.props().props.clone(), NodeRef::default(), None);
         html! {
             <>
-            <button id="return-button" onclick={return_button}><i class="fa-solid fa-house"></i></button>
+            <button class="icon-button" id="return-button" onclick={return_button}><i class="fa-solid fa-house"></i></button>
             {t}
             </>
         }
