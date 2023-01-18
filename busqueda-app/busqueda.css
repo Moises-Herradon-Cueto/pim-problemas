@@ -164,14 +164,15 @@ li {
 }
 
 .edit-problem {
-  position: fixed;
   width: calc(100vw - 20px);
   height: calc(100vh - 20px);
   z-index: 10;
-  top: 10px;
-  left: 10px;
   background-color: aliceblue;
   overflow: scroll;
+  position: absolute;
+  top: -85px;
+  left: -40px;
+  padding-top: 18px;
 }
 
 .edit-problem * {
@@ -183,8 +184,8 @@ li {
 }
 
 .edit-problem fieldset div {
-  margin-top: 5px;
   margin-bottom: 5px;
+  margin-top: 28px;
 }
 
 .close-edit-button {
@@ -203,10 +204,8 @@ li {
   overflow: scroll;
 }
 
-
 .edit-problem form {
   height: calc(100vh - 20px);
-  overflow: scroll;
 }
 
 #problem-preview {
@@ -215,10 +214,6 @@ li {
 
 .problem-preview {
   white-space: pre-wrap;
-}
-
-.edit-problem fieldset {
-  overflow-x: scroll;
 }
 
 .submit-edit-button {
@@ -233,7 +228,6 @@ li {
 .two-columns {
   gap: 2em;
 }
-
 
 .icon-button {
   display: flex;
@@ -269,8 +263,6 @@ li {
   padding: 10px 0 3px 1em;
 }
 
-
-
 #cart {
   position: absolute;
   background-color: #ccf;
@@ -279,7 +271,7 @@ li {
   display: flex;
   flex-direction: column;
   padding: 15px;
-  left: 10px;
+  left: -40px;
 }
 
 #close-cart {
