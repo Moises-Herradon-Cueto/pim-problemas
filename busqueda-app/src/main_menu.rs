@@ -60,6 +60,7 @@ impl Component for MainMenu {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
+        waiting_cursor();
         Self::get_db(ctx);
         Self::get_sheets(ctx);
         let cart = get_cart_from_storage().unwrap_or_default();
@@ -151,6 +152,7 @@ impl Component for MainMenu {
                 false
             }
             Msg::GetSheets => {
+                waiting_cursor();
                 Self::get_sheets(ctx);
                 false
             }
@@ -266,7 +268,7 @@ impl MainMenu {
     fn view_db(&self, ctx: &Context<Self>) -> Html {
         self.db.as_ref().map_or_else(|| html!{<p>{"Cargando..."}</p>}, |db| {
             let return_cb = ctx.link().callback(|_: ()| Msg::ChangeApps(Start));
-            let reload_db_cb = ctx.link().callback(|_| Msg::GetDb);
+            let reload_db_cb = ctx.link().batch_callback(|_| vec![Msg::GetDb,Msg::GetSheets ]);
             let edit_cb = ctx.link().callback( Msg::EditEntry);
             let delete_cb = ctx.link().callback(Msg::DeleteProblem);
             let add_to_cart = ctx.link().callback(Msg::AddToCart);

@@ -7,6 +7,7 @@ use crate::field_display::Comp as FieldDisplay;
 use crate::field_selector::Comp as FieldSelect;
 use crate::result_range::{self, Comp as RangeSelector};
 use crate::typeset;
+use crate::ReloadButton;
 use material_yew::MatIconButtonToggle;
 use pim_lib::{Data, Fields, ParseOneError};
 use web_sys::window;
@@ -223,9 +224,11 @@ impl Component for ViewDb {
             .map_or_else(|| html! {}, |err| html! {<p class="error">{err}</p>});
 
         let range_cb = ctx.link().callback(|(x, y)| Msg::Range(x, y));
+        let reload_cb = ctx.link().callback(|()| Msg::ReloadDb);
 
         html! {
             <div id="db-table-container">
+            <ReloadButton cb = {reload_cb}/>
             {error}
             <ColumnSelect show={self.shown_fields} {show_cb}></ColumnSelect>
             <div>
