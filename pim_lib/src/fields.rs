@@ -63,10 +63,10 @@ impl Display for Fields {
 }
 
 impl Fields {
-    pub const N: usize = 13;
+    pub const N: usize = 14;
     pub const ALL: [Self; Self::N] = [
         Id, Title, Problem, Topics, Difficulty, Source, History, Comments, Year, Packages, Author,
-        TexUrl, Figures,
+        TexUrl, PdfUrl, Figures,
     ];
 
     #[must_use]

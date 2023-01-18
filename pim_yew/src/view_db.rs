@@ -8,7 +8,7 @@ use crate::field_selector::Comp as FieldSelect;
 use crate::result_range::{self, Comp as RangeSelector};
 use crate::typeset;
 use crate::ReloadButton;
-use log::{warn, error};
+use log::{error, warn};
 use material_yew::MatIconButtonToggle;
 use pim_lib::{Data, Fields, ParseOneError};
 use web_sys::window;
@@ -25,7 +25,6 @@ pub struct ViewDb {
     sort: Sort,
     error: Option<ParseOneError>,
     range: (usize, usize),
-    cached_range: (usize, usize),
     special_window: SpecialWindow,
 }
 
@@ -87,15 +86,8 @@ impl Component for ViewDb {
     type Properties = Props;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let mut shown_fields = [true; Fields::N];
-        for (i, f) in Fields::ALL.into_iter().enumerate() {
-            shown_fields[i] = f.is_in_template();
-        }
-        // Hide id and title, file name and figures
-        shown_fields[0] = false;
-        shown_fields[1] = false;
-        shown_fields[11] = false;
-        shown_fields[12] = false;
+        let mut shown_fields = [false; Fields::N];
+        shown_fields[2] = true;
         let mut output = Self {
             view: vec![],
             window: vec![],
@@ -105,7 +97,6 @@ impl Component for ViewDb {
             sort: Sort::default(),
             error: None,
             range: (0, 20),
-            cached_range: (0, 0),
             special_window: SpecialWindow::Normal,
         };
 
@@ -183,10 +174,11 @@ impl Component for ViewDb {
             }
             Msg::Edit(id) => {
                 self.special_window = Editing(id);
-                self.cached_range = self.range;
+                // self.cached_range = self.range;
             }
             Msg::ViewPdf(id) => {
                 self.special_window = ViewingPdf(id);
+                // self.cached_range = self.range;
             }
         }
         true
@@ -288,17 +280,19 @@ impl ViewDb {
             e.prevent_default();
             Msg::BackToNormal
         });
-        let Some(data) = ctx.props().db.get(id) else {
+        let Some(data) = ctx.props().db.iter().find(|data| data.id == id) else {
             error!("Pdf {id} is not in db");
-        }
+            ctx.link().send_message(Msg::BackToNormal);
+            return html!{};
+        };
+        let pdf_url = data.pdf_url.clone();
         html! {
                 <>
                 <button onclick={return_cb}>{"Volver"}</button>
         <embed
             src={pdf_url}
             type="application/pdf"
-            // width="100%"
-            // height="100%"
+            id="pdf-preview"
         />
                 </>
             }
@@ -345,6 +339,10 @@ fn into_row(
         e.prevent_default();
         Msg::Edit(id)
     });
+    let view_pdf = ctx.link().callback(move |e: MouseEvent| {
+        e.prevent_default();
+        Msg::ViewPdf(id)
+    });
 
     let title = data.titulo.clone();
     let delete = ctx.link().callback(move |e: MouseEvent| {
@@ -379,9 +377,12 @@ fn into_row(
         <tr>
         <td>
         {&data.titulo}
+        <p class="problem-links">
         <a href={data.tex_url.clone()} class="problem-link" title="Descargar .tex">{"tex"}</a>
         <a href={data.pdf_url.clone()} class="problem-link" title="Descargar .pdf">{"pdf"}</a>
+        </p>
         <button title="Editar información" class="edit-button icon-button" {onclick}><i class="fa-solid fa-pen-to-square"></i></button>
+        <button title="Ver pdf" class="icon-button" onclick={view_pdf}><i class="fa-solid fa-file-pdf"></i></button>
         <button class="delete-button icon-button" title="Borrar" onclick={delete}> <i class="fa-solid fa-trash-can"></i></button>
         {bundle}
         {cart_button}
@@ -423,14 +424,11 @@ impl ViewDb {
 
     fn stop_editing(&mut self, ctx: &Context<Self>) {
         self.special_window = Normal;
-        let start = self.cached_range.0;
-        let end = self.cached_range.1;
-        ctx.link().send_future(async move {
-            log::info!("Would like to sleep");
-            log::info!("Wake up");
-            Msg::Range(start, result_range::Which::Start)
-        });
-        ctx.link()
-            .send_future(async move { Msg::Range(end, result_range::Which::End) });
+        // let start = self.cached_range.0;
+        // let end = self.cached_range.1;
+        // ctx.link()
+        //     .send_message(Msg::Range(start, result_range::Which::Start));
+        // ctx.link()
+        //     .send_message(Msg::Range(end, result_range::Which::End));
     }
 }
