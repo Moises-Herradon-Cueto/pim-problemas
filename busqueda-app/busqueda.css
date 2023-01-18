@@ -341,3 +341,7 @@ li {
 .file-upload {
   box-shadow: none;
 }
+
+body.waiting {
+  cursor: wait
+}

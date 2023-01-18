@@ -4,6 +4,8 @@ use std::rc::Rc;
 use crate::commands::delete;
 use crate::commands::insert_db_info;
 use crate::handle_db::FetchedData;
+use crate::helper::undo_waiting_cursor;
+use crate::helper::waiting_cursor;
 use crate::home_button;
 use crate::requests::MyRequest;
 use pim_lib::Data;
@@ -116,6 +118,7 @@ impl Component for MainMenu {
                 true
             }
             Msg::DeleteProblem(id) => {
+                waiting_cursor();
                 ctx.link().send_future(async move {
                     let delete = delete(id).await;
                     delete.map_or_else(Msg::UpdateErr, |_| Msg::GetDb)
@@ -127,18 +130,22 @@ impl Component for MainMenu {
                 true
             }
             Msg::UpdateDb(db) => {
+                undo_waiting_cursor();
                 self.db = Some(db);
                 true
             }
             Msg::UpdateSheets(sheets) => {
+                undo_waiting_cursor();
                 self.sheets = Some(sheets);
                 true
             }
             Msg::UpdateErr(err) => {
+                undo_waiting_cursor();
                 self.error = err;
                 true
             }
             Msg::GetDb => {
+                waiting_cursor();
                 Self::get_db(ctx);
                 self.db = None;
                 false
@@ -148,6 +155,7 @@ impl Component for MainMenu {
                 false
             }
             Msg::EditEntry(data) => {
+                waiting_cursor();
                 ctx.link().send_future(async move {
                     let result = insert_db_info(data).await;
                     result.map_or_else(Msg::UpdateErr, |_| Msg::GetDb)

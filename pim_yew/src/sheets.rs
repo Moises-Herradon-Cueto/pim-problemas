@@ -13,19 +13,19 @@ use FileType::{Pdf, Tex};
 
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Planet {
-    Mercury,
+    Mercurio,
     Venus,
     Jupiter,
-    Uranus,
+    Urano,
 }
 
 impl Planet {
     const fn to_static_str(self) -> &'static str {
         match self {
-            Self::Mercury => "Mercurio",
+            Self::Mercurio => "Mercurio",
             Self::Venus => "Venus",
             Self::Jupiter => "Júpiter",
-            Self::Uranus => "Urano",
+            Self::Urano => "Urano",
         }
     }
 }
