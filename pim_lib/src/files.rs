@@ -18,7 +18,7 @@ pub use errors::ParseOneError;
 pub use errors::ParseOneInfo;
 use regex::{Captures, Regex};
 
-fn decode_file(path: &Path) -> Result<String, ParseOneError> {
+pub fn decode_file(path: &Path) -> Result<String, ParseOneError> {
     let mut file = fs::File::open(path).map_err(|err| ParseOneError::IO {
         io_err: err.to_string(),
         action: format!("Error al abrir el archivo: {path:?}"),
@@ -75,9 +75,7 @@ fn check_file(entry: Result<DirEntry, io::Error>) -> Result<(PathBuf, usize), Pa
 
     let id: Result<usize, _> = id.parse();
 
-    let id = if let Ok(id) = id {
-        id
-    } else {
+    let Ok(id )= id  else {
         return Err(ParseOneError::BadFileName(name.into_owned()));
     };
     let path = file.path();
