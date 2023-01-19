@@ -51,19 +51,6 @@ th {
     height: 200px;
 }
 
-/* MAKE LEFT COLUMN FIXEZ */
-#db-table tr> :nth-child(2) {
-    background: hsl(45, 90%, 90%);
-    left: 0;
-
-}
-
-/* don't do this */
-#db-table tr> :nth-child(2) {
-    box-shadow: inset 0px 1px black;
-
-}
-
 #db-table tr> :first-child {
     width: 5px;
 }
