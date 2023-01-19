@@ -100,8 +100,8 @@ impl Filter {
             FieldContents::Difficulty(contents) => data.dificultad == *contents,
             FieldContents::Source(contents) => data.fuente.to_lowercase().contains(contents),
             FieldContents::History(contents) => {
-                if self.contents.is_empty() {
-                    contents.is_empty()
+                if contents.is_empty() {
+                    data.historial.is_empty()
                 } else {
                     matches(contents.split(','), &data.historial.lines())
                 }
