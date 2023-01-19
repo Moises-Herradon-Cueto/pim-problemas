@@ -31,6 +31,10 @@ impl Component for Comp {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let mut tag = VTag::new(ctx.props().tag);
         tag.node_ref = self.node_ref.clone();
+        tag.add_attribute("class", "raw-html");
+        if let Some(id) = &ctx.props().id {
+            tag.add_attribute("id", id.clone());
+        };
         VNode::from(tag)
     }
 

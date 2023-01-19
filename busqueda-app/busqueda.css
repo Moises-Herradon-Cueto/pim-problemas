@@ -165,10 +165,8 @@ li {
 
 .edit-problem {
   width: calc(100vw - 20px);
-  height: calc(100vh - 20px);
   z-index: 10;
   background-color: aliceblue;
-  overflow: scroll;
   position: absolute;
   top: -85px;
   left: -40px;
@@ -204,15 +202,8 @@ li {
   overflow: scroll;
 }
 
-.edit-problem form {
-  height: calc(100vh - 20px);
-}
 
-#problem-preview {
-  white-space: pre-wrap;
-}
-
-.problem-preview {
+.raw-html {
   white-space: pre-wrap;
 }
 
