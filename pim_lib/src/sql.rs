@@ -3,7 +3,7 @@ use std::{
     fmt::Display,
 };
 
-use crate::Data;
+use crate::{data::Curso, Data};
 
 pub fn into<T, K>(database: &HashMap<T, Data, K>) -> String {
     let mut vec: Vec<_> = database.values().collect();
@@ -146,7 +146,7 @@ fn get_columns(data: &Data) -> String {
     } else {
         data.dificultad.to_string()
     };
-    let curso_with_commas = curso(&data.curso);
+    let curso_with_commas = curso(data.curso);
     let fuente = escape(&data.fuente);
     let paquetes = escape(&data.paquetes);
     let enunciado = escape(&data.enunciado);
@@ -165,26 +165,25 @@ fn escape(input: &str) -> String {
     input.replace('\\', "\\\\").replace('\'', "\\'")
 }
 
-fn curso(input: &str) -> String {
-    if input.is_empty() {
-        String::from("NULL")
-    } else {
-        match input {
-            "1ESO" => String::from("'1 ESO'"),
-            "2ESO" => String::from("'2 ESO'"),
-            "3ESO" => String::from("'3 ESO'"),
-            "4ESO" => String::from("'4 ESO'"),
-            "1Primaria" => String::from("'1 Primaria'"),
-            "2Primaria" => String::from("'2 Primaria'"),
-            "3Primaria" => String::from("'3 Primaria'"),
-            "4Primaria" => String::from("'4 Primaria'"),
-            "5Primaria" => String::from("'5 Primaria'"),
-            "6Primaria" => String::from("'6 Primaria'"),
-            "1BACH" => String::from("'1 BACH'"),
-            "2BACH" => String::from("'2 BACH'"),
-            x => panic!("Curso: {x}"),
-        }
-    }
+fn curso(input: Option<Curso>) -> String {
+    use Curso::*;
+    input.map_or_else(
+        || String::from("NULL"),
+        |input| match input {
+            ESO1 => String::from("'1 ESO'"),
+            ESO2 => String::from("'2 ESO'"),
+            ESO3 => String::from("'3 ESO'"),
+            ESO4 => String::from("'4 ESO'"),
+            Primaria1 => String::from("'1 Primaria'"),
+            Primaria2 => String::from("'2 Primaria'"),
+            Primaria3 => String::from("'3 Primaria'"),
+            Primaria4 => String::from("'4 Primaria'"),
+            Primaria5 => String::from("'5 Primaria'"),
+            Primaria6 => String::from("'6 Primaria'"),
+            Bach1 => String::from("'1 BACH'"),
+            Bach2 => String::from("'2 BACH'"),
+        },
+    )
 }
 
 fn process_tema(topic: &str) -> String {

@@ -28,6 +28,7 @@ pub struct Props {
 #[derive(Debug)]
 pub struct Filter {
     contents: FieldContents,
+    str_contents: String,
 }
 
 impl Display for Filter {
@@ -38,50 +39,30 @@ impl Display for Filter {
 
 impl Filter {
     pub fn new(field: Fields, contents: &str) -> Option<Self> {
-        match field {
-            Fields::Id => Some(Self {
-                contents: FieldContents::Id(contents.parse().ok()?),
-            }),
-            Fields::Title => Some(Self {
-                contents: FieldContents::Title(contents.to_lowercase()),
-            }),
-            Fields::Problem => Some(Self {
-                contents: FieldContents::Problem(contents.to_lowercase()),
-            }),
-            Fields::Topics => Some(Self {
-                contents: FieldContents::Topics(vec![contents.to_lowercase()]),
-            }),
-            Fields::Figures => Some(Self {
-                contents: FieldContents::Figures(vec![contents.to_lowercase()]),
-            }),
-            Fields::Difficulty => Some(Self {
-                contents: FieldContents::Difficulty(contents.parse().ok()?),
-            }),
-            Fields::Source => Some(Self {
-                contents: FieldContents::Source(contents.to_lowercase()),
-            }),
-            Fields::History => Some(Self {
-                contents: FieldContents::History(contents.to_lowercase()),
-            }),
-            Fields::Comments => Some(Self {
-                contents: FieldContents::Comments(contents.to_lowercase()),
-            }),
-            Fields::Year => Some(Self {
-                contents: FieldContents::Year(contents.to_lowercase()),
-            }),
-            Fields::Packages => Some(Self {
-                contents: FieldContents::Packages(contents.to_lowercase()),
-            }),
-            Fields::Author => Some(Self {
-                contents: FieldContents::Author(contents.to_lowercase()),
-            }),
-            Fields::TexUrl => Some(Self {
-                contents: FieldContents::TexUrl(contents.to_lowercase()),
-            }),
-            Fields::PdfUrl => Some(Self {
-                contents: FieldContents::PdfUrl(contents.to_lowercase()),
-            }),
-        }
+        let field_contents = match field {
+            Fields::Id => FieldContents::Id(contents.parse().ok()?),
+            Fields::Title => FieldContents::Title(contents.to_lowercase()),
+            Fields::Problem => FieldContents::Problem(contents.to_lowercase()),
+            Fields::Topics => FieldContents::Topics(vec![contents.to_lowercase()]),
+            Fields::Figures => FieldContents::Figures(vec![contents.to_lowercase()]),
+            Fields::Difficulty => FieldContents::Difficulty(contents.parse().ok()?),
+            Fields::Source => FieldContents::Source(contents.to_lowercase()),
+            Fields::History => FieldContents::History(contents.to_lowercase()),
+            Fields::Comments => FieldContents::Comments(contents.to_lowercase()),
+            Fields::Year => FieldContents::Year(None),
+            Fields::Packages => FieldContents::Packages(contents.to_lowercase()),
+            Fields::Author => FieldContents::Author(contents.to_lowercase()),
+            Fields::TexUrl => FieldContents::TexUrl(contents.to_lowercase()),
+            Fields::PdfUrl => FieldContents::PdfUrl(contents.to_lowercase()),
+        };
+        Some(Self {
+            contents: field_contents,
+            str_contents: if matches!(field, Fields::Year) {
+                contents.to_owned()
+            } else {
+                String::new()
+            },
+        })
     }
 
     pub fn passes(&self, data: &Data) -> bool {
@@ -109,7 +90,9 @@ impl Filter {
             FieldContents::Comments(contents) => {
                 matches(contents.split(','), &data.comentarios.lines())
             }
-            FieldContents::Year(contents) => data.curso.to_lowercase().contains(contents),
+            FieldContents::Year(_) => data
+                .curso
+                .map_or(true, |c| c.to_string().contains(&self.str_contents)),
             FieldContents::Packages(contents) => {
                 matches(contents.split(','), &data.paquetes.lines())
             }

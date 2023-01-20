@@ -2,6 +2,7 @@ use std::fmt::Display;
 use std::mem;
 use std::{borrow::Cow, slice};
 
+use crate::data::Curso;
 use crate::Data;
 use clap::ValueEnum;
 use regex::Regex;
@@ -112,7 +113,7 @@ impl Fields {
             History => Cow::Borrowed(&data.historial),
             Comments => Cow::Borrowed(&data.comentarios),
             Packages => Cow::Borrowed(&data.paquetes),
-            Year => Cow::Borrowed(&data.curso),
+            Year => Cow::Owned(data.curso.map_or_else(String::new, |c| c.to_string())),
             Author => Cow::Borrowed(&data.id_autor),
             TexUrl => Cow::Borrowed(&data.tex_url),
             PdfUrl => Cow::Borrowed(&data.pdf_url),
@@ -130,7 +131,7 @@ impl Fields {
             Source => FieldContentsRef::Source(&data.fuente),
             History => FieldContentsRef::History(&data.historial),
             Comments => FieldContentsRef::Comments(&data.comentarios),
-            Year => FieldContentsRef::Year(&data.curso),
+            Year => FieldContentsRef::Year(data.curso),
             Packages => FieldContentsRef::Packages(&data.paquetes),
             Author => FieldContentsRef::Author(&data.id_autor),
             TexUrl => FieldContentsRef::TexUrl(&data.tex_url),
@@ -175,7 +176,7 @@ impl Fields {
             Source => FieldContents::Source(String::new()),
             History => FieldContents::History(String::new()),
             Comments => FieldContents::Comments(String::new()),
-            Year => FieldContents::Year(String::new()),
+            Year => FieldContents::Year(None),
             Packages => FieldContents::Packages(String::new()),
             Author => FieldContents::Author(String::new()),
             TexUrl => FieldContents::TexUrl(String::new()),
@@ -240,9 +241,9 @@ impl Fields {
             )),
             Year => {
                 if input.is_empty() || input == "%" {
-                    Ok(FieldContents::Year(String::new()))
+                    Ok(FieldContents::Year(None))
                 } else {
-                    Ok(FieldContents::Year(input.to_owned()))
+                    Ok(FieldContents::Year(input.parse().ok()))
                 }
             }
             Packages => Ok(FieldContents::Packages(
@@ -289,7 +290,7 @@ pub enum FieldContents {
     Source(String),
     History(String),
     Comments(String),
-    Year(String),
+    Year(Option<Curso>),
     Packages(String),
     Author(String),
     TexUrl(String),
@@ -307,7 +308,7 @@ pub enum FieldContentsRef<'a> {
     Source(&'a str),
     History(&'a str),
     Comments(&'a str),
-    Year(&'a str),
+    Year(Option<Curso>),
     Packages(&'a str),
     Author(&'a str),
     TexUrl(&'a str),
@@ -316,6 +317,7 @@ pub enum FieldContentsRef<'a> {
 }
 
 pub enum ContentsIter<'a> {
+    Option(Option<Curso>),
     Single(&'a str),
     Owned(String),
     Multi(slice::Iter<'a, String>),
@@ -343,6 +345,7 @@ impl<'a> Iterator for ContentsIter<'a> {
                 }
             }
             ContentsIter::Multi(i) => Some(Cow::Borrowed(i.next()?)),
+            ContentsIter::Option(x) => mem::take(x).map(|c| Cow::Owned(c.to_string())),
         }
     }
 }
@@ -361,11 +364,11 @@ impl<'a> IntoIterator for FieldContentsRef<'a> {
             | FieldContentsRef::Source(x)
             | FieldContentsRef::History(x)
             | FieldContentsRef::Comments(x)
-            | FieldContentsRef::Year(x)
             | FieldContentsRef::Packages(x)
             | FieldContentsRef::Author(x)
             | FieldContentsRef::TexUrl(x)
             | FieldContentsRef::PdfUrl(x) => Self::IntoIter::Single(x),
+            FieldContentsRef::Year(x) => Self::IntoIter::Option(x),
             FieldContentsRef::Figures(x) | FieldContentsRef::Topics(x) => {
                 Self::IntoIter::Multi(x.iter())
             }
@@ -384,7 +387,8 @@ impl<'a> FieldContentsRef<'a> {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
             Problem(x) | Title(x) | Source(x) | History(x) | Comments(x) | Packages(x)
-            | Year(x) | Author(x) | TexUrl(x) | PdfUrl(x) => x.is_empty() || *x == "%",
+            | Author(x) | TexUrl(x) | PdfUrl(x) => x.is_empty() || *x == "%",
+            Year(x) => x.as_ref().is_none(),
             Topics(x) | Figures(x) => x.is_empty(),
         }
     }
@@ -402,8 +406,8 @@ impl<'a> Ord for FieldContentsRef<'a> {
             | (FieldContentsRef::Source(x_1), FieldContentsRef::Source(x_2))
             | (FieldContentsRef::History(x_1), FieldContentsRef::History(x_2))
             | (FieldContentsRef::Comments(x_1), FieldContentsRef::Comments(x_2))
-            | (FieldContentsRef::Packages(x_1), FieldContentsRef::Packages(x_2))
-            | (FieldContentsRef::Year(x_1), FieldContentsRef::Year(x_2)) => x_1.cmp(x_2),
+            | (FieldContentsRef::Packages(x_1), FieldContentsRef::Packages(x_2)) => x_1.cmp(x_2),
+            (FieldContentsRef::Year(x_1), FieldContentsRef::Year(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Topics(x_1), FieldContentsRef::Topics(x_2)) => x_1.cmp(x_2),
             (FieldContentsRef::Difficulty(x_1), FieldContentsRef::Difficulty(x_2)) => x_1.cmp(x_2),
             (_, _) => std::cmp::Ordering::Equal,
@@ -425,7 +429,7 @@ impl<'a> FieldContentsRef<'a> {
             FieldContentsRef::History(x) => FieldContents::History((*x).to_owned()),
             FieldContentsRef::Comments(x) => FieldContents::Comments((*x).to_owned()),
             FieldContentsRef::Packages(x) => FieldContents::Packages((*x).to_owned()),
-            FieldContentsRef::Year(x) => FieldContents::Year((*x).to_owned()),
+            FieldContentsRef::Year(x) => FieldContents::Year(*x),
             FieldContentsRef::TexUrl(x) => FieldContents::TexUrl((*x).to_owned()),
             FieldContentsRef::PdfUrl(x) => FieldContents::PdfUrl((*x).to_owned()),
             FieldContentsRef::Author(x) => FieldContents::Author((*x).to_owned()),
@@ -462,13 +466,14 @@ impl FieldContents {
             Id(x) => *x == usize::MAX,
             Difficulty(x) => *x == u8::MAX,
             Title(x) | Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x)
-            | Year(x) | Author(x) | TexUrl(x) | PdfUrl(x) => x.is_empty() || x == "%",
+            | Author(x) | TexUrl(x) | PdfUrl(x) => x.is_empty() || x == "%",
+            Year(x) => x.as_ref().is_none(),
             Topics(x) | Figures(x) => x.is_empty(),
         }
     }
 
     #[must_use]
-    pub fn string_contents(&self) -> Cow<String> {
+    pub fn string_contents(&self) -> Cow<str> {
         use FieldContents::{
             Author, Comments, Difficulty, Figures, History, Id, Packages, PdfUrl, Problem, Source,
             TexUrl, Title, Topics, Year,
@@ -477,7 +482,8 @@ impl FieldContents {
             Id(x) => Cow::Owned(x.to_string()),
             Difficulty(x) => Cow::Owned(x.to_string()),
             Title(x) | Problem(x) | Source(x) | History(x) | Comments(x) | Packages(x)
-            | Year(x) | Author(x) | TexUrl(x) | PdfUrl(x) => Cow::Borrowed(x),
+            | Author(x) | TexUrl(x) | PdfUrl(x) => Cow::Borrowed(x),
+            Year(x) => x.map_or_else(|| Cow::Borrowed(""), |x| Cow::Owned(x.to_string())),
             Topics(x) | Figures(x) => Cow::Owned(x.join(",")),
         }
     }

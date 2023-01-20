@@ -1,4 +1,4 @@
-use pim_lib::Data;
+use pim_lib::{Curso, Data};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -12,7 +12,7 @@ pub struct FetchedData {
     #[serde(rename = "Dificultad")]
     dificultad: Option<u8>,
     #[serde(rename = "Curso")]
-    curso: Option<String>,
+    curso: Option<Curso>,
     #[serde(rename = "Procedencia")]
     procedencia: String,
     #[serde(rename = "Preambulo")]
@@ -65,7 +65,7 @@ impl From<FetchedData> for Data {
             fuente: procedencia,
             historial: hojas.unwrap_or_default(),
             comentarios: comentarios.unwrap_or_default(),
-            curso: curso.unwrap_or_default(),
+            curso,
             enunciado: descripcion,
             paquetes: preambulo,
             tex_url,

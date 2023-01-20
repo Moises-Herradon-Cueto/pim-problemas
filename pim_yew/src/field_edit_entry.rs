@@ -1,8 +1,10 @@
 use crate::RawHtml;
+use material_yew::select::{ListIndex, MatSelect, SelectedDetail};
 use material_yew::text_inputs::MatTextArea;
 use material_yew::text_inputs::MatTextField;
 use material_yew::text_inputs::TextFieldType;
-use pim_lib::{FieldContents, Fields};
+use material_yew::MatListItem;
+use pim_lib::{FieldContents, Fields, CURSOS};
 use yew::prelude::*;
 use yew::virtual_dom::AttrValue;
 use FieldContents::{
@@ -82,11 +84,13 @@ impl Component for Comp {
         let problem = matches!(self.contents, Problem(_));
 
         let input_type = match &self.contents {
-            Id(_) | Title(_) | Difficulty(_) | Source(_) | Year(_) | Author(_) | TexUrl(_)
-            | PdfUrl(_) => InputType::One,
+            Id(_) | Title(_) | Difficulty(_) | Source(_) | Author(_) | TexUrl(_) | PdfUrl(_) => {
+                InputType::One
+            }
             Figures(_) | Problem(_) | History(_) | Comments(_) | Topics(_) | Packages(_) => {
                 InputType::Multi
             }
+            Year(_) => InputType::Year,
         };
 
         if !self.showing_problem {
@@ -109,6 +113,7 @@ impl Component for Comp {
 enum InputType {
     One,
     Multi,
+    Year,
 }
 
 fn string_input(
@@ -156,6 +161,41 @@ fn string_input(
             cols={Some(200)}
             />
         },
+        InputType::Year => {
+            let onselected = oninput.reform(|x: SelectedDetail| {
+                let selection = x.index;
+                match selection {
+                    ListIndex::Single(Some(0) | None) => String::new(),
+                    ListIndex::Single(Some(i)) => CURSOS[i - 1].to_string(),
+                    ListIndex::Multi(_) => {
+                        log::warn!("{selection:?}");
+                        String::new()
+                    }
+                }
+            });
+
+            let cursos: Html = CURSOS
+                .into_iter()
+                .map(|curso| {
+                    let selected = if let FieldContents::Year(Some(x)) = contents {
+                        curso == *x
+                    } else {
+                        false
+                    };
+                    html! {
+                        <MatListItem {selected}>{curso}</MatListItem>
+                    }
+                })
+                .collect();
+
+            html! {
+                          <MatSelect {onselected}
+            outlined={true}>
+                            <MatListItem>{"Elige el curso"}</MatListItem>
+                            {cursos}
+                        </MatSelect>
+            }
+        }
     };
 
     html! {

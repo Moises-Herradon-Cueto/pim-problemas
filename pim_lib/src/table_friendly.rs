@@ -47,7 +47,7 @@ impl From<Data> for TableFriendly {
             fuente,
             historial,
             comentarios,
-            curso,
+            curso: curso.map_or_else(|| String::new(), |c| c.to_string()),
             enunciado,
             paquetes,
             tex_url,

@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::FieldEditEntry;
 use pim_lib::{Data, FieldContents, Fields};
+use web_sys::window;
 use yew::{prelude::*, virtual_dom::AttrValue};
 
 pub struct Comp {
@@ -38,7 +39,14 @@ impl Component for Comp {
                 self.data.set(content);
             }
             Msg::Submit => {
-                ctx.props().edit_cb.emit(self.data.clone());
+                if self.data.curso.is_none() {
+                    window()
+                        .unwrap()
+                        .alert_with_message("No has seleccionado el curso")
+                        .unwrap();
+                } else {
+                    ctx.props().edit_cb.emit(self.data.clone());
+                }
             }
             Msg::Close => {
                 ctx.props().close_cb.emit(());

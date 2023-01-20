@@ -102,10 +102,9 @@ pub fn overwrite_document_data(input: &str, data: &Data) -> Result<String, Parse
         comentarios = "%";
     }
 
-    let mut curso = data.curso.as_str();
-    if curso.is_empty() {
-        curso = "%";
-    }
+    let curso = data
+        .curso
+        .map_or_else(|| String::from("%"), |c| c.to_string());
 
     let mut historial = data.historial.as_str();
 
